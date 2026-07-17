@@ -129,3 +129,28 @@ export async function uploadProductImage(businessId: string, file: File) {
 
   return { url: publicUrl };
 }
+
+export async function deleteAllMenu(businessId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autenticado' };
+
+  // Eliminar primero todos los productos del negocio
+  const { error: productsError } = await supabase
+    .from('products')
+    .delete()
+    .eq('business_id', businessId);
+
+  if (productsError) return { error: productsError.message };
+
+  // Eliminar luego todas las categorías del negocio
+  const { error: categoriesError } = await supabase
+    .from('categories')
+    .delete()
+    .eq('business_id', businessId);
+
+  if (categoriesError) return { error: categoriesError.message };
+
+  revalidatePath('/productos');
+  return { success: true };
+}

@@ -1,7 +1,11 @@
 'use server';
 
+// 1. Importar el cliente de Supabase para el servidor.
+// Aquí traemos la función que nos permite interactuar con la base de datos de Supabase desde un entorno seguro (el servidor).
 import { createClient } from '@/lib/supabase/server';
 
+// 2. Definir la interfaz TypeScript para las categorías.
+// Esta interfaz asegura que los datos devueltos por la IA tengan siempre la misma estructura.
 interface AICategory {
   name: string;
   icon?: string;
@@ -12,45 +16,50 @@ interface AICategory {
   }[];
 }
 
+// ============================================================================
+// Función: importMenuAI
+// Qué hace: Analiza una imagen o archivo de un menú utilizando la API de Gemini (Inteligencia Artificial) y extrae las categorías y productos en formato JSON.
+// Por qué existe: Para automatizar y facilitar la carga de productos de un restaurante a partir de una simple foto de un menú físico.
+// Quién la llama: Es llamada desde un Client Component en el dashboard del usuario tras subir una imagen (por ejemplo, desde un asistente de creación).
+// Qué parámetros recibe:
+//   - businessId (string): El identificador único del negocio.
+//   - fileUrl (string): La URL del archivo/imagen del menú que se va a procesar.
+//   - mimeType (string): El tipo MIME del archivo (ej. 'image/jpeg') para saber cómo procesarlo.
+// Qué devuelve: Retorna un objeto con la propiedad `data` (conteniendo las categorías procesadas) o `error` (en caso de fallo).
+// Qué tabla de Supabase utiliza: Autenticación (para verificar que el usuario esté logueado).
+// Qué consulta SQL equivalente ejecutaría:
+//   SELECT * FROM auth.users WHERE id = 'token_del_usuario';
+// Qué ocurre si falla: El bloque catch captura el error y devuelve un objeto con el mensaje de error ({ error: 'mensaje' }).
+// Qué conceptos de Next.js intervienen: Server Actions ('use server').
+// Qué conceptos de TypeScript aparecen: Interfaces (AICategory), tipado de parámetros, Record<string, unknown>.
+// Qué conceptos de JavaScript aparecen: Async/Await, try/catch, variables de entorno (process.env), Buffer (Node.js), fetch, RegEx, JSON.parse.
+// Qué buenas prácticas se están utilizando:
+//   - Early return (retorno temprano) si el usuario no está autenticado.
+//   - Manejo de variables de entorno seguras en el servidor.
+//   - Uso de un bloque try/catch general para evitar crasheos del servidor.
+//   - Fallback (datos de prueba) para cuando la API Key no está configurada, permitiendo continuar el desarrollo.
+// ============================================================================
 export async function importMenuAI(businessId: string, fileUrl: string, mimeType: string) {
   try {
+    // 3. Crear cliente de Supabase y validar permisos.
+    // Verificamos que quien está ejecutando la acción sea un usuario autenticado real.
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: 'No autenticado' };
 
+    // 4. Obtener la clave de la API.
+    // Buscamos la llave secreta para conectarnos a Google Gemini desde las variables de entorno del servidor.
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+    // 5. Verificar si existe la clave de la API.
+    // Si no tenemos configurada la clave en nuestro archivo .env, retornamos datos de prueba (mock) en lugar de fallar.
     if (!GEMINI_API_KEY) {
-      // Fallback/Mock data if no key is present
-      const mockCategories: AICategory[] = [
-        {
-          name: 'Entradas',
-          icon: '🥗',
-          products: [
-            { name: 'Ensalada César', description: 'Lechuga romana, aderezo césar, crutones y parmesano', price: 8.50 },
-            { name: 'Bruschetta', description: 'Pan tostado con tomate, ajo y albahaca fresca', price: 6.00 },
-          ],
-        },
-        {
-          name: 'Platos Principales',
-          icon: '🍽️',
-          products: [
-            { name: 'Pizza Margherita', description: 'Salsa de tomate, mozzarella y albahaca', price: 14.00 },
-            { name: 'Pasta Bolognesa', description: 'Tagliatelle con ragú de carne', price: 12.50 },
-          ],
-        },
-        {
-          name: 'Bebidas',
-          icon: '🥤',
-          products: [
-            { name: 'Agua mineral', description: 'Botella 500ml', price: 2.50 },
-            { name: 'Limonada casera', description: 'Jugo de limón con menta', price: 4.00 },
-          ],
-        },
-      ];
-      return { data: { categories: mockCategories } };
+      return { error: 'La API Key de Gemini no está configurada.' };
     }
 
+    // 6. Preparar los datos del archivo para la IA.
+    // Si el archivo es una imagen, lo descargamos (fetch), lo convertimos a formato binario (ArrayBuffer) 
+    // y luego a texto codificado en Base64 para poder enviarlo a la API de Gemini.
     const isImage = mimeType?.startsWith('image/');
     let inlineData: Record<string, unknown> | null = null;
 
@@ -64,13 +73,14 @@ export async function importMenuAI(businessId: string, fileUrl: string, mimeType
       };
     }
 
-    const requestBody = {
-      contents: [
-        {
-          parts: [
-            ...(inlineData ? [{ inlineData }] : []),
-            {
-              text: `Analizá esta carta de restaurante y extraé toda la información en formato JSON.
+    // 7. Construir el cuerpo de la petición (Payload).
+    // Aquí definimos el prompt estricto (instrucciones) y adjuntamos la imagen (si la hay) para la IA.
+    const parts: any[] = [];
+    if (inlineData) {
+      parts.push({ inlineData });
+    }
+    parts.push({
+      text: `Analizá esta carta de restaurante y extraé toda la información en formato JSON.
               
 Devolvé ÚNICAMENTE un JSON válido con esta estructura (sin markdown, sin explicaciones):
 {
@@ -97,40 +107,44 @@ Reglas:
 - Los emojis de íconos deben ser representativos del tipo de comida
 - La descripción debe ser corta (máximo 80 caracteres)
 - Respondé siempre en español`
-            },
-          ],
-        },
-      ],
-    };
+    });
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      }
-    );
+    // 8. Llamar a la API de Inteligencia Artificial (Gemini).
+    // Realizamos una petición segura hacia Google con la clave y el cuerpo creado.
+    const { GoogleGenAI } = require("@google/genai");
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: parts,
+    });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Gemini error:', errText);
-      return { error: 'Error al llamar a la IA de Gemini' };
-    }
+    // 10. Extraer y procesar la respuesta textual de Gemini.
+    const rawText = response.text || '';
 
-    const geminiData = await response.json();
-    const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-
+    // 11. Limpiar y validar el JSON devuelto.
     // Parse JSON from response
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return { error: 'La IA no devolvió un JSON válido' };
     }
 
+    // 12. Retornar el resultado final.
     const parsed = JSON.parse(jsonMatch[0]);
     return { data: parsed };
   } catch (err: any) {
+    // 13. Manejo de errores fatales.
+    // Si algo falla en todo el proceso (ej. red caída, archivo corrupto), se captura aquí sin colgar el servidor.
     console.error('importMenuAI error:', err);
     return { error: err.message || 'Error interno del servidor' };
   }
 }
+// ============================================================================
+// RESUMEN DE LA FUNCIÓN
+// ============================================================================
+// • Objetivo: Automatizar la creación de menús extrayendo productos y precios de imágenes utilizando la IA de Gemini.
+// • Flujo paso a paso: Verifica el usuario -> Revisa si hay API Key -> Descarga la imagen y la convierte a base64 -> Envía la imagen y un prompt estricto a Gemini -> Extrae el JSON devuelto de la respuesta -> Lo devuelve al cliente.
+// • Datos que entran: ID del negocio, URL pública de la imagen subida, tipo MIME de la imagen.
+// • Datos que salen: Un objeto con un array estructurado de categorías y productos listos para ser guardados.
+// • Errores posibles: Usuario no autenticado, falta de API Key (retorna mock), falla de red de Google, la IA devuelve texto plano en lugar de un JSON válido.
+// • Qué aprender de esta función: Cómo estructurar un Server Action en Next.js, cómo procesar archivos binarios en el servidor (Buffer), el manejo preventivo de fallos al integrarse con APIs externas de IA (uso de Regex y mocks), y cómo diseñar un prompt de sistema robusto pidiendo formato JSON estricto.

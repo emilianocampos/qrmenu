@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FiltersBar } from '@/components/ui/FiltersBar';
 import { ProductTable } from '@/components/ui/ProductTable';
 import { ProductDialog } from '@/components/ui/ProductDialog';
-import { createProduct, updateProduct, deleteProduct, duplicateProduct } from '@/actions/products';
+import { createProduct, updateProduct, deleteProduct, duplicateProduct, deleteAllMenu } from '@/actions/products';
+import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { Product, Category, Business } from '@/types';
 
@@ -54,6 +55,7 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -188,8 +190,24 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
       const result = await deleteProduct(id);
       if (!result.error) {
         setProducts(prev => prev.filter(p => p.id !== id));
+        toast.success('Producto eliminado');
+      } else {
+        toast.error('Error al eliminar: ' + result.error);
       }
       setConfirmDelete(null);
+    });
+  };
+
+  const handleDeleteAll = () => {
+    startTransition(async () => {
+      const result = await deleteAllMenu(business.id);
+      if (!result.error) {
+        setProducts([]);
+        toast.success('Todo el menú fue eliminado');
+      } else {
+        toast.error('Error al eliminar menú: ' + result.error);
+      }
+      setConfirmDeleteAll(false);
     });
   };
 
@@ -227,14 +245,26 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
         description={`${products.length} productos en tu carta`}
         breadcrumb={[{ label: 'Dashboard' }, { label: 'Productos' }]}
         action={
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
-                       bg-indigo-500 hover:bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-500/25 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Nuevo Producto
-          </button>
+          <div className="flex items-center gap-3">
+            {products.length > 0 && (
+              <button
+                onClick={() => setConfirmDeleteAll(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                           bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-all cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                Eliminar Todo
+              </button>
+            )}
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                         bg-indigo-500 hover:bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-500/25 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Nuevo Producto
+            </button>
+          </div>
         }
       />
 
@@ -346,6 +376,17 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
         confirmLabel="Eliminar"
         onConfirm={() => confirmDelete && handleDelete(confirmDelete)}
         onCancel={() => setConfirmDelete(null)}
+        danger
+        loading={isPending}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteAll}
+        title="Eliminar TODO el menú"
+        description="¿Estás completamente seguro? Esta acción eliminará TODOS los productos y categorías de tu negocio de forma permanente. No se puede deshacer."
+        confirmLabel="Eliminar todo"
+        onConfirm={handleDeleteAll}
+        onCancel={() => setConfirmDeleteAll(false)}
         danger
         loading={isPending}
       />

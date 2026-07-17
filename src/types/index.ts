@@ -8,7 +8,11 @@ export type Business = {
   color_secondary: string | null;
   typography: string | null;
   theme: string | null;
-  description?: string | null;
+  description: string | null;
+  about_title: string | null;
+  about_description: string | null;
+  cover_image: string | null;
+  banner_image: string | null;
   whatsapp?: string | null;
   instagram?: string | null;
   facebook?: string | null;
@@ -45,4 +49,14 @@ export type Product = {
   item_order: number | null;
   created_at: string;
   category?: Category;
+};
+
+export type Review = {
+  id: string;
+  business_id: string;
+  first_name: string;
+  last_name: string;
+  comment: string;
+  rating: number;
+  created_at: string;
 };

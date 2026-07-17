@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { UploadDropzone } from '@/components/ui/UploadDropzone';
 import { createClient } from '@/lib/supabase/client';
 import { Business } from '@/types';
+import { toast } from 'sonner';
 
 interface AICategory {
   name: string;
@@ -56,21 +57,31 @@ export function ImportClient({ business }: ImportClientProps) {
     setError(null);
 
     try {
-      const supabase = createClient();
-      const ext = file.name.split('.').pop();
-      const path = `${business.id}/import-${Date.now()}.${ext}`;
+      // Leer el archivo como Base64 directamente en el cliente
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]); // Remover prefijo "data:image/jpeg;base64,"
+        };
+        reader.onerror = error => reject(error);
+      });
 
-      await supabase.storage.from('imports').upload(path, file, { upsert: true });
-      const { data: { publicUrl } } = supabase.storage.from('imports').getPublicUrl(path);
+      const toastId = toast.loading('Analizando menú con IA...');
 
-      // Call the AI import route
+      // Call the AI import route directly with base64 instead of uploading to Supabase
       const response = await fetch('/api/ai/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileUrl: publicUrl, fileName: file.name, mimeType: file.type }),
+        body: JSON.stringify({ base64Data, fileName: file.name, mimeType: file.type }),
       });
 
       if (!response.ok) {
+        toast.dismiss(toastId);
+        if (response.status === 503) {
+          throw new Error('El servicio de IA está temporalmente sobrecargado. Por favor, intente nuevamente.');
+        }
         const err = await response.json();
         throw new Error(err.error ?? 'Error al analizar el archivo');
       }
@@ -80,8 +91,12 @@ export function ImportClient({ business }: ImportClientProps) {
       setEditableResult(JSON.parse(JSON.stringify(data.categories)));
       // Expand all by default
       setExpandedCats(new Set(data.categories.map((_: unknown, i: number) => i)));
+      toast.dismiss(toastId);
+      toast.success('Análisis completado');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsAnalyzing(false);
     }
@@ -92,6 +107,7 @@ export function ImportClient({ business }: ImportClientProps) {
     setError(null);
 
     startTransition(async () => {
+      const toastId = toast.loading('Guardando categorías y productos...');
       try {
         const response = await fetch('/api/ai/import/save', {
           method: 'POST',
@@ -104,9 +120,14 @@ export function ImportClient({ business }: ImportClientProps) {
           throw new Error(err.error ?? 'Error al guardar');
         }
 
+        toast.dismiss(toastId);
+        toast.success('Menú importado exitosamente');
         setImportDone(true);
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Error al guardar');
+        const msg = err instanceof Error ? err.message : 'Error al guardar';
+        setError(msg);
+        toast.dismiss(toastId);
+        toast.error(msg);
       }
     });
   };

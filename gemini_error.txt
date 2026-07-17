@@ -1,0 +1,26 @@
+Catch error:
+ApiError: {"error":{"code":503,"message":"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.","status":"UNAVAILABLE"}}
+    at throwErrorIfNotOK (C:\Users\Emi\Desktop\carta_qr\.next\dev\server\chunks\node_modules_@google_genai_dist_node_index_mjs_03zuq2l._.js:18006:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async C:\Users\Emi\Desktop\carta_qr\.next\dev\server\chunks\node_modules_@google_genai_dist_node_index_mjs_03zuq2l._.js:17703:13
+    at async Models.generateContent (C:\Users\Emi\Desktop\carta_qr\.next\dev\server\chunks\node_modules_@google_genai_dist_node_index_mjs_03zuq2l._.js:19079:24)
+    at async POST (C:\Users\Emi\Desktop\carta_qr\.next\dev\server\chunks\[root-of-the-server]__1vs9mn0._.js:291:26)
+    at async AppRouteRouteModule.do (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:40131)
+    at async AppRouteRouteModule.handle (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:47411)
+    at async responseGenerator (C:\Users\Emi\Desktop\carta_qr\.next\dev\server\chunks\node_modules_next_0urbv-s._.js:16543:38)
+    at async AppRouteRouteModule.handleResponse (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:1:228552)
+    at async handleResponse (C:\Users\Emi\Desktop\carta_qr\.next\dev\server\chunks\node_modules_next_0urbv-s._.js:16606:32)
+    at async Module.handler (C:\Users\Emi\Desktop\carta_qr\.next\dev\server\chunks\node_modules_next_0urbv-s._.js:16660:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\base-server.js:1462:9)
+    at async DevServer.renderPageComponent (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\base-server.js:1514:24)
+    at async DevServer.renderToResponseImpl (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\base-server.js:1564:32)
+    at async DevServer.pipeImpl (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\base-server.js:1044:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\base-server.js:935:17)
+    at async C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\lib\router-server.js:266:21)
+    at async handleRequest (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\lib\router-server.js:465:24)
+    at async requestHandlerImpl (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\lib\router-server.js:514:13)
+    at async Server.requestListener (C:\Users\Emi\Desktop\carta_qr\node_modules\next\dist\server\lib\start-server.js:225:13)

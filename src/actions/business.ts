@@ -51,7 +51,10 @@ export async function updateBusiness(businessId: string, updates: Record<string,
   if (!user) return { error: 'No autenticado' };
 
   // Separate updates into businesses columns and settings columns
-  const businessKeys = ['name', 'slug', 'logo_url', 'color_primary', 'color_secondary', 'typography', 'theme'];
+  const businessKeys = [
+    'name', 'slug', 'logo_url', 'color_primary', 'color_secondary', 'typography', 'theme',
+    'description', 'about_title', 'about_description', 'cover_image', 'banner_image'
+  ];
   const settingsKeys = ['email', 'whatsapp', 'instagram', 'facebook', 'address', 'schedule', 'language', 'currency', 'plan'];
 
   const businessUpdates: Record<string, any> = {};
@@ -137,5 +140,26 @@ export async function uploadLogo(businessId: string, file: File) {
 // Keep alias for compatibility
 export async function uploadBusinessLogo(businessId: string, file: File) {
   return uploadLogo(businessId, file);
+}
+
+export async function uploadBusinessImage(businessId: string, file: File, type: 'logo' | 'cover' | 'banner') {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autenticado' };
+
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${businessId}/${type}_${Date.now()}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('logos')
+    .upload(fileName, file, { upsert: true });
+
+  if (uploadError) return { error: uploadError.message };
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('logos')
+    .getPublicUrl(fileName);
+
+  return { url: publicUrl };
 }
 

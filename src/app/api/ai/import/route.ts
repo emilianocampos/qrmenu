@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { GoogleGenAI } from "@google/genai";
 
 interface AICategory {
   name: string;
@@ -9,65 +10,41 @@ interface AICategory {
     price: number;
   }[];
 }
-
 export async function POST(req: NextRequest) {
   try {
-    const { fileUrl, fileName, mimeType } = await req.json();
+    const { fileUrl, base64Data, fileName, mimeType } = await req.json();
 
-    if (!fileUrl) {
+    if (!fileUrl && !base64Data) {
       return NextResponse.json({ error: 'No se proporcionó archivo' }, { status: 400 });
     }
 
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
     if (!GEMINI_API_KEY) {
-      // Return mock data if no API key configured
-      const mockCategories: AICategory[] = [
-        {
-          name: 'Entradas',
-          icon: '🥗',
-          products: [
-            { name: 'Ensalada César', description: 'Lechuga romana, aderezo césar, crutones y parmesano', price: 8.50 },
-            { name: 'Bruschetta', description: 'Pan tostado con tomate, ajo y albahaca fresca', price: 6.00 },
-          ],
-        },
-        {
-          name: 'Platos Principales',
-          icon: '🍽️',
-          products: [
-            { name: 'Pizza Margherita', description: 'Salsa de tomate, mozzarella y albahaca', price: 14.00 },
-            { name: 'Pasta Bolognesa', description: 'Tagliatelle con ragú de carne', price: 12.50 },
-          ],
-        },
-        {
-          name: 'Bebidas',
-          icon: '🥤',
-          products: [
-            { name: 'Agua mineral', description: 'Botella 500ml', price: 2.50 },
-            { name: 'Limonada casera', description: 'Jugo de limón con menta', price: 4.00 },
-          ],
-        },
-      ];
-
-      return NextResponse.json({ categories: mockCategories });
+      return NextResponse.json({ error: 'La API Key de Gemini no está configurada.' }, { status: 500 });
     }
+
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
     // Real Gemini Vision call
     const isImage = mimeType?.startsWith('image/');
+    
+    // Resolve base64 data
+    let finalBase64 = base64Data;
+    if (!finalBase64 && fileUrl) {
+      finalBase64 = await fetchFileAsBase64(fileUrl);
+    }
 
-    const requestBody: Record<string, unknown> = {
-      contents: [
-        {
-          parts: [
-            ...(isImage ? [{
-              inlineData: {
-                mimeType: mimeType,
-                data: await fetchFileAsBase64(fileUrl),
-              },
-            }] : []),
-            {
-              text: `Analizá esta carta de restaurante y extraé toda la información en formato JSON.
-              
+    const parts = [
+      ...(isImage && finalBase64 ? [{
+        inlineData: {
+          mimeType: mimeType,
+          data: finalBase64,
+        },
+      }] : []),
+      {
+        text: `Analizá esta carta de restaurante y extraé toda la información en formato JSON.
+        
 Devolvé ÚNICAMENTE un JSON válido con esta estructura (sin markdown, sin explicaciones):
 {
   "categories": [
@@ -93,33 +70,23 @@ Reglas:
 - Los emojis de íconos deben ser representativos del tipo de comida
 - La descripción debe ser corta (máximo 80 caracteres)
 - Respondé siempre en español`
-            },
-          ],
-        },
-      ],
-    };
+      },
+    ];
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      }
-    );
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: parts,
+    });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Gemini error:', errText);
-      throw new Error('Error al llamar a la IA');
-    }
-
-    const geminiData = await response.json();
-    const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    const rawText = response.text || '';
 
     // Parse JSON from response (may be wrapped in ```json ... ```)
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      try {
+        const fs = require('fs');
+        fs.writeFileSync('C:\\Users\\Emi\\Desktop\\carta_qr\\gemini_error.txt', 'No JSON found. Raw text:\n' + rawText);
+      } catch (e) {}
       throw new Error('La IA no devolvió un JSON válido');
     }
 
@@ -128,12 +95,17 @@ Reglas:
     return NextResponse.json(parsed);
   } catch (err: unknown) {
     console.error('AI import error:', err);
+    try {
+      const fs = require('fs');
+      fs.writeFileSync('C:\\Users\\Emi\\Desktop\\carta_qr\\gemini_error.txt', 'Catch error:\n' + (err instanceof Error ? err.stack : String(err)));
+    } catch (e) {}
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Error interno del servidor' },
       { status: 500 }
     );
   }
 }
+
 
 async function fetchFileAsBase64(url: string): Promise<string> {
   const response = await fetch(url);
