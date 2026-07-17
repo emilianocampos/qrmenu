@@ -245,7 +245,7 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
         description={`${products.length} productos en tu carta`}
         breadcrumb={[{ label: 'Dashboard' }, { label: 'Productos' }]}
         action={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3 w-full">
             {products.length > 0 && (
               <button
                 onClick={() => setConfirmDeleteAll(true)}

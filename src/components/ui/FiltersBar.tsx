@@ -22,7 +22,7 @@ interface FiltersBarProps {
 
 export function FiltersBar({ search, onSearchChange, searchPlaceholder = 'Buscar...', filters = [] }: FiltersBarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3 w-full">
+    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 w-full">
       <SearchBar
         placeholder={searchPlaceholder}
         value={search}
