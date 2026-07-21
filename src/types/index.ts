@@ -8,6 +8,7 @@ export type Business = {
   color_secondary: string | null;
   typography: string | null;
   theme: string | null;
+  layout_style: string | null;
   description: string | null;
   about_title: string | null;
   about_description: string | null;

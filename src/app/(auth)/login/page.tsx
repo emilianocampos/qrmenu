@@ -1,8 +1,9 @@
 import { login } from "@/actions/auth";
 import Link from "next/link";
 import { Store, QrCode } from "lucide-react";
+import { ToastHelper } from "@/components/ui/ToastHelper";
 
-export default async function LoginPage(props: { searchParams: Promise<{ message?: string }> }) {
+export default async function LoginPage(props: { searchParams: Promise<{ message?: string; success?: string }> }) {
   const searchParams = await props.searchParams;
 
   return (
@@ -17,10 +18,13 @@ export default async function LoginPage(props: { searchParams: Promise<{ message
       <p className="text-gray-400 text-center mb-8">Ingresa a tu panel de administración</p>
 
       <form action={login} className="flex flex-col gap-4">
-        {searchParams?.message && (
+        {searchParams?.message && !searchParams?.success && (
           <p className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm text-center">
             {searchParams.message}
           </p>
+        )}
+        {searchParams?.message && searchParams?.success && (
+          <ToastHelper message={searchParams.message} type="success" />
         )}
 
         <div className="flex flex-col gap-2">

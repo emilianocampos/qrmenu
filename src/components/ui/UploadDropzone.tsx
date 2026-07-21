@@ -39,7 +39,7 @@ export function UploadDropzone({
   if (preview) {
     return (
       <div className="relative rounded-xl overflow-hidden border border-white/10 bg-white/5">
-        {preview.startsWith('data:image') || preview.startsWith('http') ? (
+        {typeof preview === 'string' && preview.length > 0 ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt="Preview" className="w-full h-48 object-cover" />
         ) : (

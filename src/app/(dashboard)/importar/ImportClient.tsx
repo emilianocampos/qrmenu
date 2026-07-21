@@ -202,7 +202,7 @@ export function ImportClient({ business }: ImportClientProps) {
           <h2 className="text-2xl font-bold text-white mb-2">¡Carta importada!</h2>
           <p className="text-gray-400 mb-6">Las categorías y productos fueron creados correctamente.</p>
           <a
-            href="/dashboard/productos"
+            href="/productos"
             className="px-6 py-3 rounded-xl text-sm font-semibold bg-indigo-500 hover:bg-indigo-600 text-white transition-all"
           >
             Ver productos →

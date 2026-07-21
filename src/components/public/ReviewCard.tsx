@@ -56,11 +56,11 @@ export function ReviewCard({ review }: ReviewCardProps) {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: '0.9rem' }}>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.9rem' }}>
                 {review.first_name} {review.last_name}
               </span>
             </div>
-            <p style={{ color: '#4b6075', fontSize: '0.78rem', margin: '2px 0 0' }}>
+            <p style={{ color: 'var(--text-faint)', fontSize: '0.78rem', margin: '2px 0 0' }}>
               📅 {timeAgo}
             </p>
           </div>
@@ -71,7 +71,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
       </div>
 
       {/* Comment */}
-      <p style={{ color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.6, margin: 0 }}>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.6, margin: 0 }}>
         {review.comment}
       </p>
     </div>

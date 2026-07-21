@@ -29,10 +29,10 @@ export async function signup(formData: FormData) {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const businessName = formData.get("businessName") as string;
-  const slug = formData.get("slug") as string;
-  const colorPrimary = formData.get("colorPrimary") as string || "#4f46e5";
-  const colorSecondary = formData.get("colorSecondary") as string || "#ffffff";
+  const businessName = `${name}'s Business`;
+  const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.floor(Math.random() * 1000);
+  const colorPrimary = "#4f46e5";
+  const colorSecondary = "#ffffff";
 
   // 1. Sign up the user
   const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -72,7 +72,7 @@ export async function signup(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect("/login?message=Verifica+tu+correo+electrónico+(se+te+envió+un+mail+de+confirmación)&success=true");
 }
 
 export async function logout() {

@@ -44,8 +44,8 @@ export function StarRating({ rating, maxStars = 5, onChange, interactive = false
               width={px}
               height={px}
               style={{
-                fill: filled ? 'var(--primary-color, #f97316)' : 'transparent',
-                color: filled ? 'var(--primary-color, #f97316)' : '#2a3a4a',
+                fill: filled ? '#eab308' : 'transparent',
+                color: filled ? '#eab308' : '#2a3a4a',
                 transition: 'fill 0.15s, color 0.15s',
               }}
             />

@@ -27,6 +27,7 @@ export function CustomizationClient({ business }: { business: Business }) {
     color_secondary: business.color_secondary ?? '#ffffff',
     typography: business.typography ?? 'Inter',
     theme: business.theme ?? 'light',
+    layout_style: business.layout_style ?? 'grid',
     description: business.description ?? '',
     about_title: business.about_title ?? '',
     about_description: business.about_description ?? '',
@@ -120,6 +121,7 @@ export function CustomizationClient({ business }: { business: Business }) {
         color_secondary: form.color_secondary,
         typography: form.typography,
         theme: form.theme,
+        layout_style: form.layout_style,
         description: form.description || null,
         about_title: form.about_title || null,
         about_description: form.about_description || null,
@@ -173,17 +175,7 @@ export function CustomizationClient({ business }: { business: Business }) {
               />
             </div>
 
-            <div>
-              <h3 className="text-sm font-semibold text-white mb-1">Imagen de banner</h3>
-              <p className="text-xs text-gray-400 mb-4">Fondo que se mostrará en la cabecera principal</p>
-              <UploadDropzone
-                accept="image/*"
-                onFileSelect={handleBannerSelect}
-                preview={bannerPreview}
-                onClear={() => { setBannerPreview(null); setBannerFile(null); setForm(f => ({ ...f, banner_image: '' })); }}
-                loading={uploading || isPending}
-              />
-            </div>
+
           </div>
 
           {/* Name & General Description */}
@@ -214,12 +206,12 @@ export function CustomizationClient({ business }: { business: Business }) {
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5">
             <h3 className="text-sm font-semibold text-white">Colores</h3>
             <ColorPicker label="Color principal" value={form.color_primary} onChange={v => setForm(f => ({ ...f, color_primary: v }))} />
-            <ColorPicker label="Color secundario" value={form.color_secondary} onChange={v => setForm(f => ({ ...f, color_secondary: v }))} />
+            <ColorPicker label="Color de texto" value={form.color_secondary} onChange={v => setForm(f => ({ ...f, color_secondary: v }))} />
           </div>
 
           {/* Typography & Theme */}
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5">
-            <h3 className="text-sm font-semibold text-white">Tipografía y Tema</h3>
+            <h3 className="text-sm font-semibold text-white">Tipografía y Diseño</h3>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Tipografía</label>
               <select
@@ -232,21 +224,28 @@ export function CustomizationClient({ business }: { business: Business }) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Tema predeterminado de la carta</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Carta</label>
               <div className="flex gap-3">
-                {themes.map(t => (
-                  <button
-                    key={t.value}
-                    onClick={() => setForm(f => ({ ...f, theme: t.value }))}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border
-                      ${form.theme === t.value
-                        ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/25'
-                        : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
-                      }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+                <button
+                  onClick={() => setForm(f => ({ ...f, layout_style: 'grid' }))}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border
+                    ${form.layout_style !== 'list'
+                      ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/25'
+                      : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
+                    }`}
+                >
+                  Grilla con imágenes
+                </button>
+                <button
+                  onClick={() => setForm(f => ({ ...f, layout_style: 'list' }))}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border
+                    ${form.layout_style === 'list'
+                      ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/25'
+                      : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
+                    }`}
+                >
+                  Cascada sin imágenes
+                </button>
               </div>
             </div>
           </div>
@@ -315,37 +314,13 @@ export function CustomizationClient({ business }: { business: Business }) {
             <div
               className="rounded-xl overflow-hidden border border-white/10 shadow-2xl transition-all duration-300"
               style={{
-                backgroundColor: form.theme === 'dark' ? '#0f0f0f' : '#f9f9f9',
+                backgroundColor: '#0a0e1a',
                 fontFamily: form.typography,
-                color: form.theme === 'dark' ? '#f3f4f6' : '#1f2937',
+                color: form.color_secondary || '#f3f4f6',
               }}
             >
-              {/* Preview Banner */}
-              <div className="relative h-32 bg-indigo-900 flex items-center justify-center overflow-hidden">
-                {bannerPreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={bannerPreview} alt="Banner" className="w-full h-full object-cover opacity-60" />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-r from-neutral-800 to-neutral-700 opacity-60" />
-                )}
-                <div className="absolute bottom-4 left-6 flex items-center gap-3">
-                  {logoPreview ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={logoPreview} alt="Logo" className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md bg-white" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-xl border border-white/20">
-                      🍽️
-                    </div>
-                  )}
-                  <div>
-                    <h2 className="text-sm font-bold text-white leading-tight drop-shadow-md">{form.name || 'Mi Negocio'}</h2>
-                    <p className="text-[10px] text-gray-200 line-clamp-1 max-w-[200px] drop-shadow-sm">{form.description || 'Descripción corta...'}</p>
-                  </div>
-                </div>
-              </div>
-
               {/* Navigation Preview */}
-              <div className="px-6 py-2 border-b text-xs flex justify-between items-center opacity-70 border-white/10">
+              <div className="px-6 py-3 border-b text-xs flex justify-between items-center opacity-70 border-white/10" style={{ backgroundColor: '#111827' }}>
                 <span className="font-semibold" style={{ color: form.color_primary }}>{form.name || 'Logo'}</span>
                 <div className="flex gap-4">
                   <span>Menú</span>
@@ -354,17 +329,84 @@ export function CustomizationClient({ business }: { business: Business }) {
                 </div>
               </div>
 
+              {/* Preview Simple Header */}
+              <div className="flex flex-col items-center text-center gap-2 p-6 bg-transparent border-b border-white/10">
+                {logoPreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoPreview} alt="Logo" className="w-16 h-16 rounded-full object-cover border-2 bg-transparent" style={{ borderColor: form.color_primary }} />
+                ) : (
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl border-2" style={{ borderColor: form.color_primary, backgroundColor: '#111827' }}>
+                    🍽️
+                  </div>
+                )}
+                <div>
+                  <h2 className="text-xl font-bold leading-tight" style={{ color: form.color_primary }}>{form.name || 'Mi Negocio'}</h2>
+                  <p className="text-[10px] line-clamp-2 max-w-[200px] mt-1" style={{ opacity: 0.7 }}>{form.description || 'Descripción corta...'}</p>
+                </div>
+              </div>
+
               {/* Preview Content */}
               <div className="p-6 space-y-6">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: form.color_primary }}>NUESTRO MENÚ</p>
-                  <div className="space-y-2">
-                    <div className="p-3 rounded-lg border border-white/5 bg-white/[0.02] flex justify-between items-center">
-                      <div>
-                        <p className="text-xs font-semibold">Café con Leche Especial</p>
-                        <p className="text-[9px] opacity-60">Doble shot de espresso con leche cremosa.</p>
+                  <div className={form.layout_style === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-2'}>
+                    {/* Mini Card 1 */}
+                    <div
+                      className={`rounded-lg overflow-hidden border flex ${form.layout_style === 'list' ? 'flex-row items-center h-20' : 'flex-col'}`}
+                      style={{
+                        backgroundColor: '#111827',
+                        borderColor: '#1e2d45',
+                      }}
+                    >
+                      {form.layout_style !== 'list' && (
+                        <div className="h-16 w-full bg-gray-700 object-cover relative">
+                          <div className="absolute inset-0 opacity-20 bg-gradient-to-tr from-black to-transparent" />
+                        </div>
+                      )}
+                      <div className="p-2 flex flex-col flex-1">
+                        <div className="flex justify-between items-start mb-1 gap-1">
+                          <p className="text-[10px] font-semibold leading-tight" style={{ color: form.color_primary }}>Café Especial</p>
+                          <p className="text-[9px] font-bold">$3.50</p>
+                        </div>
+                        <p className="text-[8px] mb-2 line-clamp-2 leading-tight" style={{ opacity: 0.7 }}>Doble shot de espresso con leche cremosa.</p>
+                        <div className="mt-auto flex justify-start">
+                          <span className="text-[7px] px-2 py-0.5 rounded-full" style={{
+                            backgroundColor: 'rgba(255,255,255,0.1)',
+                            color: '#cbd5e1'
+                          }}>
+                            Cafetería
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-xs font-bold" style={{ color: form.color_primary }}>$3.50</span>
+                    </div>
+                    {/* Mini Card 2 */}
+                    <div
+                      className={`rounded-lg overflow-hidden border flex ${form.layout_style === 'list' ? 'flex-row items-center h-20' : 'flex-col'}`}
+                      style={{
+                        backgroundColor: '#111827',
+                        borderColor: '#1e2d45',
+                      }}
+                    >
+                      {form.layout_style !== 'list' && (
+                        <div className="h-16 w-full bg-gray-700 object-cover relative">
+                          <div className="absolute inset-0 opacity-20 bg-gradient-to-tl from-black to-transparent" />
+                        </div>
+                      )}
+                      <div className="p-2 flex flex-col flex-1">
+                        <div className="flex justify-between items-start mb-1 gap-1">
+                          <p className="text-[10px] font-semibold leading-tight" style={{ color: form.color_primary }}>Tostado</p>
+                          <p className="text-[9px] font-bold">$4.00</p>
+                        </div>
+                        <p className="text-[8px] mb-2 line-clamp-2 leading-tight" style={{ opacity: 0.7 }}>Pan de masamadre con jamón y queso.</p>
+                        <div className="mt-auto flex justify-start">
+                          <span className="text-[7px] px-2 py-0.5 rounded-full" style={{
+                            backgroundColor: 'rgba(255,255,255,0.1)',
+                            color: '#cbd5e1'
+                          }}>
+                            Panadería
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

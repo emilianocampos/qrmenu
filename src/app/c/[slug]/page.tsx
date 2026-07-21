@@ -5,6 +5,7 @@ import { Navbar } from '@/components/public/Navbar';
 import { MenuSection } from '@/components/public/MenuSection';
 import { AboutSection } from '@/components/public/AboutSection';
 import { ReviewSection } from '@/components/public/ReviewSection';
+import { ViewTracker } from '@/components/public/ViewTracker';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -30,6 +31,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
 
   const primaryColor = business.color_primary || '#f97316';
   const primaryColorRgb = hexToRgb(primaryColor);
+  const textColor = business.color_secondary || '#f1f5f9';
   const fontName = business.typography || 'Inter';
   const hasAbout = !!(business.about_title || business.about_description || business.cover_image);
 
@@ -49,9 +51,9 @@ export default async function PublicMenuPage({ params }: PageProps) {
           --bg-card: #111827;
           --bg-card-hover: #151d2e;
           --border-color: #1e2d45;
-          --text-primary: #f1f5f9;
-          --text-muted: #94a3b8;
-          --text-faint: #4b6075;
+          --text-primary: ${textColor};
+          --text-muted: ${textColor}b3;
+          --text-faint: ${textColor}80;
         }
         body {
           font-family: var(--font-family);
@@ -71,6 +73,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
       `}</style>
 
       <div style={{ backgroundColor: 'var(--bg-page)', minHeight: '100vh', color: 'var(--text-primary)' }}>
+        <ViewTracker businessId={business.id} />
 
         <Navbar
           name={business.name}
@@ -78,48 +81,29 @@ export default async function PublicMenuPage({ params }: PageProps) {
           hasAbout={hasAbout}
         />
 
-        {/* Hero Banner */}
-        <header className="relative w-full overflow-hidden" style={{ height: '300px' }}>
-          {business.banner_image ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={business.banner_image}
-                alt={business.name}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(10,14,26,0.3) 0%, rgba(10,14,26,0.85) 100%)' }} />
-            </>
-          ) : (
-            <div
-              className="absolute inset-0"
-              style={{
-                background: `linear-gradient(135deg, rgba(${primaryColorRgb},0.15) 0%, #0a0e1a 60%)`,
-                borderBottom: '1px solid var(--border-color)'
-              }}
-            />
-          )}
+        {/* Simple Header instead of Banner */}
+        <header className="w-full flex flex-col items-center justify-center py-12" style={{ backgroundColor: 'var(--bg-page)', borderBottom: '1px solid var(--border-color)' }}>
 
-          {/* Hero content */}
-          <div className="absolute bottom-0 left-0 right-0 max-w-7xl mx-auto px-6 pb-8 flex items-end gap-5">
+          {/* Header content */}
+          <div className="max-w-7xl mx-auto px-6 flex flex-col items-center text-center gap-4">
             {business.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={business.logo_url}
                 alt={business.name}
-                style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border-color)', backgroundColor: 'var(--bg-card)', flexShrink: 0 }}
+                style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--primary-color)', backgroundColor: 'var(--bg-card)', flexShrink: 0 }}
               />
             ) : (
-              <div style={{ width: 80, height: 80, borderRadius: '50%', backgroundColor: 'var(--bg-card)', border: '3px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, flexShrink: 0 }}>
+              <div style={{ width: 100, height: 100, borderRadius: '50%', backgroundColor: 'var(--bg-card)', border: '3px solid var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, flexShrink: 0 }}>
                 🍽️
               </div>
             )}
             <div>
-              <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.2 }}>
+              <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary-color)', margin: 0, lineHeight: 1.2 }}>
                 {business.name}
               </h1>
               {business.description && (
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '4px 0 0' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1rem', margin: '8px 0 0', maxWidth: '600px' }}>
                   {business.description}
                 </p>
               )}
@@ -128,7 +112,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
         </header>
 
         <main>
-          <MenuSection products={products} currencySymbol="$" />
+          <MenuSection products={products} currencySymbol="$" layoutStyle={business.layout_style || 'grid'} />
           {hasAbout && (
             <AboutSection
               title={business.about_title}

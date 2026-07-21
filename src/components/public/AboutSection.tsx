@@ -38,11 +38,11 @@ export function AboutSection({ title, description, imageUrl, businessName }: Abo
 
           {/* Text */}
           <div>
-            <h2 style={{ color: '#f1f5f9', fontWeight: 800, fontSize: '2rem', margin: '0 0 8px', lineHeight: 1.2 }}>
+            <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '2rem', margin: '0 0 8px', lineHeight: 1.2 }}>
               {displayTitle}
             </h2>
             <div style={{ width: 48, height: 4, borderRadius: 2, backgroundColor: 'var(--primary-color, #f97316)', marginBottom: 24 }} />
-            <p style={{ color: '#94a3b8', fontSize: '1rem', lineHeight: 1.8, margin: 0, whiteSpace: 'pre-wrap' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.8, margin: 0, whiteSpace: 'pre-wrap' }}>
               {displayDescription}
             </p>
           </div>

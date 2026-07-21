@@ -8,9 +8,10 @@ import { ProductGrid } from './ProductGrid';
 interface MenuSectionProps {
   products: Product[];
   currencySymbol?: string;
+  layoutStyle?: string;
 }
 
-export function MenuSection({ products, currencySymbol = '$' }: MenuSectionProps) {
+export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'grid' }: MenuSectionProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
@@ -52,8 +53,8 @@ export function MenuSection({ products, currencySymbol = '$' }: MenuSectionProps
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem' }}>
         {/* Header row */}
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ color: '#fff', fontWeight: 800, fontSize: '1.75rem', margin: '0 0 16px' }}>
-            Our Menu
+          <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '1.75rem', margin: '0 0 16px' }}>
+            Nuestro Menú
           </h2>
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
         </div>
@@ -80,12 +81,12 @@ export function MenuSection({ products, currencySymbol = '$' }: MenuSectionProps
               whiteSpace: 'nowrap',
               fontWeight: 600,
               fontSize: '0.9rem',
-              backgroundColor: selectedCategoryId === null ? 'var(--primary-color)' : '#1e283b',
-              color: selectedCategoryId === null ? '#fff' : '#cbd5e1',
+              backgroundColor: selectedCategoryId === null ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+              color: selectedCategoryId === null ? '#fff' : 'var(--text-muted)',
               transition: 'background-color 0.2s',
             }}
           >
-            All
+            Todo
             <span style={{ 
               backgroundColor: selectedCategoryId === null ? 'rgba(255,255,255,0.2)' : '#334155', 
               padding: '2px 8px', 
@@ -111,8 +112,8 @@ export function MenuSection({ products, currencySymbol = '$' }: MenuSectionProps
                 whiteSpace: 'nowrap',
                 fontWeight: 600,
                 fontSize: '0.9rem',
-                backgroundColor: selectedCategoryId === cat.id ? 'var(--primary-color)' : '#1e283b',
-                color: selectedCategoryId === cat.id ? '#fff' : '#cbd5e1',
+                backgroundColor: selectedCategoryId === cat.id ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                color: selectedCategoryId === cat.id ? '#fff' : 'var(--text-muted)',
                 transition: 'background-color 0.2s',
               }}
             >
@@ -131,15 +132,15 @@ export function MenuSection({ products, currencySymbol = '$' }: MenuSectionProps
 
         {/* Results info */}
         {searchQuery.trim() && (
-          <p style={{ color: '#64748b', fontSize: '0.82rem', marginBottom: 20 }}>
-            <span style={{ color: '#94a3b8', fontWeight: 600 }}>{filteredProducts.length}</span> resultado{filteredProducts.length !== 1 ? 's' : ''} para &ldquo;{searchQuery}&rdquo;
+          <p style={{ color: 'var(--text-faint)', fontSize: '0.82rem', marginBottom: 20 }}>
+            <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{filteredProducts.length}</span> resultado{filteredProducts.length !== 1 ? 's' : ''} para &ldquo;{searchQuery}&rdquo;
           </p>
         )}
 
-        {/* Grid */}
         <ProductGrid
           products={filteredProducts}
           currencySymbol={currencySymbol}
+          layoutStyle={layoutStyle}
           onResetSearch={() => {
             setSearchQuery('');
             setSelectedCategoryId(null);

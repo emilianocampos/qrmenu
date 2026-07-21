@@ -57,62 +57,11 @@ export default async function RegisterPage(props: { searchParams: Promise<{ mess
           />
         </div>
 
-        <hr className="border-white/10 my-2" />
-        <p className="text-sm font-medium text-indigo-300 mb-2">Datos del Negocio</p>
-
-        <div className="flex flex-col gap-2">
-          <label className="text-sm text-gray-300" htmlFor="businessName">Nombre del Negocio</label>
-          <input
-            className="px-4 py-3 bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
-            name="businessName"
-            placeholder="Ej. Café Aurora"
-            required
-            type="text"
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label className="text-sm text-gray-300" htmlFor="slug">Enlace (URL) de tu carta</label>
-          <div className="flex items-center">
-            <span className="px-4 py-3 bg-black/40 border border-white/10 rounded-l-xl text-gray-500 text-sm border-r-0">carta.qr/</span>
-            <input
-              className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-r-xl focus:outline-none focus:border-indigo-500 transition-colors"
-              name="slug"
-              placeholder="cafe-aurora"
-              pattern="^[a-z0-9-]+$"
-              title="Solo minúsculas, números y guiones"
-              required
-              type="text"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300" htmlFor="colorPrimary">Color Principal</label>
-            <input
-              className="w-full h-12 p-1 bg-black/20 border border-white/10 rounded-xl focus:outline-none cursor-pointer"
-              name="colorPrimary"
-              defaultValue="#4f46e5"
-              type="color"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300" htmlFor="colorSecondary">Color Secundario</label>
-            <input
-              className="w-full h-12 p-1 bg-black/20 border border-white/10 rounded-xl focus:outline-none cursor-pointer"
-              name="colorSecondary"
-              defaultValue="#ffffff"
-              type="color"
-            />
-          </div>
-        </div>
-
         <button
           className="mt-6 bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
           type="submit"
         >
-          Crear Cuenta y Negocio
+          Registrarse
         </button>
       </form>
 

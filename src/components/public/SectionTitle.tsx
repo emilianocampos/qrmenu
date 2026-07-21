@@ -15,7 +15,7 @@ export function SectionTitle({
 }: SectionTitleProps) {
   return (
     <div className={`mb-10 space-y-2 ${align === 'center' ? 'text-center' : 'text-left'}`}>
-      <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-white relative inline-block">
+      <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight relative inline-block" style={{ color: 'var(--primary-color, #4f46e5)' }}>
         {title}
         <span 
           className="absolute -bottom-2 left-0 h-1 w-12 rounded-full" 

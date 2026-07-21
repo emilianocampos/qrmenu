@@ -52,7 +52,7 @@ export async function updateBusiness(businessId: string, updates: Record<string,
 
   // Separate updates into businesses columns and settings columns
   const businessKeys = [
-    'name', 'slug', 'logo_url', 'color_primary', 'color_secondary', 'typography', 'theme',
+    'name', 'slug', 'logo_url', 'color_primary', 'color_secondary', 'typography', 'theme', 'layout_style',
     'description', 'about_title', 'about_description', 'cover_image', 'banner_image'
   ];
   const settingsKeys = ['email', 'whatsapp', 'instagram', 'facebook', 'address', 'schedule', 'language', 'currency', 'plan'];

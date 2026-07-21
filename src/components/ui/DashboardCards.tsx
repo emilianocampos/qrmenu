@@ -23,13 +23,13 @@ export function DashboardCards({
         title="Total Productos"
         value={productsCount}
         icon={<Package className="w-5 h-5 text-blue-400" />}
-        href="/dashboard/productos"
+        href="/productos"
       />
       <StatCard
         title="Total Categorías"
         value={categoriesCount}
         icon={<Tags className="w-5 h-5 text-violet-400" />}
-        href="/dashboard/categorias"
+        href="/categorias"
       />
       <StatCard
         title="Escaneos Hoy"

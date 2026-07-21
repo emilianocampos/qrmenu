@@ -31,10 +31,10 @@ export function ReviewSection({ businessId, initialReviews, businessName }: Revi
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <h2 style={{ color: '#f1f5f9', fontWeight: 800, fontSize: '2rem', margin: '0 0 12px' }}>
+          <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '2rem', margin: '0 0 12px' }}>
             Opiniones de Clientes
           </h2>
-          <p style={{ color: '#64748b', fontSize: '1rem', maxWidth: 560, margin: '0 auto 24px', lineHeight: 1.6 }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', maxWidth: 560, margin: '0 auto 24px', lineHeight: 1.6 }}>
             Conocé la experiencia de nuestros clientes en {businessName}.
           </p>
           <button
@@ -87,10 +87,10 @@ export function ReviewSection({ businessId, initialReviews, businessName }: Revi
                 border: '1px solid #1e2d45',
               }}>
                 <span style={{ fontSize: 36, display: 'block', marginBottom: 12 }}>💬</span>
-                <h3 style={{ color: '#f1f5f9', fontWeight: 700, fontSize: '1rem', margin: '0 0 8px' }}>
+                <h3 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '1rem', margin: '0 0 8px' }}>
                   Aún no hay reseñas
                 </h3>
-                <p style={{ color: '#4b6075', fontSize: '0.875rem', margin: '0 0 20px' }}>
+                <p style={{ color: 'var(--text-faint)', fontSize: '0.875rem', margin: '0 0 20px' }}>
                   ¡Sé el primero en opinar sobre {businessName}!
                 </p>
                 <button

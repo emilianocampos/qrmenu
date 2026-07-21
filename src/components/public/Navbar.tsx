@@ -61,7 +61,7 @@ export function Navbar({ name, logoUrl, hasAbout }: NavbarProps) {
               <span style={{ fontSize: 24 }}>🍽️</span>
             )}
             <div style={{ textAlign: 'left' }}>
-              <div style={{ color: '#f1f5f9', fontWeight: 800, fontSize: '1rem', lineHeight: 1.2 }}>{name}</div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '1rem', lineHeight: 1.2 }}>{name}</div>
             </div>
           </button>
 
@@ -75,7 +75,7 @@ export function Navbar({ name, logoUrl, hasAbout }: NavbarProps) {
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  color: '#94a3b8',
+                  color: 'var(--text-muted)',
                   fontWeight: 600,
                   fontSize: '0.9rem',
                   padding: '8px 18px',
@@ -83,11 +83,11 @@ export function Navbar({ name, logoUrl, hasAbout }: NavbarProps) {
                   transition: 'color 0.2s, background 0.2s',
                 }}
                 onMouseEnter={e => {
-                  (e.target as HTMLElement).style.color = '#f1f5f9';
+                  (e.target as HTMLElement).style.color = 'var(--text-primary)';
                   (e.target as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.05)';
                 }}
                 onMouseLeave={e => {
-                  (e.target as HTMLElement).style.color = '#94a3b8';
+                  (e.target as HTMLElement).style.color = 'var(--text-muted)';
                   (e.target as HTMLElement).style.backgroundColor = 'transparent';
                 }}
               >
@@ -98,7 +98,7 @@ export function Navbar({ name, logoUrl, hasAbout }: NavbarProps) {
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            <IconButton onClick={() => setMobileOpen(true)} style={{ color: '#94a3b8' }}>
+            <IconButton onClick={() => setMobileOpen(true)} style={{ color: 'var(--text-muted)' }}>
               <Menu className="w-5 h-5" />
             </IconButton>
           </div>
@@ -118,9 +118,9 @@ export function Navbar({ name, logoUrl, hasAbout }: NavbarProps) {
         }}
       >
         <Box style={{ padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-            <span style={{ color: '#f1f5f9', fontWeight: 800, fontSize: '1.1rem' }}>{name}</span>
-            <IconButton onClick={() => setMobileOpen(false)} style={{ color: '#64748b' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 32px' }}>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '1.1rem' }}>{name}</span>
+            <IconButton onClick={() => setMobileOpen(false)} style={{ color: 'var(--text-faint)' }}>
               <X className="w-5 h-5" />
             </IconButton>
           </div>
@@ -131,7 +131,7 @@ export function Navbar({ name, logoUrl, hasAbout }: NavbarProps) {
                   onClick={() => handleScroll(item.id)}
                   style={{ borderRadius: 12, marginBottom: 4, padding: '14px 16px' }}
                 >
-                  <span style={{ color: '#94a3b8', fontWeight: 700, fontSize: '1rem' }}>{item.label}</span>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '1rem' }}>{item.label}</span>
                 </ListItemButton>
               </ListItem>
             ))}

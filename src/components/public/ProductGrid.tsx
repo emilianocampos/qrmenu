@@ -7,10 +7,11 @@ import { ProductCard } from './ProductCard';
 interface ProductGridProps {
   products: Product[];
   currencySymbol?: string;
+  layoutStyle?: string;
   onResetSearch?: () => void;
 }
 
-export function ProductGrid({ products, currencySymbol = '$', onResetSearch }: ProductGridProps) {
+export function ProductGrid({ products, currencySymbol = '$', layoutStyle = 'grid', onResetSearch }: ProductGridProps) {
   if (products.length === 0) {
     return (
       <div style={{
@@ -21,15 +22,15 @@ export function ProductGrid({ products, currencySymbol = '$', onResetSearch }: P
         padding: '4rem 2rem',
         textAlign: 'center',
         borderRadius: 14,
-        backgroundColor: '#111827',
-        border: '1px solid #1e2d45',
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border-color)',
         margin: '2rem 0',
       }}>
         <span style={{ fontSize: 40, marginBottom: 16 }}>🔍</span>
-        <h3 style={{ color: '#f1f5f9', fontWeight: 700, fontSize: '1.1rem', margin: '0 0 8px' }}>
+        <h3 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '1.1rem', margin: '0 0 8px' }}>
           Sin resultados
         </h3>
-        <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0 0 20px', maxWidth: 320 }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: '0 0 20px', maxWidth: 320 }}>
           No encontramos platos que coincidan con tu búsqueda.
         </p>
         {onResetSearch && (
@@ -56,18 +57,22 @@ export function ProductGrid({ products, currencySymbol = '$', onResetSearch }: P
   return (
     <div
       style={{
-        columnCount: 1,
-        columnGap: 16,
+        display: 'grid',
+        gap: '1.5rem',
       }}
       className="product-grid"
     >
       <style>{`
-        @media (min-width: 640px) { .product-grid { column-count: 2; } }
-        @media (min-width: 1024px) { .product-grid { column-count: 3; } }
-        @media (min-width: 1280px) { .product-grid { column-count: 4; } }
+        .product-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        ${layoutStyle !== 'list' ? `
+        @media (min-width: 640px) { .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        ` : `
+        @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        `}
       `}</style>
       {products.map(product => (
-        <ProductCard key={product.id} product={product} currencySymbol={currencySymbol} />
+        <ProductCard key={product.id} product={product} currencySymbol={currencySymbol} layoutStyle={layoutStyle} />
       ))}
     </div>
   );
