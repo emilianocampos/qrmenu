@@ -30,14 +30,15 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
   const navItems = [
     { label: 'Menú', id: 'menu', href: `/c/${slug}` },
     { label: 'Sobre Nosotros', id: 'about', href: `/c/${slug}/sobre-nosotros` },
-    { label: 'Reviews', id: 'reviews', href: `/c/${slug}#reviews` },
+    { label: 'Reservar Mesa', id: 'reservar-mesa', href: `/c/${slug}/reservar-mesa` },
+    { label: 'Reseñas', id: 'reviews', href: `/c/${slug}#reviews` },
   ];
 
   const handleNav = (item: any) => {
     setMobileOpen(false);
 
     // Cross-page navigation
-    if (item.id === 'about' || (item.id === 'menu' && !isHome) || (item.id === 'reviews' && !isHome)) {
+    if (item.id === 'about' || item.id === 'reservar-mesa' || (item.id === 'menu' && !isHome) || (item.id === 'reviews' && !isHome)) {
       router.push(item.href);
       return;
     }

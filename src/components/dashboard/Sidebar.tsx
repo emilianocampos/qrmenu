@@ -46,11 +46,12 @@ type NavItem = {
   divider?: boolean;
 };
 
-function NavItem({ href, icon: Icon, label, color, active }: NavItem & { active?: boolean }) {
+function NavItem({ href, icon: Icon, label, color, active, onClick }: NavItem & { active?: boolean, onClick?: () => void }) {
   if (!href || !Icon) return null;
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
         ${active
           ? 'bg-white/10 text-white'
@@ -99,6 +100,7 @@ export function Sidebar({ business }: SidebarProps) {
                 key={item.href}
                 {...item}
                 active={isActive}
+                onClick={() => setMobileOpen(false)}
               />
             );
           })
@@ -109,6 +111,7 @@ export function Sidebar({ business }: SidebarProps) {
             label="Crear mi Carta"
             color="text-indigo-400"
             active
+            onClick={() => setMobileOpen(false)}
           />
         )}
       </nav>

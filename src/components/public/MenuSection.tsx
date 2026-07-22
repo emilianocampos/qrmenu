@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Product } from '@/types';
 import { SearchBar } from './SearchBar';
 import { ProductGrid } from './ProductGrid';
+import { VintageMenuSection } from './VintageMenuSection';
 
 interface MenuSectionProps {
   products: Product[];
@@ -12,6 +13,10 @@ interface MenuSectionProps {
 }
 
 export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'grid' }: MenuSectionProps) {
+  if (layoutStyle === 'vintage') {
+    return <VintageMenuSection products={products} currencySymbol={currencySymbol} />;
+  }
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 

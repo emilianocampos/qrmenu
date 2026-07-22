@@ -283,12 +283,12 @@ export function CustomizationClient({ business }: { business: Business }) {
                 <button
                   onClick={() => setForm(f => ({ ...f, layout_style: 'grid' }))}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border
-                    ${form.layout_style !== 'list'
+                    ${form.layout_style === 'grid' || !form.layout_style
                       ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/25'
                       : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
                     }`}
                 >
-                  Grilla con imágenes
+                  Moderna (Grilla)
                 </button>
                 <button
                   onClick={() => setForm(f => ({ ...f, layout_style: 'list' }))}
@@ -298,7 +298,17 @@ export function CustomizationClient({ business }: { business: Business }) {
                       : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
                     }`}
                 >
-                  Cascada sin imágenes
+                  Cascada
+                </button>
+                <button
+                  onClick={() => setForm(f => ({ ...f, layout_style: 'vintage' }))}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border
+                    ${form.layout_style === 'vintage'
+                      ? 'bg-pink-600 text-white border-pink-600 shadow-lg shadow-pink-600/25'
+                      : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
+                    }`}
+                >
+                  Vintage Club
                 </button>
               </div>
             </div>
@@ -473,8 +483,39 @@ export function CustomizationClient({ business }: { business: Business }) {
               {/* Preview Content */}
               <div className="p-6 space-y-6">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: form.color_primary }}>NUESTRO MENÚ</p>
-                  <div className={form.layout_style === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-2'}>
+                  {form.layout_style !== 'vintage' && (
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: form.color_primary }}>NUESTRO MENÚ</p>
+                  )}
+                  {form.layout_style === 'vintage' ? (
+                    <div className="space-y-4">
+                      {/* Vintage Category Header */}
+                      <div className="flex items-center gap-2 py-1 px-3 rounded-md border" style={{ borderColor: '#ff4500', boxShadow: '0 0 5px #ff450040', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: '#ff4500', boxShadow: '0 0 5px #ff450080' }} />
+                        <h2 className="text-[10px] font-black uppercase tracking-wider m-0" style={{ color: '#ff4500' }}>Cafetería</h2>
+                      </div>
+                      
+                      {/* Vintage Product List */}
+                      <div className="space-y-2 px-1">
+                        <div className="flex flex-col">
+                          <div className="flex items-end justify-between gap-1 w-full">
+                            <span className="text-white font-bold text-[9px] uppercase tracking-wide shrink-0">Café Especial</span>
+                            <div className="flex-grow border-b border-dotted border-gray-600 mb-[4px] opacity-40 shrink mx-1" />
+                            <span className="text-white font-bold text-[9px] shrink-0">$3.50</span>
+                          </div>
+                          <p className="text-gray-400 text-[7px] mt-0.5 leading-snug">Doble shot de espresso con leche cremosa.</p>
+                        </div>
+                        <div className="flex flex-col">
+                          <div className="flex items-end justify-between gap-1 w-full">
+                            <span className="text-white font-bold text-[9px] uppercase tracking-wide shrink-0">Tostado</span>
+                            <div className="flex-grow border-b border-dotted border-gray-600 mb-[4px] opacity-40 shrink mx-1" />
+                            <span className="text-white font-bold text-[9px] shrink-0">$4.00</span>
+                          </div>
+                          <p className="text-gray-400 text-[7px] mt-0.5 leading-snug">Pan de masamadre con jamón y queso.</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={form.layout_style === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-2'}>
                     {/* Mini Card 1 */}
                     <div
                       className={`rounded-lg overflow-hidden border flex ${form.layout_style === 'list' ? 'flex-row items-center h-20' : 'flex-col'}`}
@@ -533,7 +574,8 @@ export function CustomizationClient({ business }: { business: Business }) {
                         </div>
                       </div>
                     </div>
-                  </div>
+                    </div>
+                  )}
                 </div>
 
               </div>
