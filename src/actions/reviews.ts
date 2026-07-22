@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Business, Product, Review } from '@/types';
 
-// Get business details by slug
 export async function getBusinessBySlug(slug: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -17,7 +16,19 @@ export async function getBusinessBySlug(slug: string) {
     console.error('Error fetching business by slug:', error);
     return { error: error.message };
   }
-  return { data: data as Business };
+  
+  const { data: settingsData } = await supabase
+    .from('settings')
+    .select('*')
+    .eq('business_id', data.id)
+    .single();
+    
+  let businessData = { ...data };
+  if (settingsData) {
+    businessData = { ...businessData, ...settingsData, id: data.id };
+  }
+  
+  return { data: businessData as Business };
 }
 
 // Get only available products for a business, ordered by category and item order
@@ -40,7 +51,7 @@ export async function getProducts(businessId: string) {
 // Search products by name, description, or category name
 export async function searchProducts(businessId: string, query: string) {
   const supabase = await createClient();
-  
+
   // First get all categories to match category name if query is search-term
   const { data: categories } = await supabase
     .from('categories')
@@ -49,8 +60,8 @@ export async function searchProducts(businessId: string, query: string) {
 
   const matchedCategoryIds = categories
     ? categories
-        .filter(c => c.name.toLowerCase().includes(query.toLowerCase()))
-        .map(c => c.id)
+      .filter(c => c.name.toLowerCase().includes(query.toLowerCase()))
+      .map(c => c.id)
     : [];
 
   let dbQuery = supabase
@@ -146,7 +157,7 @@ export async function getAverageRating(businessId: string) {
 
   const reviews = data || [];
   const count = reviews.length;
-  const average = count > 0 
+  const average = count > 0
     ? parseFloat((reviews.reduce((acc, r) => acc + r.rating, 0) / count).toFixed(1))
     : 0;
 

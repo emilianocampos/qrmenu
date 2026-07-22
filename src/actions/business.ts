@@ -53,9 +53,9 @@ export async function updateBusiness(businessId: string, updates: Record<string,
   // Separate updates into businesses columns and settings columns
   const businessKeys = [
     'name', 'slug', 'logo_url', 'color_primary', 'color_secondary', 'typography', 'theme', 'layout_style',
-    'description', 'about_title', 'about_description', 'cover_image', 'banner_image'
+    'description', 'about_title', 'about_description', 'cover_image', 'banner_image', 'slogan'
   ];
-  const settingsKeys = ['email', 'whatsapp', 'instagram', 'facebook', 'address', 'schedule', 'language', 'currency', 'plan'];
+  const settingsKeys = ['email', 'whatsapp', 'phone', 'instagram', 'facebook', 'address', 'schedule', 'language', 'currency', 'plan'];
 
   const businessUpdates: Record<string, any> = {};
   const settingsUpdates: Record<string, any> = {};
@@ -94,7 +94,7 @@ export async function updateBusiness(businessId: string, updates: Record<string,
   revalidatePath('/dashboard', 'layout');
   revalidatePath('/dashboard/configuracion');
   revalidatePath('/dashboard/personalizacion');
-  
+
   return { success: true };
 }
 

@@ -29,10 +29,15 @@ export function CustomizationClient({ business }: { business: Business }) {
     theme: business.theme ?? 'light',
     layout_style: business.layout_style ?? 'grid',
     description: business.description ?? '',
-    about_title: business.about_title ?? '',
-    about_description: business.about_description ?? '',
-    cover_image: business.cover_image ?? '',
-    banner_image: business.banner_image ?? '',
+    about_title: business.about_title || '',
+    about_description: business.about_description || '',
+    cover_image: business.cover_image || '',
+    banner_image: business.banner_image || '',
+    slogan: business.slogan || '',
+    address: business.address || '',
+    phone: business.phone || business.whatsapp || '',
+    email: business.email || '',
+    schedule: business.schedule || '',
   });
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -98,7 +103,7 @@ export function CustomizationClient({ business }: { business: Business }) {
           coverUrl = publicUrl;
         }
 
-        if (bannerFile) {
+        if (bannerFile && form.banner_image !== 'none') {
           const ext = bannerFile.name.split('.').pop();
           const path = `${business.id}/banner_${Date.now()}.${ext}`;
           const { error: uploadErr } = await supabase.storage.from('logos').upload(path, bannerFile, { upsert: true });
@@ -127,6 +132,11 @@ export function CustomizationClient({ business }: { business: Business }) {
         about_description: form.about_description || null,
         cover_image: coverUrl || null,
         banner_image: bannerUrl || null,
+        slogan: form.slogan || null,
+        address: form.address || null,
+        phone: form.phone || null,
+        email: form.email || null,
+        schedule: form.schedule || null,
       });
 
       if (result.error) {
@@ -173,6 +183,50 @@ export function CustomizationClient({ business }: { business: Business }) {
                 onClear={() => { setLogoPreview(null); setLogoFile(null); setForm(f => ({ ...f, logo_url: '' })); }}
                 loading={uploading || isPending}
               />
+            </div>
+
+            <div className="pt-4 border-t border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-1">Banner (Cabecera)</h3>
+                  <p className="text-xs text-gray-400">Personalizá la cabecera de tu carta</p>
+                </div>
+                <label className="flex items-center cursor-pointer">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={form.banner_image !== 'none'}
+                      onChange={(e) => {
+                        const showBanner = e.target.checked;
+                        if (!showBanner) {
+                          setForm(f => ({ ...f, banner_image: 'none' }));
+                        } else {
+                          setForm(f => ({ ...f, banner_image: business.banner_image && business.banner_image !== 'none' ? business.banner_image : '' }));
+                        }
+                      }}
+                    />
+                    <div className={`block w-10 h-6 rounded-full transition-colors ${form.banner_image !== 'none' ? 'bg-indigo-500' : 'bg-gray-600'}`}></div>
+                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${form.banner_image !== 'none' ? 'transform translate-x-4' : ''}`}></div>
+                  </div>
+                  <span className="ml-3 text-sm font-medium text-gray-300">
+                    {form.banner_image !== 'none' ? 'Mostrar Banner' : 'Sin Banner'}
+                  </span>
+                </label>
+              </div>
+
+              {form.banner_image !== 'none' && (
+                <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <p className="text-xs text-gray-400 mb-4">Sube una imagen para mostrar de fondo en la cabecera. Si no subes ninguna, se mostrará un fondo sólido.</p>
+                  <UploadDropzone
+                    accept="image/*"
+                    onFileSelect={handleBannerSelect}
+                    preview={bannerPreview}
+                    onClear={() => { setBannerPreview(null); setBannerFile(null); setForm(f => ({ ...f, banner_image: '' })); }}
+                    loading={uploading || isPending}
+                  />
+                </div>
+              )}
             </div>
 
 
@@ -264,7 +318,17 @@ export function CustomizationClient({ business }: { business: Business }) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Eslogan (Subtítulo)</label>
+              <input
+                type="text"
+                value={form.slogan}
+                onChange={e => setForm(f => ({ ...f, slogan: e.target.value }))}
+                placeholder="Ej. Los mejores sabores de la ciudad"
+                className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Historia (Nuestra Historia)</label>
               <textarea
                 value={form.about_description}
                 onChange={e => setForm(f => ({ ...f, about_description: e.target.value }))}
@@ -283,6 +347,58 @@ export function CustomizationClient({ business }: { business: Business }) {
                 onClear={() => { setCoverPreview(null); setCoverFile(null); setForm(f => ({ ...f, cover_image: '' })); }}
                 loading={uploading || isPending}
               />
+            </div>
+          </div>
+
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Datos de Contacto y Visítanos</h2>
+              <p className="text-sm text-gray-400 mt-1">
+                Información para que tus clientes puedan contactarte y visitar tu local.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Dirección</label>
+                <input
+                  type="text"
+                  value={form.address}
+                  onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+                  placeholder="Ej. Calle Falsa 123, CABA"
+                  className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Teléfono</label>
+                <input
+                  type="text"
+                  value={form.phone}
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder="Ej. +54 9 11 1234 5678"
+                  className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  placeholder="Ej. hola@minegocio.com"
+                  className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Horario de Atención</label>
+                <textarea
+                  value={form.schedule}
+                  onChange={e => setForm(f => ({ ...f, schedule: e.target.value }))}
+                  placeholder="Ej. Lunes a Viernes: 10:00 - 20:00&#10;Sábados: 10:00 - 14:00"
+                  rows={3}
+                  className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all resize-none"
+                />
+              </div>
             </div>
           </div>
 
@@ -324,26 +440,35 @@ export function CustomizationClient({ business }: { business: Business }) {
                 <span className="font-semibold" style={{ color: form.color_primary }}>{form.name || 'Logo'}</span>
                 <div className="flex gap-4">
                   <span>Menú</span>
-                  <span>Sobre Nosotros</span>
                   <span>Reviews</span>
                 </div>
               </div>
 
               {/* Preview Simple Header */}
-              <div className="flex flex-col items-center text-center gap-2 p-6 bg-transparent border-b border-white/10">
-                {logoPreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logoPreview} alt="Logo" className="w-16 h-16 rounded-full object-cover border-2 bg-transparent" style={{ borderColor: form.color_primary }} />
-                ) : (
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl border-2" style={{ borderColor: form.color_primary, backgroundColor: '#111827' }}>
-                    🍽️
+              {form.banner_image !== 'none' && (
+                <div className="relative flex flex-col items-center text-center gap-2 p-6 bg-transparent border-b border-white/10"
+                  style={{ minHeight: (bannerPreview || (form.banner_image && form.banner_image !== 'none')) ? '160px' : 'auto' }}>
+                  {(bannerPreview || (form.banner_image && form.banner_image !== 'none')) && (
+                    <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${bannerPreview || form.banner_image})` }}>
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    </div>
+                  )}
+                  <div className="relative z-10 flex flex-col items-center">
+                    {logoPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={logoPreview} alt="Logo" className="w-16 h-16 rounded-full object-cover border-2 bg-transparent" style={{ borderColor: form.color_primary }} />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl border-2" style={{ borderColor: form.color_primary, backgroundColor: '#111827' }}>
+                        🍽️
+                      </div>
+                    )}
+                    <div className="mt-2">
+                      <h2 className="text-xl font-bold leading-tight" style={{ color: (bannerPreview || (form.banner_image && form.banner_image !== 'none')) ? '#ffffff' : form.color_primary, textShadow: (bannerPreview || (form.banner_image && form.banner_image !== 'none')) ? '0 2px 10px rgba(0,0,0,0.5)' : 'none' }}>{form.name || 'Mi Negocio'}</h2>
+                      <p className="text-[10px] line-clamp-2 max-w-[200px] mt-1" style={{ opacity: 0.8, color: (bannerPreview || (form.banner_image && form.banner_image !== 'none')) ? '#e2e8f0' : 'inherit', textShadow: (bannerPreview || (form.banner_image && form.banner_image !== 'none')) ? '0 1px 5px rgba(0,0,0,0.5)' : 'none' }}>{form.description || 'Descripción corta...'}</p>
+                    </div>
                   </div>
-                )}
-                <div>
-                  <h2 className="text-xl font-bold leading-tight" style={{ color: form.color_primary }}>{form.name || 'Mi Negocio'}</h2>
-                  <p className="text-[10px] line-clamp-2 max-w-[200px] mt-1" style={{ opacity: 0.7 }}>{form.description || 'Descripción corta...'}</p>
                 </div>
-              </div>
+              )}
 
               {/* Preview Content */}
               <div className="p-6 space-y-6">
@@ -411,22 +536,6 @@ export function CustomizationClient({ business }: { business: Business }) {
                   </div>
                 </div>
 
-                {/* About Preview */}
-                {(form.about_title || form.about_description || coverPreview) && (
-                  <div className="border-t border-white/10 pt-4 space-y-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: form.color_primary }}>SOBRE NOSOTROS</p>
-                    <div className="flex gap-3 items-center">
-                      <div className="flex-1 space-y-1">
-                        <h4 className="text-xs font-bold">{form.about_title || 'Nuestra Historia'}</h4>
-                        <p className="text-[9px] opacity-70 line-clamp-3">{form.about_description || 'Detalle de la historia del negocio...'}</p>
-                      </div>
-                      {coverPreview && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={coverPreview} alt="Cover Preview" className="w-16 h-16 rounded-lg object-cover border border-white/10" />
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

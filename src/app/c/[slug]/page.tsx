@@ -29,11 +29,22 @@ export default async function PublicMenuPage({ params }: PageProps) {
   const { data: products = [] } = await getProducts(business.id);
   const { data: reviews = [] } = await getReviews(business.id);
 
+  const reviewCount = reviews.length;
+  const rating = reviewCount > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviewCount : 5.0;
+
   const primaryColor = business.color_primary || '#f97316';
   const primaryColorRgb = hexToRgb(primaryColor);
   const textColor = business.color_secondary || '#f1f5f9';
   const fontName = business.typography || 'Inter';
-  const hasAbout = !!(business.about_title || business.about_description || business.cover_image);
+  const hasAbout = !!(
+    business.about_title ||
+    business.about_description ||
+    business.cover_image ||
+    business.slogan ||
+    business.address ||
+    business.phone ||
+    business.schedule
+  );
 
   return (
     <>
@@ -77,50 +88,75 @@ export default async function PublicMenuPage({ params }: PageProps) {
 
         <Navbar
           name={business.name}
+          slug={business.slug}
+          description={business.description}
           logoUrl={business.logo_url}
           hasAbout={hasAbout}
+          rating={rating}
+          reviewCount={reviewCount}
         />
 
-        {/* Simple Header instead of Banner */}
-        <header className="w-full flex flex-col items-center justify-center py-12" style={{ backgroundColor: 'var(--bg-page)', borderBottom: '1px solid var(--border-color)' }}>
-
-          {/* Header content */}
-          <div className="max-w-7xl mx-auto px-6 flex flex-col items-center text-center gap-4">
-            {business.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={business.logo_url}
-                alt={business.name}
-                style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--primary-color)', backgroundColor: 'var(--bg-card)', flexShrink: 0 }}
-              />
-            ) : (
-              <div style={{ width: 100, height: 100, borderRadius: '50%', backgroundColor: 'var(--bg-card)', border: '3px solid var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, flexShrink: 0 }}>
-                🍽️
+        {/* Header / Banner */}
+        {business.banner_image !== 'none' && (
+          <header
+            className="w-full flex flex-col items-center justify-center py-12 relative"
+            style={{
+              backgroundColor: business.banner_image ? 'transparent' : 'var(--bg-page)',
+              borderBottom: '1px solid var(--border-color)',
+              minHeight: business.banner_image ? '300px' : 'auto'
+            }}
+          >
+            {business.banner_image && (
+              <div
+                className="absolute inset-0 z-0"
+                style={{
+                  backgroundImage: `url(${business.banner_image})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
               </div>
             )}
-            <div>
-              <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary-color)', margin: 0, lineHeight: 1.2 }}>
-                {business.name}
-              </h1>
-              {business.description && (
-                <p style={{ color: 'var(--text-muted)', fontSize: '1rem', margin: '8px 0 0', maxWidth: '600px' }}>
-                  {business.description}
-                </p>
+
+            {/* Header content */}
+            <div className="max-w-7xl mx-auto px-6 flex flex-col items-center text-center gap-4 relative z-10">
+              {business.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={business.logo_url}
+                  alt={business.name}
+                  style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--primary-color)', backgroundColor: 'var(--bg-card)', flexShrink: 0 }}
+                />
+              ) : (
+                <div style={{ width: 100, height: 100, borderRadius: '50%', backgroundColor: 'var(--bg-card)', border: '3px solid var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, flexShrink: 0 }}>
+                  🍽️
+                </div>
               )}
+              <div>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: business.banner_image ? '#ffffff' : 'var(--primary-color)', margin: 0, lineHeight: 1.2, textShadow: business.banner_image ? '0 2px 10px rgba(0,0,0,0.5)' : 'none' }}>
+                  {business.name}
+                </h1>
+                {business.description && (
+                  <p style={{ color: business.banner_image ? '#e2e8f0' : 'var(--text-muted)', fontSize: '1rem', margin: '8px 0 0', maxWidth: '600px', textShadow: business.banner_image ? '0 1px 5px rgba(0,0,0,0.5)' : 'none' }}>
+                    {business.description}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
         <main>
           <MenuSection products={products} currencySymbol="$" layoutStyle={business.layout_style || 'grid'} />
-          {hasAbout && (
+          {/* {hasAbout && (
             <AboutSection
               title={business.about_title}
               description={business.about_description}
               imageUrl={business.cover_image}
               businessName={business.name}
             />
-          )}
+          )} */}
           <ReviewSection
             businessId={business.id}
             initialReviews={reviews}

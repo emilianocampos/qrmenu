@@ -20,6 +20,7 @@ create table if not exists public.businesses (
   color_secondary text default '#ffffff',
   typography text default 'Inter',
   theme text default 'light',
+  slogan text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -109,6 +110,7 @@ create table if not exists public.settings (
   id uuid default uuid_generate_v4() primary key,
   business_id uuid references public.businesses(id) on delete cascade not null unique,
   email text,
+  phone text,
   whatsapp text,
   instagram text,
   facebook text,

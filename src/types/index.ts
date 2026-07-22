@@ -14,6 +14,8 @@ export type Business = {
   about_description: string | null;
   cover_image: string | null;
   banner_image: string | null;
+  slogan?: string | null;
+  phone?: string | null;
   whatsapp?: string | null;
   instagram?: string | null;
   facebook?: string | null;
