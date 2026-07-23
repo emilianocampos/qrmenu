@@ -2,6 +2,7 @@ import { login } from "@/actions/auth";
 import Link from "next/link";
 import { Store, QrCode } from "lucide-react";
 import { ToastHelper } from "@/components/ui/ToastHelper";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 
 export default async function LoginPage(props: { searchParams: Promise<{ message?: string; success?: string }> }) {
   const searchParams = await props.searchParams;
@@ -49,12 +50,12 @@ export default async function LoginPage(props: { searchParams: Promise<{ message
           />
         </div>
 
-        <button
-          className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+        <SubmitButton
+          className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 rounded-xl hover:scale-[1.02] active:scale-[0.98]"
           type="submit"
         >
           Iniciar Sesión
-        </button>
+        </SubmitButton>
       </form>
 
       <div className="mt-8 text-center text-sm text-gray-400">

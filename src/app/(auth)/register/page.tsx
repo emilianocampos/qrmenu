@@ -1,6 +1,7 @@
 import { signup } from "@/actions/auth";
 import Link from "next/link";
 import { Store } from "lucide-react";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 
 export default async function RegisterPage(props: { searchParams: Promise<{ message?: string }> }) {
   const searchParams = await props.searchParams;
@@ -57,12 +58,12 @@ export default async function RegisterPage(props: { searchParams: Promise<{ mess
           />
         </div>
 
-        <button
-          className="mt-6 bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+        <SubmitButton
+          className="mt-6 bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 rounded-xl hover:scale-[1.02] active:scale-[0.98]"
           type="submit"
         >
           Registrarse
-        </button>
+        </SubmitButton>
       </form>
 
       <div className="mt-8 text-center text-sm text-gray-400">

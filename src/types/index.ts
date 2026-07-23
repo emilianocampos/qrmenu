@@ -25,6 +25,27 @@ export type Business = {
   currency?: string | null;
   plan?: string | null;
   email?: string | null;
+  // Design properties
+  background_color?: string | null;
+  surface_color?: string | null;
+  text_color?: string | null;
+  accent_color?: string | null;
+  font_weight?: string | null;
+  category_alignment?: string | null;
+  product_alignment?: string | null;
+  price_alignment?: string | null;
+  title_alignment?: string | null;
+  card_style?: string | null;
+  border_radius?: number | null;
+  shadow?: string | null;
+  spacing?: string | null;
+  separator_style?: string | null;
+  image_style?: string | null;
+  button_style?: string | null;
+  header_style?: string | null;
+  visual_density?: string | null;
+  vintage_color?: string | null;
+  vintage_color_mode?: string | null;
   created_at: string;
 };
 

@@ -32,7 +32,6 @@ const navItems = [
   { divider: true },
   { href: '/importar', icon: Sparkles, label: 'Importar Carta', color: 'text-cyan-400' },
   { href: '/personalizacion', icon: Palette, label: 'Personalización', color: 'text-pink-400' },
-  { href: '/estadisticas', icon: BarChart3, label: 'Estadísticas', color: 'text-emerald-400' },
   { divider: true },
   { href: '/qr', icon: QrCode, label: 'QR', color: 'text-amber-400' },
   { href: '/configuracion', icon: Settings, label: 'Configuración', color: 'text-gray-400' },

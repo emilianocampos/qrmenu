@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 
 export async function registerBusinessView(businessId: string) {
-  if (!businessId) return { error: 'business_id is required' };
+  if (!businessId) return { error: 'El ID del negocio es requerido' };
   
   const supabase = await createClient();
   const { error } = await supabase
@@ -18,7 +18,7 @@ export async function registerBusinessView(businessId: string) {
 }
 
 export async function registerProductView(businessId: string, productId: string) {
-  if (!businessId || !productId) return { error: 'business_id and product_id are required' };
+  if (!businessId || !productId) return { error: 'El ID del negocio y del producto son requeridos' };
 
   const supabase = await createClient();
   const { error } = await supabase

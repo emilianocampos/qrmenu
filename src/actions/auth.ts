@@ -4,6 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+function translateAuthError(msg: string) {
+  if (msg.includes('Invalid login credentials')) return 'Credenciales de acceso inválidas';
+  if (msg.includes('User already registered')) return 'El usuario ya está registrado';
+  if (msg.includes('Password should be at least')) return 'La contraseña debe tener al menos 6 caracteres';
+  return 'Ocurrió un error. Por favor, intenta de nuevo.';
+}
+
 export async function login(formData: FormData) {
   const supabase = await createClient();
 
@@ -16,7 +23,7 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    return redirect("/login?message=" + encodeURIComponent(error.message));
+    return redirect("/login?message=" + encodeURIComponent(translateAuthError(error.message)));
   }
 
   revalidatePath("/", "layout");
@@ -46,7 +53,7 @@ export async function signup(formData: FormData) {
   });
 
   if (authError) {
-    return redirect("/register?message=" + authError.message);
+    return redirect("/register?message=" + encodeURIComponent(translateAuthError(authError.message)));
   }
 
   // 2. Insert Business

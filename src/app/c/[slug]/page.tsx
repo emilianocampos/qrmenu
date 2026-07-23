@@ -35,6 +35,34 @@ export default async function PublicMenuPage({ params }: PageProps) {
   const primaryColor = business.color_primary || '#f97316';
   const primaryColorRgb = hexToRgb(primaryColor);
   const textColor = business.color_secondary || '#f1f5f9';
+  const customBg = business.background_color;
+  const theme = business.theme || 'dark';
+
+  let defaultBg = '#0a0e1a';
+  let defaultCard = '#111827';
+  let defaultCardHover = '#151d2e';
+  let defaultNav = 'rgba(10, 14, 26, 0.9)';
+  let defaultBorder = '#1e2d45';
+  let defaultText = textColor;
+  let defaultTextMuted = `${textColor}b3`;
+  let defaultTextFaint = `${textColor}80`;
+
+  if (theme === 'light') {
+    defaultBg = '#f8fafc';
+    defaultCard = '#ffffff';
+    defaultCardHover = '#f1f5f9';
+    defaultNav = 'rgba(248, 250, 252, 0.9)';
+    defaultBorder = '#e2e8f0';
+    defaultText = '#0f172a';
+    defaultTextMuted = '#475569';
+    defaultTextFaint = '#94a3b8';
+  } else if (theme === 'custom' && customBg) {
+    defaultBg = customBg;
+    defaultCard = `${customBg}ee`;
+    defaultCardHover = `${customBg}dd`;
+    defaultNav = `${customBg}f0`;
+  }
+
   const fontName = business.typography || 'Inter';
   const hasAbout = !!(
     business.about_title ||
@@ -58,18 +86,20 @@ export default async function PublicMenuPage({ params }: PageProps) {
           --primary-color: ${primaryColor};
           --primary-color-rgb: ${primaryColorRgb};
           --font-family: '${fontName}', 'Inter', sans-serif;
-          --bg-page: #0a0e1a;
-          --bg-card: #111827;
-          --bg-card-hover: #151d2e;
-          --border-color: #1e2d45;
-          --text-primary: ${textColor};
-          --text-muted: ${textColor}b3;
-          --text-faint: ${textColor}80;
+          --bg-page: ${defaultBg};
+          --bg-card: ${defaultCard};
+          --bg-card-hover: ${defaultCardHover};
+          --bg-navbar: ${defaultNav};
+          --border-color: ${defaultBorder};
+          --text-primary: ${defaultText};
+          --text-muted: ${defaultTextMuted};
+          --text-faint: ${defaultTextFaint};
         }
         body {
           font-family: var(--font-family);
           background-color: var(--bg-page);
           color: var(--text-primary);
+          transition: background-color 0.3s, color 0.3s;
         }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -148,7 +178,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
         )}
 
         <main>
-          <MenuSection products={products} currencySymbol="$" layoutStyle={business.layout_style || 'grid'} />
+          <MenuSection products={products} currencySymbol="$" layoutStyle={business.layout_style || 'grid'} vintageColorMode={business.vintage_color_mode || 'multicolor'} vintageColor={business.vintage_color || '#ff4500'} />
           {/* {hasAbout && (
             <AboutSection
               title={business.about_title}

@@ -83,8 +83,8 @@ export function ReviewSection({ businessId, initialReviews, businessName }: Revi
                 padding: '3rem 2rem',
                 textAlign: 'center',
                 borderRadius: 14,
-                backgroundColor: '#111827',
-                border: '1px solid #1e2d45',
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
               }}>
                 <span style={{ fontSize: 36, display: 'block', marginBottom: 12 }}>💬</span>
                 <h3 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '1rem', margin: '0 0 8px' }}>

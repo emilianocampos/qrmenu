@@ -92,7 +92,8 @@ export function ProductCard({ product, currencySymbol = '$', layoutStyle = 'grid
               fontWeight: 500,
               padding: '6px 14px',
               borderRadius: 9999,
-              backgroundColor: 'rgba(255,255,255,0.05)',
+              backgroundColor: 'var(--bg-page)',
+              border: '1px solid var(--border-color)',
               color: 'var(--text-faint)',
             }}>
               {product.category.name}

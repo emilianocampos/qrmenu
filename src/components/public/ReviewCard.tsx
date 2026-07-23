@@ -29,12 +29,12 @@ export function ReviewCard({ review }: ReviewCardProps) {
       style={{
         padding: '1.5rem',
         borderRadius: 14,
-        backgroundColor: '#111827',
-        border: '1px solid #1e2d45',
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border-color)',
         transition: 'border-color 0.2s',
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2a3f5f'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1e2d45'; }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary-color)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-color)'; }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
         {/* Avatar + Name */}

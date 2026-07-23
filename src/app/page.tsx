@@ -12,14 +12,11 @@ export default function Home() {
             Carta QR
           </div>
           <div className="flex items-center gap-4 text-sm font-medium">
-            <Link href="/demo" className="text-gray-400 hover:text-white transition-colors hidden sm:block">
-              Ver Demo
-            </Link>
             <Link href="/login" className="text-gray-400 hover:text-white transition-colors">
               Iniciar sesión
             </Link>
-            <Link 
-              href="/register" 
+            <Link
+              href="/register"
               className="bg-white text-black px-4 py-2 rounded-full hover:bg-gray-200 transition-colors"
             >
               Crear cuenta
@@ -33,56 +30,49 @@ export default function Home() {
         <div className="max-w-5xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-sm font-medium mb-8 border border-indigo-500/20">
             <Sparkles className="w-4 h-4" />
-            <span>El futuro de los menús para restaurantes</span>
+            <span>Experiencia de 5 estrellas en cada mesa</span>
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-tight">
-            Cartas digitales <br className="hidden md:block" />
+            Magia para tus clientes, <br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-              hermosas y al instante
+              inteligencia artificial para ti
             </span>
           </h1>
-          
+
           <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Crea el menú de tu cafetería o restaurante en minutos. 
-            Tus clientes solo tendrán que escanear un código QR. 
-            Sin descargar apps, sin registrarse.
+            Ofrece a tus comensales una carta digital intuitiva, rápida y visualmente increíble. 
+            Mientras ellos disfrutan explorando tus platos, tú administras todo en segundos 
+            gracias a nuestra IA que automatiza la carga de tu menú.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link 
-              href="/register" 
+            <Link
+              href="/register"
               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-4 rounded-full font-medium transition-all hover:scale-105 active:scale-95"
             >
               Comenzar gratis
               <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link 
-              href="/demo" 
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-full font-medium transition-all"
-            >
-              <Store className="w-4 h-4" />
-              Probar Demo
             </Link>
           </div>
         </div>
 
         {/* Feature grid */}
         <div className="max-w-6xl mx-auto mt-32 grid md:grid-cols-3 gap-8">
-          <FeatureCard 
-            icon={<QrCode className="w-6 h-6 text-indigo-400" />}
-            title="QR Permanente"
-            description="Imprime tu código QR una sola vez. Cambia tus precios y productos cuando quieras sin tener que volver a imprimir."
+          <FeatureCard
+            icon={<Sparkles className="w-6 h-6 text-indigo-400" />}
+            title="Administración con IA"
+            description="Olvídate de la carga manual. Sube una foto de tu menú físico o un PDF y nuestra Inteligencia Artificial detectará categorías, productos y precios por ti en segundos."
           />
-          <FeatureCard 
-            icon={<Sparkles className="w-6 h-6 text-cyan-400" />}
-            title="Importación con IA"
-            description="¿Tienes un PDF o foto de tu menú? Súbelo y nuestra Inteligencia Artificial extraerá todos los productos mágicamente."
+          <FeatureCard
+            icon={<QrCode className="w-6 h-6 text-cyan-400" />}
+            title="Experiencia de Usuario Premium"
+            description="Tus clientes navegarán por un menú rápido, fluido y sin fricciones. Sin descargas molestas ni registros: escanean el QR y descubren tus platos al instante."
           />
-          <FeatureCard 
+          <FeatureCard
             icon={<Store className="w-6 h-6 text-emerald-400" />}
-            title="Diseño Premium"
-            description="Personaliza colores, tipografías y logos. Ofrece a tus clientes una experiencia visual de alta calidad."
+            title="Control Total en Tiempo Real"
+            description="Mantén a tus comensales siempre informados. Oculta platos agotados o ajusta precios de manera instantánea, sin tener que imprimir nuevos códigos QR."
           />
         </div>
       </main>

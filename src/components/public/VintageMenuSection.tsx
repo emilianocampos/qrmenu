@@ -6,6 +6,8 @@ import { Product } from '@/types';
 interface VintageMenuSectionProps {
   products: Product[];
   currencySymbol?: string;
+  vintageColorMode?: string;
+  vintageColor?: string;
 }
 
 const NEON_COLORS = [
@@ -18,7 +20,7 @@ const NEON_COLORS = [
 
 
 
-export function VintageMenuSection({ products, currencySymbol = '$' }: VintageMenuSectionProps) {
+export function VintageMenuSection({ products, currencySymbol = '$', vintageColorMode = 'multicolor', vintageColor = '#ff4500' }: VintageMenuSectionProps) {
   // Group products by category
   const categories = useMemo(() => {
     const map = new Map<string, { id: string, name: string, products: Product[] }>();
@@ -36,14 +38,14 @@ export function VintageMenuSection({ products, currencySymbol = '$' }: VintageMe
   // If no products, fallback to empty state
   if (products.length === 0) {
     return (
-      <div className="py-20 text-center text-gray-400" style={{ backgroundColor: '#111' }}>
+      <div className="py-20 text-center" style={{ color: 'var(--text-muted)', backgroundColor: 'transparent' }}>
         <p>No hay productos disponibles.</p>
       </div>
     );
   }
 
   return (
-    <section id="menu" className="relative py-16 px-4 md:px-8 overflow-hidden" style={{ backgroundColor: '#111', minHeight: '80vh' }}>
+    <section id="menu" className="relative py-16 px-4 md:px-8 overflow-hidden" style={{ backgroundColor: 'transparent', minHeight: '80vh' }}>
       {/* Subtle food doodle background pattern */}
       <div 
         className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -55,7 +57,8 @@ export function VintageMenuSection({ products, currencySymbol = '$' }: VintageMe
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-16 relative z-10">
         {categories.map((category, index) => {
-          const color = NEON_COLORS[index % NEON_COLORS.length];
+          const isSingle = vintageColorMode === 'single';
+          const color = isSingle ? vintageColor : NEON_COLORS[index % NEON_COLORS.length];
 
           return (
             <div key={category.id} className="space-y-6">
@@ -65,7 +68,7 @@ export function VintageMenuSection({ products, currencySymbol = '$' }: VintageMe
                 style={{ 
                   borderColor: color, 
                   boxShadow: `0 0 15px ${color}30, inset 0 0 10px ${color}10`,
-                  backgroundColor: 'rgba(0,0,0,0.4)'
+                  backgroundColor: 'var(--bg-card)'
                 }}
               >
                 <div 
@@ -91,19 +94,19 @@ export function VintageMenuSection({ products, currencySymbol = '$' }: VintageMe
                   return (
                     <div key={product.id} className="flex flex-col group">
                       <div className="flex items-end justify-between gap-3 w-full">
-                        <span className="text-white font-bold text-sm md:text-base uppercase tracking-wide group-hover:text-gray-300 transition-colors shrink-0">
+                        <span className="font-bold text-sm md:text-base uppercase tracking-wide transition-colors shrink-0" style={{ color: 'var(--text-primary)' }}>
                           {product.name}
                         </span>
                         
-                        <div className="flex-grow border-b-2 border-dotted border-gray-600 mb-[6px] opacity-40 shrink" />
+                        <div className="flex-grow border-b-2 border-dotted mb-[6px] opacity-40 shrink" style={{ borderColor: 'var(--border-color)' }} />
                         
-                        <span className="text-white font-bold text-sm md:text-base whitespace-nowrap shrink-0 pl-1">
+                        <span className="font-bold text-sm md:text-base whitespace-nowrap shrink-0 pl-1" style={{ color: 'var(--text-primary)' }}>
                           {currencySymbol}{formattedPrice}
                         </span>
                       </div>
                       
                       {product.description && (
-                        <p className="text-gray-400 text-[11px] md:text-xs mt-1 max-w-[85%] leading-snug">
+                        <p className="text-[11px] md:text-xs mt-1 max-w-[85%] leading-snug" style={{ color: 'var(--text-muted)' }}>
                           {product.description}
                         </p>
                       )}

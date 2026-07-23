@@ -25,8 +25,8 @@ export function OverallRating({ reviews }: OverallRatingProps) {
     <div style={{
       padding: '1.5rem',
       borderRadius: 14,
-      backgroundColor: '#111827',
-      border: '1px solid #1e2d45',
+      backgroundColor: 'var(--bg-card)',
+      border: '1px solid var(--border-color)',
       position: 'sticky',
       top: 90,
     }}>
@@ -48,13 +48,13 @@ export function OverallRating({ reviews }: OverallRatingProps) {
       </div>
 
       {/* Distribution bars */}
-      <div style={{ borderTop: '1px solid #1e2d45', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {[5, 4, 3, 2, 1].map(star => {
           const pct = getPercentage(distribution[star]);
           return (
             <div key={star} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.8rem' }}>
               <span style={{ color: 'var(--text-faint)', width: 20, textAlign: 'right', flexShrink: 0 }}>{star}★</span>
-              <div style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: '#0a0e1a', overflow: 'hidden' }}>
+              <div style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: 'var(--bg-page)', overflow: 'hidden' }}>
                 <div style={{
                   height: '100%',
                   borderRadius: 3,

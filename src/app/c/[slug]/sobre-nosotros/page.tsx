@@ -31,6 +31,34 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
   const primaryColor = business.color_primary || '#f97316';
   const primaryColorRgb = hexToRgb(primaryColor);
   const textColor = business.color_secondary || '#f1f5f9';
+  const customBg = business.background_color;
+  const theme = business.theme || 'dark';
+
+  let defaultBg = '#0a0e1a';
+  let defaultCard = '#111827';
+  let defaultCardHover = '#151d2e';
+  let defaultNav = 'rgba(10, 14, 26, 0.9)';
+  let defaultBorder = '#1e2d45';
+  let defaultText = textColor;
+  let defaultTextMuted = `${textColor}b3`;
+  let defaultTextFaint = `${textColor}80`;
+
+  if (theme === 'light') {
+    defaultBg = '#f8fafc';
+    defaultCard = '#ffffff';
+    defaultCardHover = '#f1f5f9';
+    defaultNav = 'rgba(248, 250, 252, 0.9)';
+    defaultBorder = '#e2e8f0';
+    defaultText = '#0f172a';
+    defaultTextMuted = '#475569';
+    defaultTextFaint = '#94a3b8';
+  } else if (theme === 'custom' && customBg) {
+    defaultBg = customBg;
+    defaultCard = `${customBg}ee`;
+    defaultCardHover = `${customBg}dd`;
+    defaultNav = `${customBg}f0`;
+  }
+
   const fontName = business.typography || 'Inter';
   const hasAbout = !!(
     business.about_title || 
@@ -54,18 +82,20 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
           --primary-color: ${primaryColor};
           --primary-color-rgb: ${primaryColorRgb};
           --font-family: '${fontName}', 'Inter', sans-serif;
-          --bg-page: #0a0e1a;
-          --bg-card: #111827;
-          --bg-card-hover: #151d2e;
-          --border-color: #1e2d45;
-          --text-primary: ${textColor};
-          --text-muted: ${textColor}b3;
-          --text-faint: ${textColor}80;
+          --bg-page: ${defaultBg};
+          --bg-card: ${defaultCard};
+          --bg-card-hover: ${defaultCardHover};
+          --bg-navbar: ${defaultNav};
+          --border-color: ${defaultBorder};
+          --text-primary: ${defaultText};
+          --text-muted: ${defaultTextMuted};
+          --text-faint: ${defaultTextFaint};
         }
         body {
           font-family: var(--font-family);
           background-color: var(--bg-page);
           color: var(--text-primary);
+          transition: background-color 0.3s, color 0.3s;
         }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -128,24 +158,24 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
                     {business.about_description}
                   </div>
                 ) : (
-                  <p className="text-sm md:text-base text-gray-400 italic">Historia aún no agregada.</p>
+                  <p className="text-sm md:text-base text-[var(--text-muted)] italic">Historia aún no agregada.</p>
                 )}
               </div>
               
               {/* Stats Cards */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#111827] border border-[#1e2d45] rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2">
+                <div className="rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                   <Award className="w-8 h-8" style={{ color: 'var(--primary-color)' }} />
                   <div>
                     <div className="font-bold text-lg">{rating.toFixed(1)}/5</div>
-                    <div className="text-xs text-gray-400">{reviewCount}+ Reseñas</div>
+                    <div className="text-xs text-[var(--text-muted)]">{reviewCount}+ Reseñas</div>
                   </div>
                 </div>
-                <div className="bg-[#111827] border border-[#1e2d45] rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2">
+                <div className="rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                   <Users className="w-8 h-8" style={{ color: 'var(--primary-color)' }} />
                   <div>
                     <div className="font-bold text-lg">5,000+</div>
-                    <div className="text-xs text-gray-400">Clientes Felices</div>
+                    <div className="text-xs text-[var(--text-muted)]">Clientes Felices</div>
                   </div>
                 </div>
               </div>
@@ -153,42 +183,42 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
           </div>
 
           {/* Visit Us Section */}
-          <div className="pt-8 space-y-8 border-t border-[#1e2d45]">
+          <div className="pt-8 space-y-8 border-t" style={{ borderColor: 'var(--border-color)' }}>
             <div className="text-center">
               <h2 className="text-2xl font-bold">Visítanos</h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-[#111827] border border-[#1e2d45] rounded-2xl p-8 flex flex-col items-center text-center space-y-4">
+              <div className="rounded-2xl p-8 flex flex-col items-center text-center space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                 <MapPin className="w-8 h-8" style={{ color: 'var(--primary-color)' }} />
                 <h3 className="font-bold text-lg">Dirección</h3>
-                <p className="text-sm text-gray-400 whitespace-pre-wrap">{business.address || 'No especificada'}</p>
+                <p className="text-sm text-[var(--text-muted)] whitespace-pre-wrap">{business.address || 'No especificada'}</p>
               </div>
               
-              <div className="bg-[#111827] border border-[#1e2d45] rounded-2xl p-8 flex flex-col items-center text-center space-y-4">
+              <div className="rounded-2xl p-8 flex flex-col items-center text-center space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                 <Phone className="w-8 h-8" style={{ color: 'var(--primary-color)' }} />
                 <h3 className="font-bold text-lg">Teléfono</h3>
-                <p className="text-sm text-gray-400 whitespace-pre-wrap">{business.phone || business.whatsapp || 'No especificado'}</p>
+                <p className="text-sm text-[var(--text-muted)] whitespace-pre-wrap">{business.phone || business.whatsapp || 'No especificado'}</p>
               </div>
 
-              <div className="bg-[#111827] border border-[#1e2d45] rounded-2xl p-8 flex flex-col items-center text-center space-y-4">
+              <div className="rounded-2xl p-8 flex flex-col items-center text-center space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                 <Mail className="w-8 h-8" style={{ color: 'var(--primary-color)' }} />
                 <h3 className="font-bold text-lg">Email</h3>
-                <p className="text-sm text-gray-400">{business.email || 'No especificado'}</p>
+                <p className="text-sm text-[var(--text-muted)]">{business.email || 'No especificado'}</p>
               </div>
             </div>
           </div>
 
           {/* Opening Hours */}
-          <div className="bg-[#111827] border border-[#1e2d45] rounded-2xl p-8 md:p-12">
+          <div className="rounded-2xl p-8 md:p-12" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
             <div className="flex flex-col items-center text-center space-y-6">
               <Clock className="w-8 h-8" style={{ color: 'var(--primary-color)' }} />
               <h3 className="text-xl font-bold">Horario de Atención</h3>
-              <div className="w-full max-w-2xl text-center space-y-4 text-sm md:text-base text-gray-300">
+              <div className="w-full max-w-2xl text-center space-y-4 text-sm md:text-base" style={{ color: 'var(--text-muted)' }}>
                 {business.schedule ? (
                   <p className="whitespace-pre-wrap">{business.schedule}</p>
                 ) : (
-                  <p className="italic text-gray-500">Horarios no especificados</p>
+                  <p className="italic" style={{ color: 'var(--text-faint)' }}>Horarios no especificados</p>
                 )}
               </div>
               {business.schedule && (

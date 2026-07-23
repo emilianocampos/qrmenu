@@ -8,6 +8,7 @@ import { UploadDropzone } from '@/components/ui/UploadDropzone';
 import { updateBusiness } from '@/actions/business';
 import { createClient } from '@/lib/supabase/client';
 import { Business } from '@/types';
+import { DesignAnalysisCard } from './components/DesignAnalysisCard';
 
 const typographies = ['Inter', 'Roboto', 'Playfair Display', 'Lato', 'Poppins', 'Oswald', 'Montserrat'];
 const themes = [
@@ -38,7 +39,14 @@ export function CustomizationClient({ business }: { business: Business }) {
     phone: business.phone || business.whatsapp || '',
     email: business.email || '',
     schedule: business.schedule || '',
+    vintage_color_mode: business.vintage_color_mode || 'multicolor',
+    vintage_color: business.vintage_color || '#ff4500',
   });
+
+  const handleDesignApplied = () => {
+    // Optionally trigger a page refresh or re-fetch business data
+    window.location.reload();
+  };
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(business.logo_url);
@@ -137,6 +145,8 @@ export function CustomizationClient({ business }: { business: Business }) {
         phone: form.phone || null,
         email: form.email || null,
         schedule: form.schedule || null,
+        vintage_color_mode: form.vintage_color_mode,
+        vintage_color: form.vintage_color,
       });
 
       if (result.error) {
@@ -171,6 +181,8 @@ export function CustomizationClient({ business }: { business: Business }) {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Editor */}
         <div className="space-y-6">
+          <DesignAnalysisCard business={business} onDesignApplied={handleDesignApplied} />
+
           {/* Logo & Banner */}
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-6">
             <div>
@@ -256,11 +268,53 @@ export function CustomizationClient({ business }: { business: Business }) {
             </div>
           </div>
 
-          {/* Colors */}
+          {/* Colors & Theme */}
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5">
-            <h3 className="text-sm font-semibold text-white">Colores</h3>
-            <ColorPicker label="Color principal" value={form.color_primary} onChange={v => setForm(f => ({ ...f, color_primary: v }))} />
-            <ColorPicker label="Color de texto" value={form.color_secondary} onChange={v => setForm(f => ({ ...f, color_secondary: v }))} />
+            <h3 className="text-sm font-semibold text-white">Fondo de la Carta</h3>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setForm(f => ({ ...f, theme: 'dark', background_color: '' }))}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border
+                  ${form.theme === 'dark'
+                    ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/25'
+                    : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
+                  }`}
+              >
+                Modo Oscuro
+              </button>
+              <button
+                onClick={() => setForm(f => ({ ...f, theme: 'light', background_color: '' }))}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border
+                  ${form.theme === 'light'
+                    ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/25'
+                    : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
+                  }`}
+              >
+                Modo Claro
+              </button>
+              <button
+                onClick={() => setForm(f => ({ ...f, theme: 'custom' }))}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border
+                  ${form.theme === 'custom'
+                    ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/25'
+                    : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
+                  }`}
+              >
+                Personalizar
+              </button>
+            </div>
+            
+            {form.theme === 'custom' && (
+              <div className="animate-in fade-in slide-in-from-top-2">
+                <ColorPicker label="Color de Fondo" value={form.background_color} onChange={v => setForm(f => ({ ...f, background_color: v }))} />
+              </div>
+            )}
+
+            <div className="pt-4 border-t border-white/10 space-y-5">
+              <h3 className="text-sm font-semibold text-white">Colores</h3>
+              <ColorPicker label="Color principal" value={form.color_primary} onChange={v => setForm(f => ({ ...f, color_primary: v }))} />
+              <ColorPicker label="Color de texto" value={form.color_secondary} onChange={v => setForm(f => ({ ...f, color_secondary: v }))} />
+            </div>
           </div>
 
           {/* Typography & Theme */}
@@ -312,6 +366,42 @@ export function CustomizationClient({ business }: { business: Business }) {
                 </button>
               </div>
             </div>
+
+            {form.layout_style === 'vintage' && (
+              <div className="pt-4 border-t border-white/10 space-y-4">
+                <h3 className="text-sm font-semibold text-white">Estilo Vintage</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Color de Categorías</label>
+                  <div className="flex gap-3 mb-4">
+                    <button
+                      onClick={() => setForm(f => ({ ...f, vintage_color_mode: 'multicolor' }))}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border
+                        ${form.vintage_color_mode !== 'single'
+                          ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/25'
+                          : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
+                        }`}
+                    >
+                      Multicolor
+                    </button>
+                    <button
+                      onClick={() => setForm(f => ({ ...f, vintage_color_mode: 'single' }))}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border
+                        ${form.vintage_color_mode === 'single'
+                          ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/25'
+                          : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
+                        }`}
+                    >
+                      Color Único
+                    </button>
+                  </div>
+                  {form.vintage_color_mode === 'single' && (
+                    <div className="animate-in fade-in slide-in-from-top-2">
+                      <ColorPicker label="Color de Categorías" value={form.vintage_color} onChange={v => setForm(f => ({ ...f, vintage_color: v }))} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* About Us Section */}
@@ -489,11 +579,11 @@ export function CustomizationClient({ business }: { business: Business }) {
                   {form.layout_style === 'vintage' ? (
                     <div className="space-y-4">
                       {/* Vintage Category Header */}
-                      <div className="flex items-center gap-2 py-1 px-3 rounded-md border" style={{ borderColor: '#ff4500', boxShadow: '0 0 5px #ff450040', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: '#ff4500', boxShadow: '0 0 5px #ff450080' }} />
-                        <h2 className="text-[10px] font-black uppercase tracking-wider m-0" style={{ color: '#ff4500' }}>Cafetería</h2>
+                      <div className="flex items-center gap-2 py-1 px-3 rounded-md border" style={{ borderColor: form.vintage_color_mode === 'single' ? form.vintage_color : '#ff4500', boxShadow: `0 0 5px ${form.vintage_color_mode === 'single' ? form.vintage_color : '#ff4500'}40`, backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: form.vintage_color_mode === 'single' ? form.vintage_color : '#ff4500', boxShadow: `0 0 5px ${form.vintage_color_mode === 'single' ? form.vintage_color : '#ff4500'}80` }} />
+                        <h2 className="text-[10px] font-black uppercase tracking-wider m-0" style={{ color: form.vintage_color_mode === 'single' ? form.vintage_color : '#ff4500' }}>Cafetería</h2>
                       </div>
-                      
+
                       {/* Vintage Product List */}
                       <div className="space-y-2 px-1">
                         <div className="flex flex-col">
@@ -516,64 +606,64 @@ export function CustomizationClient({ business }: { business: Business }) {
                     </div>
                   ) : (
                     <div className={form.layout_style === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-2'}>
-                    {/* Mini Card 1 */}
-                    <div
-                      className={`rounded-lg overflow-hidden border flex ${form.layout_style === 'list' ? 'flex-row items-center h-20' : 'flex-col'}`}
-                      style={{
-                        backgroundColor: '#111827',
-                        borderColor: '#1e2d45',
-                      }}
-                    >
-                      {form.layout_style !== 'list' && (
-                        <div className="h-16 w-full bg-gray-700 object-cover relative">
-                          <div className="absolute inset-0 opacity-20 bg-gradient-to-tr from-black to-transparent" />
-                        </div>
-                      )}
-                      <div className="p-2 flex flex-col flex-1">
-                        <div className="flex justify-between items-start mb-1 gap-1">
-                          <p className="text-[10px] font-semibold leading-tight" style={{ color: form.color_primary }}>Café Especial</p>
-                          <p className="text-[9px] font-bold">$3.50</p>
-                        </div>
-                        <p className="text-[8px] mb-2 line-clamp-2 leading-tight" style={{ opacity: 0.7 }}>Doble shot de espresso con leche cremosa.</p>
-                        <div className="mt-auto flex justify-start">
-                          <span className="text-[7px] px-2 py-0.5 rounded-full" style={{
-                            backgroundColor: 'rgba(255,255,255,0.1)',
-                            color: '#cbd5e1'
-                          }}>
-                            Cafetería
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Mini Card 2 */}
-                    <div
-                      className={`rounded-lg overflow-hidden border flex ${form.layout_style === 'list' ? 'flex-row items-center h-20' : 'flex-col'}`}
-                      style={{
-                        backgroundColor: '#111827',
-                        borderColor: '#1e2d45',
-                      }}
-                    >
-                      {form.layout_style !== 'list' && (
-                        <div className="h-16 w-full bg-gray-700 object-cover relative">
-                          <div className="absolute inset-0 opacity-20 bg-gradient-to-tl from-black to-transparent" />
-                        </div>
-                      )}
-                      <div className="p-2 flex flex-col flex-1">
-                        <div className="flex justify-between items-start mb-1 gap-1">
-                          <p className="text-[10px] font-semibold leading-tight" style={{ color: form.color_primary }}>Tostado</p>
-                          <p className="text-[9px] font-bold">$4.00</p>
-                        </div>
-                        <p className="text-[8px] mb-2 line-clamp-2 leading-tight" style={{ opacity: 0.7 }}>Pan de masamadre con jamón y queso.</p>
-                        <div className="mt-auto flex justify-start">
-                          <span className="text-[7px] px-2 py-0.5 rounded-full" style={{
-                            backgroundColor: 'rgba(255,255,255,0.1)',
-                            color: '#cbd5e1'
-                          }}>
-                            Panadería
-                          </span>
+                      {/* Mini Card 1 */}
+                      <div
+                        className={`rounded-lg overflow-hidden border flex ${form.layout_style === 'list' ? 'flex-row items-center h-20' : 'flex-col'}`}
+                        style={{
+                          backgroundColor: '#111827',
+                          borderColor: '#1e2d45',
+                        }}
+                      >
+                        {form.layout_style !== 'list' && (
+                          <div className="h-16 w-full bg-gray-700 object-cover relative">
+                            <div className="absolute inset-0 opacity-20 bg-gradient-to-tr from-black to-transparent" />
+                          </div>
+                        )}
+                        <div className="p-2 flex flex-col flex-1">
+                          <div className="flex justify-between items-start mb-1 gap-1">
+                            <p className="text-[10px] font-semibold leading-tight" style={{ color: form.color_primary }}>Café Especial</p>
+                            <p className="text-[9px] font-bold">$3.50</p>
+                          </div>
+                          <p className="text-[8px] mb-2 line-clamp-2 leading-tight" style={{ opacity: 0.7 }}>Doble shot de espresso con leche cremosa.</p>
+                          <div className="mt-auto flex justify-start">
+                            <span className="text-[7px] px-2 py-0.5 rounded-full" style={{
+                              backgroundColor: 'rgba(255,255,255,0.1)',
+                              color: '#cbd5e1'
+                            }}>
+                              Cafetería
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                      {/* Mini Card 2 */}
+                      <div
+                        className={`rounded-lg overflow-hidden border flex ${form.layout_style === 'list' ? 'flex-row items-center h-20' : 'flex-col'}`}
+                        style={{
+                          backgroundColor: '#111827',
+                          borderColor: '#1e2d45',
+                        }}
+                      >
+                        {form.layout_style !== 'list' && (
+                          <div className="h-16 w-full bg-gray-700 object-cover relative">
+                            <div className="absolute inset-0 opacity-20 bg-gradient-to-tl from-black to-transparent" />
+                          </div>
+                        )}
+                        <div className="p-2 flex flex-col flex-1">
+                          <div className="flex justify-between items-start mb-1 gap-1">
+                            <p className="text-[10px] font-semibold leading-tight" style={{ color: form.color_primary }}>Tostado</p>
+                            <p className="text-[9px] font-bold">$4.00</p>
+                          </div>
+                          <p className="text-[8px] mb-2 line-clamp-2 leading-tight" style={{ opacity: 0.7 }}>Pan de masamadre con jamón y queso.</p>
+                          <div className="mt-auto flex justify-start">
+                            <span className="text-[7px] px-2 py-0.5 rounded-full" style={{
+                              backgroundColor: 'rgba(255,255,255,0.1)',
+                              color: '#cbd5e1'
+                            }}>
+                              Panadería
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

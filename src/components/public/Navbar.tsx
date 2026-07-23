@@ -62,8 +62,8 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
     left: 0,
     right: 0,
     zIndex: 50,
-    borderBottom: '1px solid #1e2d45',
-    backgroundColor: 'rgba(10, 14, 26, 0.9)',
+    borderBottom: '1px solid var(--border-color)',
+    backgroundColor: 'var(--bg-navbar)',
     backdropFilter: 'blur(12px)',
     WebkitBackdropFilter: 'blur(12px)',
   };
@@ -79,7 +79,7 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
           >
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt={name} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid #1e2d45' }} />
+              <img src={logoUrl} alt={name} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }} />
             ) : (
               <span style={{ fontSize: 24 }}>🍽️</span>
             )}
@@ -152,7 +152,7 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         slotProps={{
-          paper: { style: { backgroundColor: '#111827', borderLeft: '1px solid #1e2d45', width: 280 } }
+          paper: { style: { backgroundColor: 'var(--bg-card)', borderLeft: '1px solid var(--border-color)', width: 280 } }
         }}
       >
         <Box style={{ padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column' }}>

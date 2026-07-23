@@ -10,11 +10,13 @@ interface MenuSectionProps {
   products: Product[];
   currencySymbol?: string;
   layoutStyle?: string;
+  vintageColorMode?: string;
+  vintageColor?: string;
 }
 
-export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'grid' }: MenuSectionProps) {
+export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'grid', vintageColorMode = 'multicolor', vintageColor = '#ff4500' }: MenuSectionProps) {
   if (layoutStyle === 'vintage') {
-    return <VintageMenuSection products={products} currencySymbol={currencySymbol} />;
+    return <VintageMenuSection products={products} currencySymbol={currencySymbol} vintageColorMode={vintageColorMode} vintageColor={vintageColor} />;
   }
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,19 +83,20 @@ export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'gri
               gap: '8px',
               padding: '6px 16px',
               borderRadius: '8px',
-              border: 'none',
+              border: selectedCategoryId === null ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               fontWeight: 600,
               fontSize: '0.9rem',
-              backgroundColor: selectedCategoryId === null ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+              backgroundColor: selectedCategoryId === null ? 'var(--primary-color)' : 'var(--bg-card)',
               color: selectedCategoryId === null ? '#fff' : 'var(--text-muted)',
               transition: 'background-color 0.2s',
             }}
           >
             Todo
             <span style={{ 
-              backgroundColor: selectedCategoryId === null ? 'rgba(255,255,255,0.2)' : '#334155', 
+              backgroundColor: selectedCategoryId === null ? 'rgba(255,255,255,0.2)' : 'var(--border-color)', 
+              color: selectedCategoryId === null ? '#fff' : 'var(--text-primary)',
               padding: '2px 8px', 
               borderRadius: '12px', 
               fontSize: '0.75rem' 
@@ -112,19 +115,20 @@ export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'gri
                 gap: '8px',
                 padding: '6px 16px',
                 borderRadius: '8px',
-                border: 'none',
+                border: selectedCategoryId === cat.id ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 fontWeight: 600,
                 fontSize: '0.9rem',
-                backgroundColor: selectedCategoryId === cat.id ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                backgroundColor: selectedCategoryId === cat.id ? 'var(--primary-color)' : 'var(--bg-card)',
                 color: selectedCategoryId === cat.id ? '#fff' : 'var(--text-muted)',
                 transition: 'background-color 0.2s',
               }}
             >
               {cat.name}
               <span style={{ 
-                backgroundColor: selectedCategoryId === cat.id ? 'rgba(255,255,255,0.2)' : '#334155', 
+                backgroundColor: selectedCategoryId === cat.id ? 'rgba(255,255,255,0.2)' : 'var(--border-color)', 
+                color: selectedCategoryId === cat.id ? '#fff' : 'var(--text-primary)',
                 padding: '2px 8px', 
                 borderRadius: '12px', 
                 fontSize: '0.75rem' 

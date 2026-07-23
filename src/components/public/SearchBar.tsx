@@ -19,7 +19,7 @@ export function SearchBar({ value, onChange, placeholder = 'Search menu items...
           left: 14,
           top: '50%',
           transform: 'translateY(-50%)',
-          color: '#64748b',
+          color: 'var(--text-muted)',
           pointerEvents: 'none',
         }}
       />
@@ -36,15 +36,15 @@ export function SearchBar({ value, onChange, placeholder = 'Search menu items...
           paddingTop: 12,
           paddingBottom: 12,
           borderRadius: 8,
-          backgroundColor: '#151c2c',
-          border: '1px solid #1e2d45',
-          color: '#f1f5f9',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          color: 'var(--text-primary)',
           fontSize: '0.9rem',
           outline: 'none',
           transition: 'border-color 0.2s',
         }}
         onFocus={e => { e.target.style.borderColor = 'var(--primary-color)'; }}
-        onBlur={e => { e.target.style.borderColor = '#1e2d45'; }}
+        onBlur={e => { e.target.style.borderColor = 'var(--border-color)'; }}
       />
       {value && (
         <button
@@ -58,7 +58,7 @@ export function SearchBar({ value, onChange, placeholder = 'Search menu items...
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            color: '#64748b',
+            color: 'var(--text-muted)',
             padding: 2,
             display: 'flex',
             alignItems: 'center',

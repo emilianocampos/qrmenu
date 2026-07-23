@@ -31,6 +31,34 @@ export default async function ReservarMesaPage({ params }: PageProps) {
   const primaryColor = business.color_primary || '#f97316';
   const primaryColorRgb = hexToRgb(primaryColor);
   const textColor = business.color_secondary || '#f1f5f9';
+  const customBg = business.background_color;
+  const theme = business.theme || 'dark';
+
+  let defaultBg = '#0a0e1a';
+  let defaultCard = '#111827';
+  let defaultCardHover = '#151d2e';
+  let defaultNav = 'rgba(10, 14, 26, 0.9)';
+  let defaultBorder = '#1e2d45';
+  let defaultText = textColor;
+  let defaultTextMuted = `${textColor}b3`;
+  let defaultTextFaint = `${textColor}80`;
+
+  if (theme === 'light') {
+    defaultBg = '#f8fafc';
+    defaultCard = '#ffffff';
+    defaultCardHover = '#f1f5f9';
+    defaultNav = 'rgba(248, 250, 252, 0.9)';
+    defaultBorder = '#e2e8f0';
+    defaultText = '#0f172a';
+    defaultTextMuted = '#475569';
+    defaultTextFaint = '#94a3b8';
+  } else if (theme === 'custom' && customBg) {
+    defaultBg = customBg;
+    defaultCard = `${customBg}ee`;
+    defaultCardHover = `${customBg}dd`;
+    defaultNav = `${customBg}f0`;
+  }
+
   const fontName = business.typography || 'Inter';
   const hasAbout = !!(
     business.about_title || 
@@ -54,18 +82,20 @@ export default async function ReservarMesaPage({ params }: PageProps) {
           --primary-color: ${primaryColor};
           --primary-color-rgb: ${primaryColorRgb};
           --font-family: '${fontName}', 'Inter', sans-serif;
-          --bg-page: #0a0e1a;
-          --bg-card: #111827;
-          --bg-card-hover: #151d2e;
-          --border-color: #1e2d45;
-          --text-primary: ${textColor};
-          --text-muted: ${textColor}b3;
-          --text-faint: ${textColor}80;
+          --bg-page: ${defaultBg};
+          --bg-card: ${defaultCard};
+          --bg-card-hover: ${defaultCardHover};
+          --bg-navbar: ${defaultNav};
+          --border-color: ${defaultBorder};
+          --text-primary: ${defaultText};
+          --text-muted: ${defaultTextMuted};
+          --text-faint: ${defaultTextFaint};
         }
         body {
           font-family: var(--font-family);
           background-color: var(--bg-page);
           color: var(--text-primary);
+          transition: background-color 0.3s, color 0.3s;
         }
       `}</style>
 
@@ -83,8 +113,8 @@ export default async function ReservarMesaPage({ params }: PageProps) {
         />
 
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <div className="bg-white/5 border border-white/10 p-12 rounded-3xl flex flex-col items-center max-w-lg w-full">
-            <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6" style={{ color: 'var(--primary-color)' }}>
+          <div className="p-12 rounded-3xl flex flex-col items-center max-w-lg w-full" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6" style={{ color: 'var(--primary-color)', backgroundColor: 'var(--bg-page)' }}>
               <CalendarClock className="w-10 h-10" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black uppercase tracking-widest mb-4" style={{ color: 'var(--primary-color)' }}>

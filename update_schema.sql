@@ -26,3 +26,25 @@ ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 -- 5. Crear políticas de seguridad
 CREATE POLICY "Reviews are viewable by everyone." ON public.reviews FOR SELECT USING (true);
 CREATE POLICY "Anyone can insert reviews." ON public.reviews FOR INSERT WITH CHECK (true);
+
+-- 6. Opciones de personalización de Vintage Mode
+-- Crear la tabla settings si no existe
+CREATE TABLE IF NOT EXISTS public.settings (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  business_id uuid REFERENCES public.businesses(id) ON DELETE CASCADE NOT NULL UNIQUE,
+  email text,
+  phone text,
+  whatsapp text,
+  instagram text,
+  facebook text,
+  address text,
+  schedule text,
+  language text DEFAULT 'Español',
+  currency text DEFAULT 'ARS',
+  plan text DEFAULT 'Demo',
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS vintage_color text;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS vintage_color_mode text DEFAULT 'multicolor';
+
