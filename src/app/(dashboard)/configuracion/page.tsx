@@ -29,6 +29,7 @@ export default async function ConfiguracionPage() {
       business={business as Business}
       productsCount={productsCount ?? 0}
       categoriesCount={categoriesCount ?? 0}
+      userEmail={user.email ?? ''}
     />
   );
 }

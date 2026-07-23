@@ -6,32 +6,9 @@ import { StatCard } from '@/components/ui/StatCard';
 import { ChartCard } from '@/components/ui/ChartCard';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { getVisitStatistics } from '@/actions/visits/get-statistics';
 
-// Generate chart data for the last 7 days from actual views
-function getWeekDataFromViews(views: { created_at: string }[]) {
-  const data = [];
-  const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-  
-  // Build the last 7 days array
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    d.setHours(0, 0, 0, 0);
-    const nextD = new Date(d);
-    nextD.setDate(nextD.getDate() + 1);
-
-    const count = views.filter(v => {
-      const vDate = new Date(v.created_at);
-      return vDate >= d && vDate < nextD;
-    }).length;
-
-    data.push({
-      label: days[d.getDay()],
-      value: count,
-    });
-  }
-  return data;
-}
+// Function removed
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -58,30 +35,21 @@ export default async function DashboardPage() {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   sevenDaysAgo.setHours(0, 0, 0, 0);
 
+  const visitStats = await getVisitStatistics(business.id);
+
   const [
     { count: productsCount },
     { count: categoriesCount },
     { data: featuredProducts },
     { data: recentProducts },
     { data: topCategories },
-    { data: recentViews },
   ] = await Promise.all([
     supabase.from('products').select('*', { count: 'exact', head: true }).eq('business_id', business.id),
     supabase.from('categories').select('*', { count: 'exact', head: true }).eq('business_id', business.id),
     supabase.from('products').select('*').eq('business_id', business.id).eq('is_featured', true).limit(3),
     supabase.from('products').select('*, category:categories(name)').eq('business_id', business.id).order('created_at', { ascending: false }).limit(5),
     supabase.from('categories').select('*, products(count)').eq('business_id', business.id).order('item_order').limit(5),
-    supabase.from('business_views').select('created_at').eq('business_id', business.id).gte('created_at', startOfMonth.toISOString()),
   ]);
-
-  const viewsArray = recentViews || [];
-  
-  const escaneosHoy = viewsArray.filter(v => new Date(v.created_at) >= startOfToday).length;
-  const escaneosMes = viewsArray.length; // Already filtered by startOfMonth
-
-  // Filter views for the last 7 days for the chart
-  const weekViews = viewsArray.filter(v => new Date(v.created_at) >= sevenDaysAgo);
-  const chartData = getWeekDataFromViews(weekViews);
 
   return (
     <div>
@@ -117,12 +85,12 @@ export default async function DashboardPage() {
         />
         <StatCard
           title="Escaneos hoy"
-          value={escaneosHoy}
+          value={visitStats.today}
           icon={<Eye className="w-5 h-5 text-emerald-400" />}
         />
         <StatCard
           title="Escaneos del mes"
-          value={escaneosMes}
+          value={visitStats.month}
           icon={<TrendingUp className="w-5 h-5 text-amber-400" />}
         />
       </div>
@@ -131,9 +99,10 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2">
           <ChartCard
-            title="Visitas esta semana"
-            description="Accesos a tu carta pública"
-            data={chartData}
+            title="Visitantes Únicos (Últimos 7 días)"
+            description="Escaneos de QR por usuarios únicos"
+            data={visitStats.chartData}
+            color="#10b981"
           />
         </div>
 

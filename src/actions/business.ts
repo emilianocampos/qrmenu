@@ -92,9 +92,7 @@ export async function updateBusiness(businessId: string, updates: Record<string,
     if (setErr) return { error: setErr.message };
   }
 
-  revalidatePath('/dashboard', 'layout');
-  revalidatePath('/dashboard/configuracion');
-  revalidatePath('/dashboard/personalizacion');
+  revalidatePath('/', 'layout');
 
   return { success: true };
 }

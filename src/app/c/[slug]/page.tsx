@@ -6,6 +6,7 @@ import { MenuSection } from '@/components/public/MenuSection';
 import { AboutSection } from '@/components/public/AboutSection';
 import { ReviewSection } from '@/components/public/ReviewSection';
 import { ViewTracker } from '@/components/public/ViewTracker';
+import { VisitTracker } from '@/components/public/VisitTracker';
 import { PromoModal } from '@/components/public/PromoModal';
 
 interface PageProps {
@@ -123,6 +124,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
           primaryColor={primaryColor}
         />
         <ViewTracker businessId={business.id} />
+        <VisitTracker businessId={business.id} />
 
         <Navbar
           name={business.name}

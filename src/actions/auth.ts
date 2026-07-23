@@ -87,3 +87,18 @@ export async function logout() {
   await supabase.auth.signOut();
   redirect("/");
 }
+
+export async function updateUserCredentials({ email, password }: { email?: string; password?: string }) {
+  const supabase = await createClient();
+  const updates: any = {};
+  if (email) updates.email = email;
+  if (password) updates.password = password;
+
+  const { error } = await supabase.auth.updateUser(updates);
+
+  if (error) {
+    return { error: translateAuthError(error.message) };
+  }
+
+  return { success: true };
+}
