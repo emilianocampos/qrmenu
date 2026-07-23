@@ -23,8 +23,8 @@ export function ProductCard({ product, currencySymbol = '$', layoutStyle = 'grid
         backgroundColor: 'var(--bg-card)',
         borderRadius: 12,
         overflow: 'hidden',
-        border: '1px solid var(--border-color)',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        border: 'none',
+        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4)',
         display: 'flex',
         flexDirection: layoutStyle === 'list' ? 'row' : 'column',
         height: '100%',
@@ -94,7 +94,7 @@ export function ProductCard({ product, currencySymbol = '$', layoutStyle = 'grid
               borderRadius: 9999,
               backgroundColor: 'var(--bg-page)',
               border: '1px solid var(--border-color)',
-              color: 'var(--text-faint)',
+              color: 'var(--text-primary)',
             }}>
               {product.category.name}
             </span>

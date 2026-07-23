@@ -46,6 +46,10 @@ export type Business = {
   visual_density?: string | null;
   vintage_color?: string | null;
   vintage_color_mode?: string | null;
+  promo_active?: boolean;
+  promo_title?: string | null;
+  promo_description?: string | null;
+  promo_image?: string | null;
   created_at: string;
 };
 

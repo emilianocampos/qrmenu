@@ -30,11 +30,12 @@ export function ReviewCard({ review }: ReviewCardProps) {
         padding: '1.5rem',
         borderRadius: 14,
         backgroundColor: 'var(--bg-card)',
-        border: '1px solid var(--border-color)',
-        transition: 'border-color 0.2s',
+        border: 'none',
+        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4)',
+        transition: 'transform 0.2s',
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary-color)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-color)'; }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
         {/* Avatar + Name */}
@@ -60,7 +61,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
                 {review.first_name} {review.last_name}
               </span>
             </div>
-            <p style={{ color: 'var(--text-faint)', fontSize: '0.78rem', margin: '2px 0 0' }}>
+            <p style={{ color: 'var(--text-primary)', fontSize: '0.78rem', margin: '2px 0 0' }}>
               📅 {timeAgo}
             </p>
           </div>
@@ -71,7 +72,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
       </div>
 
       {/* Comment */}
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.6, margin: 0 }}>
+      <p style={{ color: 'var(--text-primary)', fontSize: '0.875rem', lineHeight: 1.6, margin: 0 }}>
         {review.comment}
       </p>
     </div>

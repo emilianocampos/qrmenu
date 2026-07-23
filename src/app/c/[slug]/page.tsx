@@ -6,6 +6,7 @@ import { MenuSection } from '@/components/public/MenuSection';
 import { AboutSection } from '@/components/public/AboutSection';
 import { ReviewSection } from '@/components/public/ReviewSection';
 import { ViewTracker } from '@/components/public/ViewTracker';
+import { PromoModal } from '@/components/public/PromoModal';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -34,7 +35,6 @@ export default async function PublicMenuPage({ params }: PageProps) {
 
   const primaryColor = business.color_primary || '#f97316';
   const primaryColorRgb = hexToRgb(primaryColor);
-  const textColor = business.color_secondary || '#f1f5f9';
   const customBg = business.background_color;
   const theme = business.theme || 'dark';
 
@@ -42,25 +42,25 @@ export default async function PublicMenuPage({ params }: PageProps) {
   let defaultCard = '#111827';
   let defaultCardHover = '#151d2e';
   let defaultNav = 'rgba(10, 14, 26, 0.9)';
-  let defaultBorder = '#1e2d45';
-  let defaultText = textColor;
-  let defaultTextMuted = `${textColor}b3`;
-  let defaultTextFaint = `${textColor}80`;
+  let defaultBorder = '#000000';
+  let defaultText = '#f1f5f9';
+  let defaultTextMuted = '#94a3b8';
+  let defaultTextFaint = '#64748b';
 
   if (theme === 'light') {
     defaultBg = '#f8fafc';
     defaultCard = '#ffffff';
     defaultCardHover = '#f1f5f9';
     defaultNav = 'rgba(248, 250, 252, 0.9)';
-    defaultBorder = '#e2e8f0';
+    defaultBorder = '#000000';
     defaultText = '#0f172a';
     defaultTextMuted = '#475569';
     defaultTextFaint = '#94a3b8';
-  } else if (theme === 'custom' && customBg) {
+  }
+
+  // customBg applies only to the main background, leaving cards as they are
+  if (customBg) {
     defaultBg = customBg;
-    defaultCard = `${customBg}ee`;
-    defaultCardHover = `${customBg}dd`;
-    defaultNav = `${customBg}f0`;
   }
 
   const fontName = business.typography || 'Inter';
@@ -114,6 +114,14 @@ export default async function PublicMenuPage({ params }: PageProps) {
       `}</style>
 
       <div style={{ backgroundColor: 'var(--bg-page)', minHeight: '100vh', color: 'var(--text-primary)' }}>
+        <PromoModal
+          businessId={business.id}
+          active={business.promo_active || false}
+          title={business.promo_title || null}
+          description={business.promo_description || null}
+          imageUrl={business.promo_image || null}
+          primaryColor={primaryColor}
+        />
         <ViewTracker businessId={business.id} />
 
         <Navbar
@@ -154,12 +162,18 @@ export default async function PublicMenuPage({ params }: PageProps) {
               {business.logo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
+                  id="banner-logo"
                   src={business.logo_url}
                   alt={business.name}
+                  className="transition-transform duration-500 hover:rotate-[360deg] hover:scale-105 cursor-pointer"
                   style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--primary-color)', backgroundColor: 'var(--bg-card)', flexShrink: 0 }}
                 />
               ) : (
-                <div style={{ width: 100, height: 100, borderRadius: '50%', backgroundColor: 'var(--bg-card)', border: '3px solid var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, flexShrink: 0 }}>
+                <div 
+                  id="banner-logo"
+                  className="transition-transform duration-500 hover:rotate-[360deg] hover:scale-105 cursor-pointer"
+                  style={{ width: 100, height: 100, borderRadius: '50%', backgroundColor: 'var(--bg-card)', border: '3px solid var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, flexShrink: 0 }}
+                >
                   🍽️
                 </div>
               )}
@@ -193,13 +207,6 @@ export default async function PublicMenuPage({ params }: PageProps) {
             businessName={business.name}
           />
         </main>
-
-        {/* Footer */}
-        <footer style={{ borderTop: '1px solid var(--border-color)', padding: '2rem 1.5rem', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-faint)', fontSize: '0.75rem' }}>
-            &copy; {new Date().getFullYear()} {business.name} · Desarrollado con <span style={{ color: 'var(--primary-color)' }}>Carta QR</span>
-          </p>
-        </footer>
       </div>
     </>
   );

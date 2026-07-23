@@ -61,9 +61,9 @@ export function ReviewDialog({ open, onClose, businessId, onSubmitSuccess }: Rev
     boxSizing: 'border-box',
     padding: '12px 14px',
     borderRadius: 10,
-    backgroundColor: '#0a0e1a',
-    border: '1px solid #1e2d45',
-    color: '#f1f5f9',
+    backgroundColor: 'var(--bg-page)',
+    border: '1px solid var(--border-color)',
+    color: 'var(--text-primary)',
     fontSize: '0.875rem',
     outline: 'none',
     fontFamily: 'inherit',
@@ -72,7 +72,7 @@ export function ReviewDialog({ open, onClose, businessId, onSubmitSuccess }: Rev
 
   const labelStyle: React.CSSProperties = {
     display: 'block',
-    color: '#94a3b8',
+    color: 'var(--text-muted)',
     fontSize: '0.82rem',
     fontWeight: 600,
     marginBottom: 6,
@@ -93,28 +93,29 @@ export function ReviewDialog({ open, onClose, businessId, onSubmitSuccess }: Rev
       slotProps={{
         paper: {
           style: {
-            backgroundColor: '#111827',
-            border: '1px solid #1e2d45',
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
             borderRadius: 16,
-            color: '#f1f5f9',
+            color: 'var(--text-primary)',
+            backgroundImage: 'none',
           }
         }
       }}
     >
       <form onSubmit={handleSubmit}>
         <DialogTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px 8px' }}>
-          <span style={{ fontWeight: 800, fontSize: '1.25rem', color: '#f1f5f9' }}>Escribir una reseña</span>
+          <span style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-primary)' }}>Escribir una reseña</span>
           <button
             type="button"
             onClick={handleClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4b6075', padding: 4, display: 'flex' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex' }}
           >
             <X className="w-5 h-5" />
           </button>
         </DialogTitle>
 
         <DialogContent style={{ padding: '8px 24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0 }}>
             Contanos tu experiencia. Tu opinión ayuda a otros clientes.
           </p>
 
@@ -130,11 +131,11 @@ export function ReviewDialog({ open, onClose, businessId, onSubmitSuccess }: Rev
             <div>
               <label style={labelStyle}>Nombre *</label>
               <input
-                style={{ ...inputStyle, borderColor: errors.first_name ? '#f87171' : '#1e2d45' }}
+                style={{ ...inputStyle, borderColor: errors.first_name ? '#f87171' : 'var(--border-color)' }}
                 value={form.first_name}
                 onChange={e => { setForm(f => ({ ...f, first_name: e.target.value })); setErrors(er => ({ ...er, first_name: '' })); }}
                 onFocus={e => { e.target.style.borderColor = 'var(--primary-color, #f97316)'; }}
-                onBlur={e => { e.target.style.borderColor = errors.first_name ? '#f87171' : '#1e2d45'; }}
+                onBlur={e => { e.target.style.borderColor = errors.first_name ? '#f87171' : 'var(--border-color)'; }}
                 disabled={isPending}
                 placeholder="Juan"
               />
@@ -143,11 +144,11 @@ export function ReviewDialog({ open, onClose, businessId, onSubmitSuccess }: Rev
             <div>
               <label style={labelStyle}>Apellido *</label>
               <input
-                style={{ ...inputStyle, borderColor: errors.last_name ? '#f87171' : '#1e2d45' }}
+                style={{ ...inputStyle, borderColor: errors.last_name ? '#f87171' : 'var(--border-color)' }}
                 value={form.last_name}
                 onChange={e => { setForm(f => ({ ...f, last_name: e.target.value })); setErrors(er => ({ ...er, last_name: '' })); }}
                 onFocus={e => { e.target.style.borderColor = 'var(--primary-color, #f97316)'; }}
-                onBlur={e => { e.target.style.borderColor = errors.last_name ? '#f87171' : '#1e2d45'; }}
+                onBlur={e => { e.target.style.borderColor = errors.last_name ? '#f87171' : 'var(--border-color)'; }}
                 disabled={isPending}
                 placeholder="García"
               />
@@ -159,11 +160,11 @@ export function ReviewDialog({ open, onClose, businessId, onSubmitSuccess }: Rev
           <div>
             <label style={labelStyle}>Comentario *</label>
             <textarea
-              style={{ ...inputStyle, minHeight: 100, resize: 'vertical', borderColor: errors.comment ? '#f87171' : '#1e2d45' }}
+              style={{ ...inputStyle, minHeight: 100, resize: 'vertical', borderColor: errors.comment ? '#f87171' : 'var(--border-color)' }}
               value={form.comment}
               onChange={e => { setForm(f => ({ ...f, comment: e.target.value })); setErrors(er => ({ ...er, comment: '' })); }}
               onFocus={e => { e.target.style.borderColor = 'var(--primary-color, #f97316)'; }}
-              onBlur={e => { e.target.style.borderColor = errors.comment ? '#f87171' : '#1e2d45'; }}
+              onBlur={e => { e.target.style.borderColor = errors.comment ? '#f87171' : 'var(--border-color)'; }}
               disabled={isPending}
               placeholder="Contanos tu experiencia..."
             />
@@ -186,9 +187,9 @@ export function ReviewDialog({ open, onClose, businessId, onSubmitSuccess }: Rev
               flex: 1,
               padding: '12px',
               borderRadius: 10,
-              backgroundColor: '#0a0e1a',
-              border: '1px solid #1e2d45',
-              color: '#94a3b8',
+              backgroundColor: 'var(--bg-page)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-muted)',
               fontWeight: 600,
               fontSize: '0.9rem',
               cursor: 'pointer',

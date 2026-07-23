@@ -54,7 +54,6 @@ export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'gri
       style={{
         scrollMarginTop: 80,
         padding: '2.5rem 0',
-        borderBottom: '1px solid #1e2d45',
       }}
     >
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem' }}>
@@ -83,19 +82,20 @@ export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'gri
               gap: '8px',
               padding: '6px 16px',
               borderRadius: '8px',
-              border: selectedCategoryId === null ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
+              border: 'none',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               fontWeight: 600,
               fontSize: '0.9rem',
               backgroundColor: selectedCategoryId === null ? 'var(--primary-color)' : 'var(--bg-card)',
-              color: selectedCategoryId === null ? '#fff' : 'var(--text-muted)',
+              color: selectedCategoryId === null ? '#fff' : 'var(--text-primary)',
               transition: 'background-color 0.2s',
             }}
           >
             Todo
             <span style={{ 
-              backgroundColor: selectedCategoryId === null ? 'rgba(255,255,255,0.2)' : 'var(--border-color)', 
+              backgroundColor: selectedCategoryId === null ? 'rgba(255,255,255,0.2)' : 'rgba(128, 128, 128, 0.15)', 
               color: selectedCategoryId === null ? '#fff' : 'var(--text-primary)',
               padding: '2px 8px', 
               borderRadius: '12px', 
@@ -115,19 +115,20 @@ export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'gri
                 gap: '8px',
                 padding: '6px 16px',
                 borderRadius: '8px',
-                border: selectedCategoryId === cat.id ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
+                border: 'none',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 fontWeight: 600,
                 fontSize: '0.9rem',
                 backgroundColor: selectedCategoryId === cat.id ? 'var(--primary-color)' : 'var(--bg-card)',
-                color: selectedCategoryId === cat.id ? '#fff' : 'var(--text-muted)',
+                color: selectedCategoryId === cat.id ? '#fff' : 'var(--text-primary)',
                 transition: 'background-color 0.2s',
               }}
             >
               {cat.name}
               <span style={{ 
-                backgroundColor: selectedCategoryId === cat.id ? 'rgba(255,255,255,0.2)' : 'var(--border-color)', 
+                backgroundColor: selectedCategoryId === cat.id ? 'rgba(255,255,255,0.2)' : 'rgba(128, 128, 128, 0.15)', 
                 color: selectedCategoryId === cat.id ? '#fff' : 'var(--text-primary)',
                 padding: '2px 8px', 
                 borderRadius: '12px', 

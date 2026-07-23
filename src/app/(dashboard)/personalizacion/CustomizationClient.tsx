@@ -42,6 +42,10 @@ export function CustomizationClient({ business }: { business: Business }) {
     background_color: business.background_color || '',
     vintage_color_mode: business.vintage_color_mode || 'multicolor',
     vintage_color: business.vintage_color || '#ff4500',
+    promo_active: business.promo_active || false,
+    promo_title: business.promo_title || '',
+    promo_description: business.promo_description || '',
+    promo_image: business.promo_image || '',
   });
 
   const handleDesignApplied = () => {
@@ -57,6 +61,9 @@ export function CustomizationClient({ business }: { business: Business }) {
 
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(business.banner_image);
+
+  const [promoFile, setPromoFile] = useState<File | null>(null);
+  const [promoPreview, setPromoPreview] = useState<string | null>(business.promo_image || null);
 
   const [uploading, setUploading] = useState(false);
 
@@ -81,6 +88,13 @@ export function CustomizationClient({ business }: { business: Business }) {
     reader.readAsDataURL(file);
   };
 
+  const handlePromoSelect = (file: File) => {
+    setPromoFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setPromoPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handleSave = () => {
     setError(null);
     setSaved(false);
@@ -89,6 +103,7 @@ export function CustomizationClient({ business }: { business: Business }) {
       let logoUrl = form.logo_url;
       let coverUrl = form.cover_image;
       let bannerUrl = form.banner_image;
+      let promoUrl = form.promo_image;
 
       setUploading(true);
       const supabase = createClient();
@@ -120,6 +135,14 @@ export function CustomizationClient({ business }: { business: Business }) {
           const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path);
           bannerUrl = publicUrl;
         }
+        if (promoFile) {
+          const ext = promoFile.name.split('.').pop();
+          const path = `${business.id}/promo_${Date.now()}.${ext}`;
+          const { error: uploadErr } = await supabase.storage.from('promotions').upload(path, promoFile, { upsert: true });
+          if (uploadErr) throw new Error('Error al subir promo: ' + uploadErr.message);
+          const { data: { publicUrl } } = supabase.storage.from('promotions').getPublicUrl(path);
+          promoUrl = publicUrl;
+        }
       } catch (err: any) {
         setError(err.message || 'Error al subir archivos');
         setUploading(false);
@@ -149,6 +172,10 @@ export function CustomizationClient({ business }: { business: Business }) {
         background_color: form.background_color || null,
         vintage_color_mode: form.vintage_color_mode,
         vintage_color: form.vintage_color,
+        promo_active: form.promo_active,
+        promo_title: form.promo_title || null,
+        promo_description: form.promo_description || null,
+        promo_image: promoUrl || null,
       });
 
       if (result.error) {
@@ -315,7 +342,6 @@ export function CustomizationClient({ business }: { business: Business }) {
             <div className="pt-4 border-t border-white/10 space-y-5">
               <h3 className="text-sm font-semibold text-white">Colores</h3>
               <ColorPicker label="Color principal" value={form.color_primary} onChange={v => setForm(f => ({ ...f, color_primary: v }))} />
-              <ColorPicker label="Color de texto" value={form.color_secondary} onChange={v => setForm(f => ({ ...f, color_secondary: v }))} />
             </div>
           </div>
 
@@ -504,6 +530,62 @@ export function CustomizationClient({ business }: { business: Business }) {
             </div>
           </div>
 
+          {/* Promotions Section */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1">Promociones (Pop-up)</h3>
+                <p className="text-xs text-gray-400">Mostrá una promo destacada cuando el cliente entra a tu carta.</p>
+              </div>
+              <label className="flex items-center cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={form.promo_active || false}
+                    onChange={(e) => setForm(f => ({ ...f, promo_active: e.target.checked }))}
+                  />
+                  <div className={`block w-10 h-6 rounded-full transition-colors ${form.promo_active ? 'bg-indigo-500' : 'bg-gray-600'}`}></div>
+                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${form.promo_active ? 'transform translate-x-4' : ''}`}></div>
+                </div>
+              </label>
+            </div>
+            
+            {form.promo_active && (
+              <div className="space-y-5 animate-in fade-in slide-in-from-top-2 duration-300 border-t border-white/10 pt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Título de la Promoción</label>
+                  <input
+                    value={form.promo_title || ''}
+                    onChange={e => setForm(f => ({ ...f, promo_title: e.target.value }))}
+                    placeholder="Ej: ¡2x1 en Pintas!"
+                    className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Descripción (Opcional)</label>
+                  <textarea
+                    value={form.promo_description || ''}
+                    onChange={e => setForm(f => ({ ...f, promo_description: e.target.value }))}
+                    placeholder="Ej. Todos los martes de 18:00 a 20:30 hs presentá este cartel en la caja."
+                    rows={3}
+                    className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Imagen de la Promo (Opcional)</label>
+                  <UploadDropzone
+                    accept="image/*"
+                    onFileSelect={handlePromoSelect}
+                    preview={promoPreview}
+                    onClear={() => { setPromoPreview(null); setPromoFile(null); setForm(f => ({ ...f, promo_image: '' })); }}
+                    loading={uploading || isPending}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           {error && (
             <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-sm">{error}</div>
           )}
@@ -530,15 +612,16 @@ export function CustomizationClient({ business }: { business: Business }) {
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-4">Vista previa en tiempo real</p>
             <div
-              className="rounded-xl overflow-hidden border border-white/10 shadow-2xl transition-all duration-300"
+              className="rounded-xl overflow-hidden shadow-2xl transition-all duration-300 relative"
               style={{
-                backgroundColor: '#0a0e1a',
-                fontFamily: form.typography,
-                color: form.color_secondary || '#f3f4f6',
+                backgroundColor: form.background_color || (form.theme === 'light' ? '#f8fafc' : '#0a0e1a'),
+                fontFamily: `"${form.typography || 'Inter'}", sans-serif`,
+                color: form.theme === 'light' ? '#0f172a' : '#f3f4f6'
               }}
             >
+              <style>{`@import url('https://fonts.googleapis.com/css2?family=${(form.typography || 'Inter').replace(/ /g, '+')}:wght@300;400;500;600;700;800;900&display=swap');`}</style>
               {/* Navigation Preview */}
-              <div className="px-6 py-3 border-b text-xs flex justify-between items-center opacity-70 border-white/10" style={{ backgroundColor: '#111827' }}>
+              <div className="px-6 py-3 text-xs flex justify-between items-center opacity-70 shadow-sm" style={{ backgroundColor: form.theme === 'light' ? 'rgba(248, 250, 252, 0.9)' : '#111827' }}>
                 <span className="font-semibold" style={{ color: form.color_primary }}>{form.name || 'Logo'}</span>
                 <div className="flex gap-4">
                   <span>Menú</span>
@@ -548,7 +631,7 @@ export function CustomizationClient({ business }: { business: Business }) {
 
               {/* Preview Simple Header */}
               {form.banner_image !== 'none' && (
-                <div className="relative flex flex-col items-center text-center gap-2 p-6 bg-transparent border-b border-white/10"
+                <div className="relative flex flex-col items-center text-center gap-2 p-6 bg-transparent"
                   style={{ minHeight: (bannerPreview || (form.banner_image && form.banner_image !== 'none')) ? '160px' : 'auto' }}>
                   {(bannerPreview || (form.banner_image && form.banner_image !== 'none')) && (
                     <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${bannerPreview || form.banner_image})` }}>
@@ -558,9 +641,9 @@ export function CustomizationClient({ business }: { business: Business }) {
                   <div className="relative z-10 flex flex-col items-center">
                     {logoPreview ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={logoPreview} alt="Logo" className="w-16 h-16 rounded-full object-cover border-2 bg-transparent" style={{ borderColor: form.color_primary }} />
+                      <img src={logoPreview} alt="Logo" className="w-16 h-16 rounded-full object-cover shadow-sm bg-transparent" style={{ border: `2px solid ${form.color_primary}` }} />
                     ) : (
-                      <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl border-2" style={{ borderColor: form.color_primary, backgroundColor: '#111827' }}>
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl shadow-sm" style={{ border: `2px solid ${form.color_primary}`, backgroundColor: '#111827' }}>
                         🍽️
                       </div>
                     )}
@@ -590,19 +673,19 @@ export function CustomizationClient({ business }: { business: Business }) {
                       <div className="space-y-2 px-1">
                         <div className="flex flex-col">
                           <div className="flex items-end justify-between gap-1 w-full">
-                            <span className="text-white font-bold text-[9px] uppercase tracking-wide shrink-0">Café Especial</span>
-                            <div className="flex-grow border-b border-dotted border-gray-600 mb-[4px] opacity-40 shrink mx-1" />
-                            <span className="text-white font-bold text-[9px] shrink-0">$3.50</span>
+                            <span className="font-bold text-[9px] uppercase tracking-wide shrink-0">Café Especial</span>
+                            <div className="flex-grow border-b border-dotted mb-[4px] opacity-40 shrink mx-1" style={{ borderColor: 'currentColor' }} />
+                            <span className="font-bold text-[9px] shrink-0">$3.50</span>
                           </div>
-                          <p className="text-gray-400 text-[7px] mt-0.5 leading-snug">Doble shot de espresso con leche cremosa.</p>
+                          <p className="text-[7px] mt-0.5 leading-snug" style={{ opacity: 0.7 }}>Doble shot de espresso con leche cremosa.</p>
                         </div>
                         <div className="flex flex-col">
                           <div className="flex items-end justify-between gap-1 w-full">
-                            <span className="text-white font-bold text-[9px] uppercase tracking-wide shrink-0">Tostado</span>
-                            <div className="flex-grow border-b border-dotted border-gray-600 mb-[4px] opacity-40 shrink mx-1" />
-                            <span className="text-white font-bold text-[9px] shrink-0">$4.00</span>
+                            <span className="font-bold text-[9px] uppercase tracking-wide shrink-0">Tostado</span>
+                            <div className="flex-grow border-b border-dotted mb-[4px] opacity-40 shrink mx-1" style={{ borderColor: 'currentColor' }} />
+                            <span className="font-bold text-[9px] shrink-0">$4.00</span>
                           </div>
-                          <p className="text-gray-400 text-[7px] mt-0.5 leading-snug">Pan de masamadre con jamón y queso.</p>
+                          <p className="text-[7px] mt-0.5 leading-snug" style={{ opacity: 0.7 }}>Pan de masamadre con jamón y queso.</p>
                         </div>
                       </div>
                     </div>
@@ -610,10 +693,11 @@ export function CustomizationClient({ business }: { business: Business }) {
                     <div className={form.layout_style === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-2'}>
                       {/* Mini Card 1 */}
                       <div
-                        className={`rounded-lg overflow-hidden border flex ${form.layout_style === 'list' ? 'flex-row items-center h-20' : 'flex-col'}`}
+                        className={`rounded-lg overflow-hidden flex ${form.layout_style === 'list' ? 'flex-row items-center h-20' : 'flex-col'}`}
                         style={{
-                          backgroundColor: '#111827',
-                          borderColor: '#1e2d45',
+                          backgroundColor: form.theme === 'light' ? '#ffffff' : '#111827',
+                          border: 'none',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
                         }}
                       >
                         {form.layout_style !== 'list' && (
@@ -630,7 +714,7 @@ export function CustomizationClient({ business }: { business: Business }) {
                           <div className="mt-auto flex justify-start">
                             <span className="text-[7px] px-2 py-0.5 rounded-full" style={{
                               backgroundColor: 'rgba(255,255,255,0.1)',
-                              color: '#cbd5e1'
+                              color: form.theme === 'light' ? '#0f172a' : '#f3f4f6'
                             }}>
                               Cafetería
                             </span>
@@ -639,10 +723,11 @@ export function CustomizationClient({ business }: { business: Business }) {
                       </div>
                       {/* Mini Card 2 */}
                       <div
-                        className={`rounded-lg overflow-hidden border flex ${form.layout_style === 'list' ? 'flex-row items-center h-20' : 'flex-col'}`}
+                        className={`rounded-lg overflow-hidden flex ${form.layout_style === 'list' ? 'flex-row items-center h-20' : 'flex-col'}`}
                         style={{
-                          backgroundColor: '#111827',
-                          borderColor: '#1e2d45',
+                          backgroundColor: form.theme === 'light' ? '#ffffff' : '#111827',
+                          border: 'none',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
                         }}
                       >
                         {form.layout_style !== 'list' && (

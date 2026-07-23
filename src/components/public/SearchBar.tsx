@@ -37,7 +37,7 @@ export function SearchBar({ value, onChange, placeholder = 'Search menu items...
           paddingBottom: 12,
           borderRadius: 8,
           backgroundColor: 'var(--bg-card)',
-          border: '1px solid var(--border-color)',
+          border: 'none',
           color: 'var(--text-primary)',
           fontSize: '0.9rem',
           outline: 'none',

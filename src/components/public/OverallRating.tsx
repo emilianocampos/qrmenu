@@ -26,11 +26,12 @@ export function OverallRating({ reviews }: OverallRatingProps) {
       padding: '1.5rem',
       borderRadius: 14,
       backgroundColor: 'var(--bg-card)',
-      border: '1px solid var(--border-color)',
+      border: 'none',
+      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4)',
       position: 'sticky',
       top: 90,
     }}>
-      <p style={{ color: 'var(--text-faint)', fontSize: '0.8rem', fontWeight: 700, margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <p style={{ color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 700, margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         Overall Rating
       </p>
 
@@ -42,18 +43,23 @@ export function OverallRating({ reviews }: OverallRatingProps) {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
           <StarRating rating={Math.round(average)} size="md" />
         </div>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>
+        <p style={{ color: 'var(--text-primary)', fontSize: '0.8rem', margin: 0 }}>
           Basado en {count} {count === 1 ? 'reseña' : 'reseñas'}
         </p>
       </div>
 
       {/* Distribution bars */}
-      <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{
+        height: '1px',
+        background: 'linear-gradient(90deg, transparent, var(--border-color), transparent)',
+        margin: '20px 0 16px',
+      }} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {[5, 4, 3, 2, 1].map(star => {
           const pct = getPercentage(distribution[star]);
           return (
             <div key={star} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.8rem' }}>
-              <span style={{ color: 'var(--text-faint)', width: 20, textAlign: 'right', flexShrink: 0 }}>{star}★</span>
+              <span style={{ color: 'var(--text-primary)', width: 20, textAlign: 'right', flexShrink: 0 }}>{star}★</span>
               <div style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: 'var(--bg-page)', overflow: 'hidden' }}>
                 <div style={{
                   height: '100%',
@@ -63,7 +69,7 @@ export function OverallRating({ reviews }: OverallRatingProps) {
                   transition: 'width 0.6s ease',
                 }} />
               </div>
-              <span style={{ color: 'var(--text-muted)', width: 32, textAlign: 'right', flexShrink: 0 }}>{distribution[star]}</span>
+              <span style={{ color: 'var(--text-primary)', width: 32, textAlign: 'right', flexShrink: 0 }}>{distribution[star]}</span>
             </div>
           );
         })}

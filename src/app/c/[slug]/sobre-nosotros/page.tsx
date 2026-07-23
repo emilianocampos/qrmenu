@@ -30,7 +30,6 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
 
   const primaryColor = business.color_primary || '#f97316';
   const primaryColorRgb = hexToRgb(primaryColor);
-  const textColor = business.color_secondary || '#f1f5f9';
   const customBg = business.background_color;
   const theme = business.theme || 'dark';
 
@@ -38,10 +37,10 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
   let defaultCard = '#111827';
   let defaultCardHover = '#151d2e';
   let defaultNav = 'rgba(10, 14, 26, 0.9)';
-  let defaultBorder = '#1e2d45';
-  let defaultText = textColor;
-  let defaultTextMuted = `${textColor}b3`;
-  let defaultTextFaint = `${textColor}80`;
+  let defaultBorder = '#000000';
+  let defaultText = '#f1f5f9';
+  let defaultTextMuted = '#94a3b8';
+  let defaultTextFaint = '#64748b';
 
   if (theme === 'light') {
     defaultBg = '#f8fafc';

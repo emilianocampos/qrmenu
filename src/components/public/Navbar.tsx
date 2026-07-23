@@ -9,6 +9,7 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import Box from '@mui/material/Box';
+import { TourGuide } from './TourGuide';
 
 interface NavbarProps {
   name: string;
@@ -62,7 +63,8 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
     left: 0,
     right: 0,
     zIndex: 50,
-    borderBottom: '1px solid var(--border-color)',
+    borderBottom: 'none',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
     backgroundColor: 'var(--bg-navbar)',
     backdropFilter: 'blur(12px)',
     WebkitBackdropFilter: 'blur(12px)',
@@ -70,6 +72,7 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
 
   return (
     <>
+      <TourGuide />
       <nav style={navStyle}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Logo + Name */}
@@ -98,6 +101,7 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
             {navItems.map(item => (
               <button
                 key={item.id}
+                id={`nav-${item.id}`}
                 onClick={() => handleNav(item)}
                 style={{
                   background: 'none',
@@ -136,7 +140,7 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            <IconButton onClick={() => setMobileOpen(true)} style={{ color: 'var(--text-muted)' }}>
+            <IconButton id="hamburger-menu-btn" onClick={() => setMobileOpen(true)} style={{ color: 'var(--text-muted)' }} className="transition-transform duration-300 hover:rotate-90 active:scale-90">
               <Menu className="w-5 h-5" />
             </IconButton>
           </div>
@@ -183,6 +187,11 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
               </ListItem>
             ))}
           </List>
+          <div style={{ marginTop: 'auto', paddingTop: '2rem', textAlign: 'center' }}>
+            <p style={{ color: 'var(--text-faint)', fontSize: '0.75rem' }}>
+              &copy; {new Date().getFullYear()} {name} · Desarrollado con <span style={{ color: 'var(--primary-color)' }}>Carta QR</span>
+            </p>
+          </div>
         </Box>
       </Drawer>
     </>

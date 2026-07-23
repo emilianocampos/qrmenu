@@ -31,10 +31,15 @@ export function ReviewSection({ businessId, initialReviews, businessName }: Revi
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ height: '1px', width: '80px', background: 'linear-gradient(90deg, transparent, var(--primary-color))', opacity: 0.7 }} />
+            <span style={{ color: 'var(--primary-color)', fontSize: '0.9rem' }}>✦</span>
+            <div style={{ height: '1px', width: '80px', background: 'linear-gradient(270deg, transparent, var(--primary-color))', opacity: 0.7 }} />
+          </div>
           <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '2rem', margin: '0 0 12px' }}>
             Opiniones de Clientes
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', maxWidth: 560, margin: '0 auto 24px', lineHeight: 1.6 }}>
+          <p style={{ color: 'var(--text-primary)', fontSize: '1rem', maxWidth: 560, margin: '0 auto 24px', lineHeight: 1.6 }}>
             Conocé la experiencia de nuestros clientes en {businessName}.
           </p>
           <button
@@ -84,13 +89,14 @@ export function ReviewSection({ businessId, initialReviews, businessName }: Revi
                 textAlign: 'center',
                 borderRadius: 14,
                 backgroundColor: 'var(--bg-card)',
-                border: '1px solid var(--border-color)',
+                border: 'none',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4)',
               }}>
                 <span style={{ fontSize: 36, display: 'block', marginBottom: 12 }}>💬</span>
                 <h3 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '1rem', margin: '0 0 8px' }}>
                   Aún no hay reseñas
                 </h3>
-                <p style={{ color: 'var(--text-faint)', fontSize: '0.875rem', margin: '0 0 20px' }}>
+                <p style={{ color: 'var(--text-primary)', fontSize: '0.875rem', margin: '0 0 20px' }}>
                   ¡Sé el primero en opinar sobre {businessName}!
                 </p>
                 <button
