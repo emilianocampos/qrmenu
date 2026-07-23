@@ -39,6 +39,7 @@ export function CustomizationClient({ business }: { business: Business }) {
     phone: business.phone || business.whatsapp || '',
     email: business.email || '',
     schedule: business.schedule || '',
+    background_color: business.background_color || '',
     vintage_color_mode: business.vintage_color_mode || 'multicolor',
     vintage_color: business.vintage_color || '#ff4500',
   });
@@ -145,6 +146,7 @@ export function CustomizationClient({ business }: { business: Business }) {
         phone: form.phone || null,
         email: form.email || null,
         schedule: form.schedule || null,
+        background_color: form.background_color || null,
         vintage_color_mode: form.vintage_color_mode,
         vintage_color: form.vintage_color,
       });
