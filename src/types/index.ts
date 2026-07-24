@@ -51,6 +51,7 @@ export type Business = {
   promo_description?: string | null;
   promo_image?: string | null;
   created_at: string;
+  trial_enabled?: boolean;
 };
 
 export type Category = {

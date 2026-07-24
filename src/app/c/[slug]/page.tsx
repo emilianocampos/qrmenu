@@ -28,6 +28,27 @@ export default async function PublicMenuPage({ params }: PageProps) {
   const { data: business, error } = await getBusinessBySlug(slug);
   if (error || !business) notFound();
 
+  // Verificación de acceso por módulo Super Admin (Trial)
+  if (business.trial_enabled === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0e1a] text-white p-4">
+        <div className="max-w-md w-full bg-[#111827] border border-white/10 rounded-2xl p-8 text-center shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-50" />
+          <h1 className="text-2xl font-bold mb-4">Esta carta ya no se encuentra disponible.</h1>
+          <p className="text-gray-400 mb-8">
+            Si sos el propietario del negocio, iniciá sesión para administrar tu cuenta y regularizar tu estado.
+          </p>
+          <a 
+            href="/login" 
+            className="inline-block bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg shadow-indigo-500/25"
+          >
+            Iniciar sesión
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   const { data: products = [] } = await getProducts(business.id);
   const { data: reviews = [] } = await getReviews(business.id);
 
