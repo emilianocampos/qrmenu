@@ -1,6 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { encrypt } from '@/lib/super-admin-auth';
 
 export async function loginSuperAdmin(formData: FormData) {
@@ -34,8 +35,8 @@ export async function loginSuperAdmin(formData: FormData) {
   }
 }
 
-export async function logoutSuperAdmin() {
+export async function logoutSuperAdmin(formData?: FormData) {
   const cookieStore = await cookies();
   cookieStore.delete('super_admin_session');
-  return { success: true };
+  redirect('/super-admin/login');
 }
