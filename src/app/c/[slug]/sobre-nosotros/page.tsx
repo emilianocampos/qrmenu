@@ -21,7 +21,7 @@ function hexToRgb(hex: string): string {
 export default async function SobreNosotrosPage({ params }: PageProps) {
   const { slug } = await params;
   const { data: business, error } = await getBusinessBySlug(slug);
-  
+
   if (error || !business) notFound();
 
   const { data: reviews = [] } = await getReviews(business.id);
@@ -60,8 +60,8 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
 
   const fontName = business.typography || 'Inter';
   const hasAbout = !!(
-    business.about_title || 
-    business.about_description || 
+    business.about_title ||
+    business.about_description ||
     business.cover_image ||
     business.slogan ||
     business.address ||
@@ -121,7 +121,7 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
         />
 
         <main className="max-w-5xl mx-auto px-6 py-16 space-y-16">
-          
+
           {/* Header Title & Slogan */}
           <div className="text-center space-y-4 max-w-3xl mx-auto">
             <h1 className="text-4xl md:text-5xl font-extrabold" style={{ color: 'var(--text-primary)' }}>
@@ -160,7 +160,7 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
                   <p className="text-sm md:text-base text-[var(--text-muted)] italic">Historia aún no agregada.</p>
                 )}
               </div>
-              
+
               {/* Stats Cards */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
@@ -186,14 +186,14 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
             <div className="text-center">
               <h2 className="text-2xl font-bold">Visítanos</h2>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="rounded-2xl p-8 flex flex-col items-center text-center space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                 <MapPin className="w-8 h-8" style={{ color: 'var(--primary-color)' }} />
                 <h3 className="font-bold text-lg">Dirección</h3>
                 <p className="text-sm text-[var(--text-muted)] whitespace-pre-wrap">{business.address || 'No especificada'}</p>
               </div>
-              
+
               <div className="rounded-2xl p-8 flex flex-col items-center text-center space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                 <Phone className="w-8 h-8" style={{ color: 'var(--primary-color)' }} />
                 <h3 className="font-bold text-lg">Teléfono</h3>
@@ -233,7 +233,7 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
         {/* Footer */}
         <footer style={{ borderTop: '1px solid var(--border-color)', padding: '2rem 1.5rem', textAlign: 'center' }}>
           <p style={{ color: 'var(--text-faint)', fontSize: '0.75rem' }}>
-            &copy; {new Date().getFullYear()} {business.name} · Desarrollado con <span style={{ color: 'var(--primary-color)' }}>Carta QR</span>
+            &copy; {new Date().getFullYear()} {business.name} · Desarrollado con <span style={{ color: 'var(--primary-color)' }}>MambaQR</span>
           </p>
         </footer>
       </div>

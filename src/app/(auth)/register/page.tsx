@@ -1,6 +1,6 @@
 import { signup } from "@/actions/auth";
 import Link from "next/link";
-import { Store } from "lucide-react";
+import { QrCode } from "lucide-react";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
 export default async function RegisterPage(props: { searchParams: Promise<{ message?: string }> }) {
@@ -9,8 +9,10 @@ export default async function RegisterPage(props: { searchParams: Promise<{ mess
   return (
     <div className="w-full max-w-md bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md my-8">
       <div className="flex justify-center mb-6">
-        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-          <Store className="w-6 h-6 text-indigo-400" />
+        <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
+          <QrCode className="absolute inset-0 m-auto w-12 h-12 text-indigo-500/30 rotate-45" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/mambaqr.png" alt="MambaQR" className="w-24 h-24 object-contain z-10 relative drop-shadow-md" />
         </div>
       </div>
       

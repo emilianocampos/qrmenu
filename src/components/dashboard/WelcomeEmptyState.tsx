@@ -23,13 +23,14 @@ export function WelcomeEmptyState() {
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
         <div className="max-w-lg w-full text-center">
           {/* Icon */}
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-violet-600/20 border border-indigo-500/20
-                          flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-indigo-500/10">
-            <span className="text-4xl">🍽️</span>
+          <div className="relative w-48 h-48 flex items-center justify-center mx-auto mb-10 mt-6">
+            <QrCode className="absolute inset-0 m-auto w-24 h-24 text-indigo-500/20 rotate-45" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/mambaqr.png" alt="MambaQR" className="w-48 h-48 object-contain drop-shadow-2xl z-10 relative" />
           </div>
 
           <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
-            Bienvenido a Carta QR
+            Bienvenido a MambaQR
           </h1>
           <p className="text-gray-400 mb-8 leading-relaxed">
             Todavía no creaste tu primera carta digital. Una vez creada podrás acceder a todo el potencial de la plataforma.

@@ -9,7 +9,7 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-export function SearchBar({ value, onChange, placeholder = 'Search menu items...' }: SearchBarProps) {
+export function SearchBar({ value, onChange, placeholder = 'Buscar en el menú...' }: SearchBarProps) {
   return (
     <div style={{ position: 'relative', width: '100%' }}>
       <Search

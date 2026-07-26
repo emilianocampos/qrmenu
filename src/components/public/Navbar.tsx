@@ -189,7 +189,7 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
           </List>
           <div style={{ marginTop: 'auto', paddingTop: '2rem', textAlign: 'center' }}>
             <p style={{ color: 'var(--text-faint)', fontSize: '0.75rem' }}>
-              &copy; {new Date().getFullYear()} {name} · Desarrollado con <span style={{ color: 'var(--primary-color)' }}>Carta QR</span>
+              &copy; {new Date().getFullYear()} {name} · Desarrollado con <span style={{ color: 'var(--primary-color)' }}>MambaQR</span>
             </p>
           </div>
         </Box>

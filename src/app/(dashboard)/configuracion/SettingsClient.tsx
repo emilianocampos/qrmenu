@@ -9,6 +9,27 @@ import { updateUserCredentials } from '@/actions/auth';
 import { Business } from '@/types';
 import { useRouter } from 'next/navigation';
 
+const FieldInput = ({ label, value, onChange, type = 'text', placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
+    <input
+      type={type}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-600 rounded-xl px-4 py-3 text-sm
+                 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+    />
+  </div>
+);
+
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+    <h3 className="text-sm font-semibold text-white mb-5 pb-4 border-b border-white/8">{title}</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">{children}</div>
+  </div>
+);
+
 interface SettingsClientProps {
   business: Business;
   productsCount: number;
@@ -53,6 +74,7 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
       } else {
         setSaved(true);
         setAccountForm(f => ({ ...f, password: '' }));
+        router.refresh();
         setTimeout(() => setSaved(false), 3000);
       }
     });
@@ -70,29 +92,16 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
     });
   };
 
-  const update = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }));
+  const generateSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+  const update = (key: string, value: string) => setForm(f => {
+    const newForm = { ...f, [key]: value };
+    if (key === 'name') {
+      newForm.slug = generateSlug(value);
+    }
+    return newForm;
+  });
   const updateAccount = (key: string, value: string) => setAccountForm(f => ({ ...f, [key]: value }));
-
-  const FieldInput = ({ label, value, onChange, type = 'text', placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-600 rounded-xl px-4 py-3 text-sm
-                   focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
-      />
-    </div>
-  );
-
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-      <h3 className="text-sm font-semibold text-white mb-5 pb-4 border-b border-white/8">{title}</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">{children}</div>
-    </div>
-  );
 
   return (
     <div>

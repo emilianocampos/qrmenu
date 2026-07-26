@@ -71,6 +71,17 @@ export async function updateBusiness(businessId: string, updates: Record<string,
 
   // Update business if there are updates
   if (Object.keys(businessUpdates).length > 0) {
+    if (businessUpdates.slug) {
+      const { data: existing } = await supabase
+        .from('businesses')
+        .select('id')
+        .eq('slug', businessUpdates.slug)
+        .neq('id', businessId)
+        .single();
+      
+      if (existing) return { error: 'El slug o dirección web ya está en uso' };
+    }
+
     const { error: busError } = await supabase
       .from('businesses')
       .update(businessUpdates)

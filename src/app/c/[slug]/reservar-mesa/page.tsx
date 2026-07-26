@@ -21,7 +21,7 @@ function hexToRgb(hex: string): string {
 export default async function ReservarMesaPage({ params }: PageProps) {
   const { slug } = await params;
   const { data: business, error } = await getBusinessBySlug(slug);
-  
+
   if (error || !business) notFound();
 
   const { data: reviews = [] } = await getReviews(business.id);
@@ -60,8 +60,8 @@ export default async function ReservarMesaPage({ params }: PageProps) {
 
   const fontName = business.typography || 'Inter';
   const hasAbout = !!(
-    business.about_title || 
-    business.about_description || 
+    business.about_title ||
+    business.about_description ||
     business.cover_image ||
     business.slogan ||
     business.address ||
@@ -128,7 +128,7 @@ export default async function ReservarMesaPage({ params }: PageProps) {
         {/* Footer */}
         <footer style={{ borderTop: '1px solid var(--border-color)', padding: '2rem 1.5rem', textAlign: 'center' }}>
           <p style={{ color: 'var(--text-faint)', fontSize: '0.75rem' }}>
-            &copy; {new Date().getFullYear()} {business.name} · Desarrollado con <span style={{ color: 'var(--primary-color)' }}>Carta QR</span>
+            &copy; {new Date().getFullYear()} {business.name} · Desarrollado con <span style={{ color: 'var(--primary-color)' }}>MambaQR</span>
           </p>
         </footer>
       </div>
