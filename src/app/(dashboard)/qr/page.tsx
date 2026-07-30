@@ -16,7 +16,7 @@ export default async function QRPage() {
 
   if (!business) redirect('/dashboard');
 
-  const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://myqrmenu-sweet.vercel.app'}/c/${business.slug}`;
+  const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://mambaqr.vercel.app'}/c/${business.slug}`;
 
   return <QRPageClient business={business as Business} publicUrl={publicUrl} />;
 }
