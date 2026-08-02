@@ -50,6 +50,7 @@ export type Business = {
   promo_title?: string | null;
   promo_description?: string | null;
   promo_image?: string | null;
+  order_mode?: string | null;
   created_at: string;
   trial_enabled?: boolean;
 };

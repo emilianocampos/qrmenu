@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Box } from 'lucide-react';
 import { Product, Business } from '@/types';
 import { Product3DCard } from '@/components/models/Product3DCard';
 import { delete3DModel, getProductsWithModels } from '@/actions/models';
@@ -37,8 +36,6 @@ export function ModelsClient({ initialProducts, business }: ModelsClientProps) {
         <PageHeader
           title="Modelos 3D"
           description="Genera modelos 3D a partir de las imágenes de tus productos utilizando Inteligencia Artificial."
-          icon={Box}
-          color="text-emerald-400"
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

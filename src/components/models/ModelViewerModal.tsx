@@ -5,27 +5,9 @@ import Script from 'next/script';
 import { X, Maximize } from 'lucide-react';
 import { Product } from '@/types';
 
-// Permitir el uso de <model-viewer> en TypeScript
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'model-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        src?: string;
-        alt?: string;
-        'auto-rotate'?: boolean;
-        'camera-controls'?: boolean;
-        ar?: boolean;
-        'ar-modes'?: string;
-        'shadow-intensity'?: string;
-        'environment-image'?: string;
-        exposure?: string;
-        style?: React.CSSProperties;
-        loading?: string;
-        poster?: string;
-      };
-    }
-  }
-}
+
+
+const ModelViewer = 'model-viewer' as any;
 
 interface ModelViewerModalProps {
   product: Product;
@@ -85,7 +67,7 @@ export function ModelViewerModal({ product, isOpen, onClose }: ModelViewerModalP
           )}
           
           {/* model-viewer tag */}
-          <model-viewer
+          <ModelViewer
             src={product.model_3d_url}
             alt={product.name}
             auto-rotate
@@ -98,7 +80,7 @@ export function ModelViewerModal({ product, isOpen, onClose }: ModelViewerModalP
             style={{ width: '100%', height: '100%', outline: 'none' }}
           >
             {/* Botón personalizado de AR que model-viewer inserta automáticamente si detecta AR, pero podemos estilizar el default */}
-          </model-viewer>
+          </ModelViewer>
         </div>
         
         {/* Footer info */}

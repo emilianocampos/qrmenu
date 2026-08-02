@@ -8,6 +8,7 @@ interface VintageMenuSectionProps {
   currencySymbol?: string;
   vintageColorMode?: string;
   vintageColor?: string;
+  orderMode?: string;
 }
 
 const NEON_COLORS = [
@@ -20,7 +21,7 @@ const NEON_COLORS = [
 
 
 
-export function VintageMenuSection({ products, currencySymbol = '$', vintageColorMode = 'multicolor', vintageColor = '#ff4500' }: VintageMenuSectionProps) {
+export function VintageMenuSection({ products, currencySymbol = '$', vintageColorMode = 'multicolor', vintageColor = '#ff4500', orderMode = 'menu_only' }: VintageMenuSectionProps) {
   // Group products by category
   const categories = useMemo(() => {
     const map = new Map<string, { id: string, name: string, products: Product[] }>();
