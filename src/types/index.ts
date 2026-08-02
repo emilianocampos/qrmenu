@@ -76,6 +76,10 @@ export type Product = {
   is_available: boolean | null;
   is_featured: boolean | null;
   item_order: number | null;
+  model_3d_url?: string | null;
+  model_3d_status?: string | null;
+  model_3d_generated_at?: string | null;
+  model_3d_task_id?: string | null;
   created_at: string;
   category?: Category;
 };

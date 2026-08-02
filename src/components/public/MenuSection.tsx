@@ -12,11 +12,12 @@ interface MenuSectionProps {
   layoutStyle?: string;
   vintageColorMode?: string;
   vintageColor?: string;
+  orderMode?: string;
 }
 
-export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'grid', vintageColorMode = 'multicolor', vintageColor = '#ff4500' }: MenuSectionProps) {
+export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'grid', vintageColorMode = 'multicolor', vintageColor = '#ff4500', orderMode = 'menu_only' }: MenuSectionProps) {
   if (layoutStyle === 'vintage') {
-    return <VintageMenuSection products={products} currencySymbol={currencySymbol} vintageColorMode={vintageColorMode} vintageColor={vintageColor} />;
+    return <VintageMenuSection products={products} currencySymbol={currencySymbol} vintageColorMode={vintageColorMode} vintageColor={vintageColor} orderMode={orderMode} />;
   }
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,6 +152,7 @@ export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'gri
           products={filteredProducts}
           currencySymbol={currencySymbol}
           layoutStyle={layoutStyle}
+          orderMode={orderMode}
           onResetSearch={() => {
             setSearchQuery('');
             setSelectedCategoryId(null);

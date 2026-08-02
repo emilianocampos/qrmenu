@@ -1,22 +1,31 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Product } from '@/types';
-import { ShoppingCart } from 'lucide-react';
+import { Box, ShoppingBag } from 'lucide-react';
+import { ModelViewerModal } from '@/components/models/ModelViewerModal';
+import { ProductOrderModal } from '@/components/orders/ProductOrderModal';
 
 interface ProductCardProps {
   product: Product;
   currencySymbol?: string;
   layoutStyle?: string;
+  orderMode?: string;
 }
 
-export function ProductCard({ product, currencySymbol = '$', layoutStyle = 'grid' }: ProductCardProps) {
+export function ProductCard({ product, currencySymbol = '$', layoutStyle = 'grid', orderMode = 'menu_only' }: ProductCardProps) {
+  const [is3DModalOpen, setIs3DModalOpen] = useState(false);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+
   const formattedPrice = new Intl.NumberFormat('es-AR', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(product.price);
 
+  const has3DModel = product.model_3d_status === 'ready' && product.model_3d_url;
+
   return (
+    <>
     <div
       className="break-inside-avoid"
       style={{
@@ -83,24 +92,90 @@ export function ProductCard({ product, currencySymbol = '$', layoutStyle = 'grid
           </p>
         )}
 
-        {/* Footer: Category */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', marginTop: product.description ? 'auto' : '24px' }}>
-          {/* Category Pill */}
-          {product.category?.name && (
-            <span style={{
-              fontSize: '0.75rem',
-              fontWeight: 500,
-              padding: '6px 14px',
-              borderRadius: 9999,
-              backgroundColor: 'var(--bg-page)',
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-primary)',
-            }}>
-              {product.category.name}
-            </span>
+        {/* Footer: Category & 3D Buttons */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginTop: product.description ? 'auto' : '24px' }}>
+          
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {/* Category Pill */}
+            {product.category?.name && (
+              <span style={{
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                padding: '6px 14px',
+                borderRadius: 9999,
+                backgroundColor: 'var(--bg-page)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
+              }}>
+                {product.category.name}
+              </span>
+            )}
+
+            {/* 3D Buttons */}
+            {has3DModel && (
+              <button
+                onClick={() => setIs3DModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  padding: '6px 12px',
+                  borderRadius: 9999,
+                  backgroundColor: 'var(--bg-page)',
+                  color: 'var(--primary-color)',
+                  border: '1px solid var(--primary-color)',
+                  cursor: 'pointer',
+                }}
+              >
+                <Box size={14} />
+                3D
+              </button>
+            )}
+          </div>
+
+          {orderMode !== 'menu_only' && (
+            <button
+              onClick={() => setIsOrderModalOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                padding: '8px 16px',
+                borderRadius: 9999,
+                backgroundColor: 'var(--primary-color)',
+                color: '#fff',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+              }}
+            >
+              <ShoppingBag size={14} />
+              Pedir
+            </button>
           )}
+
         </div>
       </div>
     </div>
+    
+    <ModelViewerModal 
+      product={product}
+      isOpen={is3DModalOpen}
+      onClose={() => setIs3DModalOpen(false)}
+    />
+
+    {orderMode !== 'menu_only' && (
+      <ProductOrderModal
+        product={product}
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        currencySymbol={currencySymbol}
+      />
+    )}
+    </>
   );
 }

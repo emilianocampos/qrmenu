@@ -27,6 +27,19 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
   const pathname = usePathname();
   const router = useRouter();
   const isHome = pathname === `/c/${slug}`;
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    // Buscar en el localStorage el last_order_id.
+    // Iteramos por las keys buscando alguna que empiece con last_order_
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('last_order_')) {
+        setLastOrderId(localStorage.getItem(key));
+        break;
+      }
+    }
+  }, []);
 
   const navItems = [
     { label: 'Menú', id: 'menu', href: `/c/${slug}` },
@@ -34,6 +47,10 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
     { label: 'Reservar Mesa', id: 'reservar-mesa', href: `/c/${slug}/reservar-mesa` },
     { label: 'Reseñas', id: 'reviews', href: `/c/${slug}#reviews` },
   ];
+
+  if (lastOrderId) {
+    navItems.push({ label: 'Mis Pedidos', id: 'mis-pedidos', href: `/c/${slug}/mis-pedidos?id=${lastOrderId}` });
+  }
 
   const handleNav = (item: any) => {
     setMobileOpen(false);

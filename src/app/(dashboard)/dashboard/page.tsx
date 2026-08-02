@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Package, Tags, TrendingUp, Eye, Star, LayoutGrid } from 'lucide-react';
+import { Package, Tags, TrendingUp, Eye, Star, LayoutGrid, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { StatCard } from '@/components/ui/StatCard';
 import { ChartCard } from '@/components/ui/ChartCard';
@@ -40,12 +40,16 @@ export default async function DashboardPage() {
   const [
     { count: productsCount },
     { count: categoriesCount },
+    { count: ordersTodayCount },
+    { count: ordersMonthCount },
     { data: featuredProducts },
     { data: recentProducts },
     { data: topCategories },
   ] = await Promise.all([
     supabase.from('products').select('*', { count: 'exact', head: true }).eq('business_id', business.id),
     supabase.from('categories').select('*', { count: 'exact', head: true }).eq('business_id', business.id),
+    supabase.from('orders').select('*', { count: 'exact', head: true }).eq('business_id', business.id).gte('created_at', startOfToday.toISOString()),
+    supabase.from('orders').select('*', { count: 'exact', head: true }).eq('business_id', business.id).gte('created_at', startOfMonth.toISOString()),
     supabase.from('products').select('*').eq('business_id', business.id).eq('is_featured', true).limit(3),
     supabase.from('products').select('*, category:categories(name)').eq('business_id', business.id).order('created_at', { ascending: false }).limit(5),
     supabase.from('categories').select('*, products(count)').eq('business_id', business.id).order('item_order').limit(5),
@@ -70,7 +74,7 @@ export default async function DashboardPage() {
       />
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <StatCard
           title="Productos"
           value={productsCount ?? 0}
@@ -92,6 +96,18 @@ export default async function DashboardPage() {
           title="Escaneos del mes"
           value={visitStats.month}
           icon={<TrendingUp className="w-5 h-5 text-amber-400" />}
+        />
+        <StatCard
+          title="Pedidos hoy"
+          value={ordersTodayCount ?? 0}
+          icon={<ShoppingBag className="w-5 h-5 text-orange-400" />}
+          href="/orders"
+        />
+        <StatCard
+          title="Pedidos del mes"
+          value={ordersMonthCount ?? 0}
+          icon={<ShoppingBag className="w-5 h-5 text-orange-400" />}
+          href="/orders"
         />
       </div>
 

@@ -8,6 +8,7 @@ import { ReviewSection } from '@/components/public/ReviewSection';
 import { ViewTracker } from '@/components/public/ViewTracker';
 import { VisitTracker } from '@/components/public/VisitTracker';
 import { PromoModal } from '@/components/public/PromoModal';
+import { PublicMenuClient } from './PublicMenuClient';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -97,7 +98,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
   );
 
   return (
-    <>
+    <PublicMenuClient businessId={business.id} orderMode={business.order_mode || 'menu_only'} businessSlug={business.slug}>
       <link
         rel="stylesheet"
         href={`https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, '+')}:wght@300;400;500;600;700;800;900&display=swap`}
@@ -215,7 +216,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
         )}
 
         <main>
-          <MenuSection products={products} currencySymbol="$" layoutStyle={business.layout_style || 'grid'} vintageColorMode={business.vintage_color_mode || 'multicolor'} vintageColor={business.vintage_color || '#ff4500'} />
+          <MenuSection products={products} currencySymbol="$" layoutStyle={business.layout_style || 'grid'} vintageColorMode={business.vintage_color_mode || 'multicolor'} vintageColor={business.vintage_color || '#ff4500'} orderMode={business.order_mode || 'menu_only'} />
           {/* {hasAbout && (
             <AboutSection
               title={business.about_title}
@@ -231,6 +232,6 @@ export default async function PublicMenuPage({ params }: PageProps) {
           />
         </main>
       </div>
-    </>
+    </PublicMenuClient>
   );
 }
