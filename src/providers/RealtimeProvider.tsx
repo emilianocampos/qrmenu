@@ -66,7 +66,7 @@ export function RealtimeProvider({ children, businessId }: { children: React.Rea
       try {
         // Obtenemos si está habilitado del local storage o asumiendo true por ahora
         // Idealmente lo validamos desde la base de datos de settings
-        const audio = new Audio('/sounds/notification.mp3'); 
+        const audio = new Audio('/sounds/universfield-new-notification-036-485897.mp3'); 
         audio.play().catch(e => console.log('El navegador bloqueó el autoplay del sonido', e));
         
         if (navigator.vibrate) {

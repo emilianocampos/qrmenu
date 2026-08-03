@@ -27,7 +27,7 @@ export function NotificationBell({ businessId }: { businessId: string }) {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5"
+        className="relative w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-white hover:bg-white/15 transition-colors shadow-lg"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (

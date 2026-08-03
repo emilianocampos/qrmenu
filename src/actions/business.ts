@@ -54,7 +54,7 @@ export async function updateBusiness(businessId: string, updates: Record<string,
   const businessKeys = [
     'name', 'slug', 'logo_url', 'color_primary', 'color_secondary', 'typography', 'theme', 'layout_style',
     'description', 'about_title', 'about_description', 'cover_image', 'banner_image', 'slogan', 'background_color',
-    'promo_active', 'promo_title', 'promo_description', 'promo_image'
+    'promo_active', 'promo_title', 'promo_description', 'promo_image', 'show_about_us'
   ];
   const settingsKeys = ['email', 'whatsapp', 'phone', 'instagram', 'facebook', 'address', 'schedule', 'language', 'currency', 'plan', 'vintage_color', 'vintage_color_mode'];
 

@@ -96,7 +96,7 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Número de Mesa</label>
               <input
-                type="text"
+                type="number"
                 required
                 value={tableNumber}
                 onChange={e => setTableNumber(e.target.value)}

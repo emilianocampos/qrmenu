@@ -35,6 +35,7 @@ export function CustomizationClient({ business }: { business: Business }) {
     cover_image: business.cover_image || '',
     banner_image: business.banner_image || '',
     slogan: business.slogan || '',
+    show_about_us: business.show_about_us !== false,
     address: business.address || '',
     phone: business.phone || business.whatsapp || '',
     email: business.email || '',
@@ -165,6 +166,7 @@ export function CustomizationClient({ business }: { business: Business }) {
         cover_image: coverUrl || null,
         banner_image: bannerUrl || null,
         slogan: form.slogan || null,
+        show_about_us: form.show_about_us,
         address: form.address || null,
         phone: form.phone || null,
         email: form.email || null,
@@ -434,9 +436,28 @@ export function CustomizationClient({ business }: { business: Business }) {
 
           {/* About Us Section */}
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5">
-            <h3 className="text-sm font-semibold text-white">Sección "Sobre Nosotros"</h3>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Título de la sección</label>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white">Sección "Sobre Nosotros"</h3>
+              <label className="flex items-center cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={form.show_about_us}
+                    onChange={(e) => setForm(f => ({ ...f, show_about_us: e.target.checked }))}
+                  />
+                  <div className={`block w-10 h-6 rounded-full transition-colors ${form.show_about_us ? 'bg-indigo-500' : 'bg-gray-600'}`}></div>
+                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${form.show_about_us ? 'transform translate-x-4' : ''}`}></div>
+                </div>
+                <span className="ml-3 text-sm font-medium text-gray-300">
+                  {form.show_about_us ? 'Mostrar' : 'Ocultar'}
+                </span>
+              </label>
+            </div>
+            {form.show_about_us && (
+              <div className="space-y-5 animate-in fade-in slide-in-from-top-2 duration-300 border-t border-white/10 pt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Título de la sección</label>
               <input
                 value={form.about_title}
                 onChange={e => setForm(f => ({ ...f, about_title: e.target.value }))}
@@ -468,14 +489,16 @@ export function CustomizationClient({ business }: { business: Business }) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Imagen de Sobre Nosotros</label>
-              <UploadDropzone
-                accept="image/*"
-                onFileSelect={handleCoverSelect}
-                preview={coverPreview}
-                onClear={() => { setCoverPreview(null); setCoverFile(null); setForm(f => ({ ...f, cover_image: '' })); }}
-                loading={uploading || isPending}
-              />
-            </div>
+                  <UploadDropzone
+                    accept="image/*"
+                    onFileSelect={handleCoverSelect}
+                    preview={coverPreview}
+                    onClear={() => { setCoverPreview(null); setCoverFile(null); setForm(f => ({ ...f, cover_image: '' })); }}
+                    loading={uploading || isPending}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-6">

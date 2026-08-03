@@ -87,7 +87,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
   }
 
   const fontName = business.typography || 'Inter';
-  const hasAbout = !!(
+  const hasAbout = business.show_about_us !== false && !!(
     business.about_title ||
     business.about_description ||
     business.cover_image ||

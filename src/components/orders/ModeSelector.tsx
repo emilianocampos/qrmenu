@@ -13,7 +13,6 @@ interface ModeSelectorProps {
 const MODES = [
   { id: 'menu_only', name: 'Solo Carta', icon: BookOpen, description: 'Los clientes solo podrán ver el menú. Sin carrito ni pedidos.' },
   { id: 'table_number', name: 'Número de Mesa', icon: UtensilsCrossed, description: 'Se solicitará un número de mesa al cliente antes de pedir.' },
-  { id: 'table_code', name: 'Código de Mesa', icon: KeySquare, description: 'Mesas con código único (QR por mesa).' },
   { id: 'takeaway', name: 'Take Away', icon: ShoppingBag, description: 'Para retirar en el local. Solicita nombre y teléfono.' },
   { id: 'comanda', name: 'Comanda', icon: Receipt, description: 'Solicita un número de comanda impreso.' }
 ];

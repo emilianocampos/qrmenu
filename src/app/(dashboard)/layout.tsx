@@ -37,8 +37,8 @@ export default async function DashboardLayout({
         <div className="relative z-10 flex-1 flex flex-col w-full h-full overflow-y-auto">
           {business ? (
             <RealtimeProvider businessId={business.id}>
-              {/* Header with Bell */}
-              <div className="sticky top-0 z-40 flex items-center justify-end px-6 py-4 md:px-8 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-md">
+              {/* Floating Notification Bell */}
+              <div className="fixed top-4 right-4 z-50">
                  <NotificationBell businessId={business.id} />
               </div>
               

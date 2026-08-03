@@ -43,10 +43,16 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
 
   const navItems = [
     { label: 'Menú', id: 'menu', href: `/c/${slug}` },
-    { label: 'Sobre Nosotros', id: 'about', href: `/c/${slug}/sobre-nosotros` },
-    { label: 'Reservar Mesa', id: 'reservar-mesa', href: `/c/${slug}/reservar-mesa` },
-    { label: 'Reseñas', id: 'reviews', href: `/c/${slug}#reviews` },
   ];
+
+  if (hasAbout) {
+    navItems.push({ label: 'Sobre Nosotros', id: 'about', href: `/c/${slug}/sobre-nosotros` });
+  }
+
+  navItems.push(
+    { label: 'Reservar Mesa', id: 'reservar-mesa', href: `/c/${slug}/reservar-mesa` },
+    { label: 'Reseñas', id: 'reviews', href: `/c/${slug}#reviews` }
+  );
 
   if (lastOrderId) {
     navItems.push({ label: 'Mis Pedidos', id: 'mis-pedidos', href: `/c/${slug}/mis-pedidos?id=${lastOrderId}` });
@@ -56,7 +62,7 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
     setMobileOpen(false);
 
     // Cross-page navigation
-    if (item.id === 'about' || item.id === 'reservar-mesa' || (item.id === 'menu' && !isHome) || (item.id === 'reviews' && !isHome)) {
+    if (item.id === 'about' || item.id === 'reservar-mesa' || item.id === 'mis-pedidos' || (item.id === 'menu' && !isHome) || (item.id === 'reviews' && !isHome)) {
       router.push(item.href);
       return;
     }
