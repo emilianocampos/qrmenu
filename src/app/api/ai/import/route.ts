@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     // Real Gemini Vision call
     const isImage = mimeType?.startsWith('image/');
-    
+
     // Resolve base64 data
     let finalBase64 = base64Data;
     if (!finalBase64 && fileUrl) {
@@ -86,7 +86,7 @@ Reglas:
       try {
         const fs = require('fs');
         fs.writeFileSync('C:\\Users\\Emi\\Desktop\\carta_qr\\gemini_error.txt', 'No JSON found. Raw text:\n' + rawText);
-      } catch (e) {}
+      } catch (e) { }
       throw new Error('La IA no devolvió un JSON válido');
     }
 
@@ -98,7 +98,7 @@ Reglas:
     try {
       const fs = require('fs');
       fs.writeFileSync('C:\\Users\\Emi\\Desktop\\carta_qr\\gemini_error.txt', 'Catch error:\n' + (err instanceof Error ? err.stack : String(err)));
-    } catch (e) {}
+    } catch (e) { }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Error interno del servidor' },
       { status: 500 }

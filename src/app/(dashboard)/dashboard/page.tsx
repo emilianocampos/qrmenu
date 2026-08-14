@@ -1,14 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Package, Tags, TrendingUp, Eye, Star, LayoutGrid, ShoppingBag } from 'lucide-react';
+import { Package, Tags, TrendingUp, Eye, Star, LayoutGrid, ShoppingBag, DollarSign, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { StatCard } from '@/components/ui/StatCard';
 import { ChartCard } from '@/components/ui/ChartCard';
+import { BarChartCard } from '@/components/ui/BarChartCard';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { getVisitStatistics } from '@/actions/visits/get-statistics';
-
-// Function removed
+import { getSalesStatistics } from '@/actions/statistics/get-sales-stats';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -31,29 +31,27 @@ export default async function DashboardPage() {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  sevenDaysAgo.setHours(0, 0, 0, 0);
-
-  const visitStats = await getVisitStatistics(business.id);
-
   const [
+    visitStats,
+    salesStats,
     { count: productsCount },
     { count: categoriesCount },
     { count: ordersTodayCount },
     { count: ordersMonthCount },
-    { data: featuredProducts },
     { data: recentProducts },
     { data: topCategories },
   ] = await Promise.all([
+    getVisitStatistics(business.id),
+    getSalesStatistics(business.id),
     supabase.from('products').select('*', { count: 'exact', head: true }).eq('business_id', business.id),
     supabase.from('categories').select('*', { count: 'exact', head: true }).eq('business_id', business.id),
     supabase.from('orders').select('*', { count: 'exact', head: true }).eq('business_id', business.id).gte('created_at', startOfToday.toISOString()),
     supabase.from('orders').select('*', { count: 'exact', head: true }).eq('business_id', business.id).gte('created_at', startOfMonth.toISOString()),
-    supabase.from('products').select('*').eq('business_id', business.id).eq('is_featured', true).limit(3),
     supabase.from('products').select('*, category:categories(name)').eq('business_id', business.id).order('created_at', { ascending: false }).limit(5),
     supabase.from('categories').select('*, products(count)').eq('business_id', business.id).order('item_order').limit(5),
   ]);
+
+  const medals = ['🥇', '🥈', '🥉', '4º', '5º'];
 
   return (
     <div>
@@ -73,29 +71,19 @@ export default async function DashboardPage() {
         }
       />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      {/* Main Stats Grid (Ventas & Pedidos en Principal) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
-          title="Productos"
-          value={productsCount ?? 0}
-          icon={<Package className="w-5 h-5 text-blue-400" />}
-          href="/productos"
+          title="Ganado hoy"
+          value={`$${salesStats.todayEarnings.toLocaleString()}`}
+          icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
+          href="/orders"
         />
         <StatCard
-          title="Categorías"
-          value={categoriesCount ?? 0}
-          icon={<Tags className="w-5 h-5 text-violet-400" />}
-          href="/categorias"
-        />
-        <StatCard
-          title="Escaneos hoy"
-          value={visitStats.today}
-          icon={<Eye className="w-5 h-5 text-emerald-400" />}
-        />
-        <StatCard
-          title="Escaneos del mes"
-          value={visitStats.month}
-          icon={<TrendingUp className="w-5 h-5 text-amber-400" />}
+          title="Ganado del mes"
+          value={`$${salesStats.monthEarnings.toLocaleString()}`}
+          icon={<TrendingUp className="w-5 h-5 text-emerald-400" />}
+          href="/orders"
         />
         <StatCard
           title="Pedidos hoy"
@@ -111,113 +99,131 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Charts + Activity */}
+      {/* Main Section: Gráfico de Barras de Ganancias + Productos Más Pedidos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Gráfico Principal de Ventas */}
         <div className="lg:col-span-2">
-          <ChartCard
-            title="Visitantes Únicos (Últimos 7 días)"
-            description="Escaneos de QR por usuarios únicos"
-            data={visitStats.chartData}
+          <BarChartCard
+            title="Ingresos por Ventas (Últimos 7 días)"
+            description="Total acumulado de pedidos entregados ($)"
+            data={salesStats.earningsChartData}
             color="#10b981"
+            valuePrefix="$"
           />
         </div>
 
-        {/* Activity */}
+        {/* Ranking Productos Más Pedidos */}
         <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-          <h3 className="text-base font-semibold text-white mb-4">Actividad reciente</h3>
-          {recentProducts && recentProducts.length > 0 ? (
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/8">
+            <h3 className="text-base font-semibold text-white flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-amber-400" />
+              Productos más pedidos
+            </h3>
+          </div>
+
+          {salesStats.topProducts && salesStats.topProducts.length > 0 ? (
             <ul className="space-y-3">
-              {recentProducts.map((p) => (
-                <li key={p.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
-                    <Package className="w-4 h-4 text-blue-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm text-white truncate">{p.name}</p>
-                    <p className="text-xs text-gray-500">{(p as any).category?.name ?? 'Sin categoría'}</p>
-                  </div>
-                  <span className="ml-auto text-xs text-gray-500 flex-shrink-0">
-                    ${p.price.toFixed(2)}
+              {salesStats.topProducts.map((p, idx) => (
+                <li key={p.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors">
+                  <span className="w-7 text-sm font-bold flex items-center justify-center text-gray-300">
+                    {medals[idx] || `${idx + 1}º`}
                   </span>
+                  {p.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.image_url} alt={p.name} className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                      <Package className="w-4 h-4 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{p.name}</p>
+                    <p className="text-xs text-gray-500">{p.count} pedido{p.count !== 1 ? 's' : ''}</p>
+                  </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <div className="flex flex-col items-center py-8 text-center">
-              <Package className="w-8 h-8 text-gray-600 mb-2" />
-              <p className="text-sm text-gray-500">No hay productos aún</p>
-              <Link href="/productos" className="text-xs text-indigo-400 hover:text-indigo-300 mt-2 transition-colors">
-                Crear primer producto →
-              </Link>
-            </div>
+            <EmptyState
+              icon={<Trophy className="w-8 h-8 text-gray-600" />}
+              title="Sin pedidos registrados"
+              description="A medida que entregues pedidos verás aquí el ranking de tus productos estrella."
+            />
           )}
         </div>
       </div>
 
-      {/* Top Products & Categories */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Top Products */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-white">Top Productos</h3>
-            <Star className="w-4 h-4 text-amber-400" />
-          </div>
-          {featuredProducts && featuredProducts.length > 0 ? (
-            <ul className="space-y-3">
-              {featuredProducts.map((p, idx) => (
-                <li key={p.id} className="flex items-center gap-3">
-                  <span className="w-6 text-xs text-gray-600 font-mono">{idx + 1}</span>
-                  {p.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.image_url} alt={p.name} className="w-8 h-8 rounded-lg object-cover" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                      <Package className="w-4 h-4 text-gray-500" />
-                    </div>
-                  )}
-                  <span className="flex-1 text-sm text-gray-300 truncate">{p.name}</span>
-                  <span className="text-xs font-medium text-amber-400">Destacado</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState
-              icon={<Star className="w-8 h-8 text-gray-600" />}
-              title="Sin destacados"
-              description="Marca productos como destacados para verlos aquí"
-            />
-          )}
+      {/* Secondary Stats Section (Escaneos & Gestión de Carta) */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+          Resumen de Tráfico y Menú
+        </h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard
+            title="Escaneos hoy"
+            value={visitStats.today}
+            icon={<Eye className="w-5 h-5 text-indigo-400" />}
+          />
+          <StatCard
+            title="Escaneos del mes"
+            value={visitStats.month}
+            icon={<TrendingUp className="w-5 h-5 text-violet-400" />}
+          />
+          <StatCard
+            title="Productos en carta"
+            value={productsCount ?? 0}
+            icon={<Package className="w-5 h-5 text-blue-400" />}
+            href="/productos"
+          />
+          <StatCard
+            title="Categorías"
+            value={categoriesCount ?? 0}
+            icon={<Tags className="w-5 h-5 text-violet-400" />}
+            href="/categorias"
+          />
         </div>
 
-        {/* Top Categories */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-white">Categorías</h3>
-            <LayoutGrid className="w-4 h-4 text-violet-400" />
-          </div>
-          {topCategories && topCategories.length > 0 ? (
-            <ul className="space-y-3">
-              {topCategories.map((cat, idx) => {
-                const count = (cat as any).products?.[0]?.count ?? 0;
-                return (
-                  <li key={cat.id} className="flex items-center gap-3">
-                    <span className="w-6 text-xs text-gray-600 font-mono">{idx + 1}</span>
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-base">
-                      {cat.icon ?? '📋'}
-                    </div>
-                    <span className="flex-1 text-sm text-gray-300 truncate">{cat.name}</span>
-                    <span className="text-xs text-gray-500">{count} productos</span>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <EmptyState
-              icon={<Tags className="w-8 h-8 text-gray-600" />}
-              title="Sin categorías"
-              description="Crea categorías para organizar tu menú"
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Gráfico de Visitas / Escaneos */}
+          <div className="lg:col-span-2">
+            <ChartCard
+              title="Escaneos de QR (Últimos 7 días)"
+              description="Visitas de clientes a la carta digital"
+              data={visitStats.chartData}
+              color="#6366f1"
             />
-          )}
+          </div>
+
+          {/* Actividad Reciente */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+            <h3 className="text-base font-semibold text-white mb-4">Últimos productos añadidos</h3>
+            {recentProducts && recentProducts.length > 0 ? (
+              <ul className="space-y-3">
+                {recentProducts.map((p) => (
+                  <li key={p.id} className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                      <Package className="w-4 h-4 text-blue-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-white truncate">{p.name}</p>
+                      <p className="text-xs text-gray-500">{(p as any).category?.name ?? 'Sin categoría'}</p>
+                    </div>
+                    <span className="text-xs text-gray-400 flex-shrink-0 font-medium">
+                      ${Number(p.price).toFixed(2)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="flex flex-col items-center py-8 text-center">
+                <Package className="w-8 h-8 text-gray-600 mb-2" />
+                <p className="text-sm text-gray-500">No hay productos aún</p>
+                <Link href="/productos" className="text-xs text-indigo-400 hover:text-indigo-300 mt-2 transition-colors">
+                  Crear primer producto →
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

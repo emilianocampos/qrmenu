@@ -113,7 +113,7 @@ Reglas:
     // Realizamos una petición segura hacia Google con la clave y el cuerpo creado.
     const { GoogleGenAI } = require("@google/genai");
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-    
+
     const response = await ai.models.generateContent({
       model: "gemini-3.5-flash",
       contents: parts,

@@ -216,7 +216,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
         )}
 
         <main>
-          <MenuSection products={products} currencySymbol="$" layoutStyle={business.layout_style || 'grid'} vintageColorMode={business.vintage_color_mode || 'multicolor'} vintageColor={business.vintage_color || '#ff4500'} orderMode={business.order_mode || 'menu_only'} />
+          <MenuSection businessId={business.id} products={products} currencySymbol="$" layoutStyle={business.layout_style || 'grid'} vintageColorMode={business.vintage_color_mode || 'multicolor'} vintageColor={business.vintage_color || '#ff4500'} orderMode={business.order_mode || 'menu_only'} />
           {/* {hasAbout && (
             <AboutSection
               title={business.about_title}

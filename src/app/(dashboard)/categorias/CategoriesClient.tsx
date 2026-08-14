@@ -22,8 +22,10 @@ import { GripVertical, Plus, Pencil, Trash2, Eye, EyeOff, X, Loader2, Tags } fro
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { IconPicker } from '@/components/ui/IconPicker';
 import { createCategory, updateCategory, deleteCategory, reorderCategories } from '@/actions/categories';
 import { Category, Business } from '@/types';
+import { toast } from 'sonner';
 
 interface CategoriesClientProps {
   initialCategories: Category[];
@@ -76,11 +78,10 @@ function SortableItem({ category, onEdit, onDelete, onToggleVisibility }: Sortab
         <button
           onClick={() => onToggleVisibility(category)}
           title={category.is_visible ? 'Ocultar' : 'Mostrar'}
-          className={`p-2 rounded-lg transition-all ${
-            category.is_visible
-              ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
-              : 'text-gray-500 hover:text-white hover:bg-white/10'
-          }`}
+          className={`p-2 rounded-lg transition-all ${category.is_visible
+            ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+            : 'text-gray-500 hover:text-white hover:bg-white/10'
+            }`}
         >
           {category.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
         </button>
@@ -138,6 +139,7 @@ export function CategoriesClient({ initialCategories, business }: CategoriesClie
         const result = await updateCategory(editCat.id, { name: form.name, icon: form.icon || null });
         if (result.error) { setFormError(result.error); return; }
         setCategories(prev => prev.map(c => c.id === editCat.id ? { ...c, name: form.name, icon: form.icon || null } : c));
+        toast.success('Categoría actualizada correctamente.');
       } else {
         const fd = new FormData();
         fd.append('business_id', business.id);
@@ -146,6 +148,7 @@ export function CategoriesClient({ initialCategories, business }: CategoriesClie
         const result = await createCategory(fd);
         if (result.error) { setFormError(result.error); return; }
         if (result.data) setCategories(prev => [...prev, result.data as Category]);
+        toast.success('Categoría creada correctamente.');
       }
       setDialogOpen(false);
     });
@@ -154,7 +157,10 @@ export function CategoriesClient({ initialCategories, business }: CategoriesClie
   const handleDelete = (id: string) => {
     startTransition(async () => {
       const result = await deleteCategory(id);
-      if (!result.error) setCategories(prev => prev.filter(c => c.id !== id));
+      if (!result.error) {
+        setCategories(prev => prev.filter(c => c.id !== id));
+        toast.success('Categoría eliminada.');
+      }
       setConfirmDelete(null);
     });
   };
@@ -276,12 +282,9 @@ export function CategoriesClient({ initialCategories, business }: CategoriesClie
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Emoji / Ícono (opcional)</label>
-                <input
+                <IconPicker
                   value={form.icon}
-                  onChange={e => setForm(f => ({ ...f, icon: e.target.value }))}
-                  placeholder="🍕"
-                  className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-600 rounded-xl px-4 py-3 text-sm
-                             focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                  onChange={icon => setForm(f => ({ ...f, icon }))}
                 />
               </div>
               {formError && (

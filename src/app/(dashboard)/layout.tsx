@@ -33,15 +33,15 @@ export default async function DashboardLayout({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/mambaqr.png" alt="" className="w-[600px] opacity-[0.15] object-contain" />
         </div>
-        
+
         <div className="relative z-10 flex-1 flex flex-col w-full h-full overflow-y-auto">
           {business ? (
             <RealtimeProvider businessId={business.id}>
               {/* Floating Notification Bell */}
               <div className="fixed top-4 right-4 z-50">
-                 <NotificationBell businessId={business.id} />
+                <NotificationBell businessId={business.id} />
               </div>
-              
+
               <div className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
                 {children}
               </div>

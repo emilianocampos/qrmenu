@@ -26,6 +26,7 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
       case 'new_order': return '🍽️';
       case 'order_ready': return '✅';
       case 'order_cancelled': return '❌';
+      case 'waiter_call': return '🔔';
       case 'new_review': return '⭐';
       case 'low_stock': return '⚠️';
       default: return '🔔';
@@ -33,8 +34,9 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
   };
 
   const getLinkForNotification = (n: any) => {
-    if (n.type.startsWith('order')) return `/dashboard/orders`;
-    if (n.type === 'new_review') return `/dashboard/reviews`;
+    if (n.type.startsWith('order')) return `/orders`;
+    if (n.type === 'waiter_call') return `/mesas`;
+    if (n.type === 'new_review') return `/reviews`;
     return null;
   };
 
@@ -42,7 +44,7 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
     <div className="flex flex-col max-h-[80vh] overflow-hidden">
       <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[#111]">
         <h3 className="font-semibold text-white">Notificaciones</h3>
-        <button 
+        <button
           onClick={handleMarkAllAsRead}
           className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
         >
@@ -62,8 +64,8 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
               const link = getLinkForNotification(notif);
 
               return (
-                <div 
-                  key={notif.id} 
+                <div
+                  key={notif.id}
                   className={`p-4 transition-colors hover:bg-white/5 group ${!notif.read ? 'bg-white/[0.02]' : ''}`}
                 >
                   <div className="flex gap-3">
@@ -82,10 +84,10 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
                       <p className="text-xs text-gray-400 mt-1 line-clamp-2">
                         {notif.description}
                       </p>
-                      
+
                       <div className="mt-3 flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
                         {link && (
-                          <Link 
+                          <Link
                             href={link}
                             onClick={() => {
                               if (!notif.read) handleMarkAsRead(notif.id);
@@ -100,9 +102,9 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
                         {!notif.read && (
                           <button
                             onClick={() => handleMarkAsRead(notif.id)}
-                            className="text-[11px] text-gray-400 hover:text-white"
+                            className="text-[11px] font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded transition-colors"
                           >
-                            Marcar leído
+                            {notif.type === 'waiter_call' ? 'Atender / Marcar atendido' : 'Marcar leído'}
                           </button>
                         )}
                       </div>

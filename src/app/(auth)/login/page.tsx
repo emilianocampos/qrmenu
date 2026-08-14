@@ -1,8 +1,8 @@
 import { login } from "@/actions/auth";
 import Link from "next/link";
-import { Store, QrCode } from "lucide-react";
+import { QrCode } from "lucide-react";
 import { ToastHelper } from "@/components/ui/ToastHelper";
-import { SubmitButton } from "@/components/ui/SubmitButton";
+import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage(props: { searchParams: Promise<{ message?: string; success?: string }> }) {
   const searchParams = await props.searchParams;
@@ -16,49 +16,15 @@ export default async function LoginPage(props: { searchParams: Promise<{ message
           <img src="/mambaqr.png" alt="MambaQR" className="w-24 h-24 object-contain z-10 relative drop-shadow-md" />
         </div>
       </div>
-      
+
       <h2 className="text-2xl font-bold text-center mb-2">Bienvenido de nuevo</h2>
       <p className="text-gray-400 text-center mb-8">Ingresa a tu panel de administración</p>
 
-      <form action={login} className="flex flex-col gap-4">
-        {searchParams?.message && !searchParams?.success && (
-          <p className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm text-center">
-            {searchParams.message}
-          </p>
-        )}
-        {searchParams?.message && searchParams?.success && (
-          <ToastHelper message={searchParams.message} type="success" />
-        )}
+      {searchParams?.message && searchParams?.success && (
+        <ToastHelper message={searchParams.message} type="success" />
+      )}
 
-        <div className="flex flex-col gap-2">
-          <label className="text-sm text-gray-300" htmlFor="email">Email</label>
-          <input
-            className="px-4 py-3 bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
-            name="email"
-            placeholder="tu@correo.com"
-            required
-            type="email"
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label className="text-sm text-gray-300" htmlFor="password">Contraseña</label>
-          <input
-            className="px-4 py-3 bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
-            name="password"
-            placeholder="••••••••"
-            required
-            type="password"
-          />
-        </div>
-
-        <SubmitButton
-          className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 rounded-xl hover:scale-[1.02] active:scale-[0.98]"
-          type="submit"
-        >
-          Iniciar Sesión
-        </SubmitButton>
-      </form>
+      <LoginForm loginAction={login} serverError={searchParams?.message && !searchParams?.success ? searchParams.message : undefined} />
 
       <div className="mt-8 text-center text-sm text-gray-400">
         ¿No tienes una cuenta?{" "}

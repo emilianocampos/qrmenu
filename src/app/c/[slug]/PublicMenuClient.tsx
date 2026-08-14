@@ -4,7 +4,6 @@ import React from 'react';
 import { CartProvider } from '@/components/orders/CartContext';
 import { Cart } from '@/components/orders/Cart';
 import { CustomerInfoModal } from '@/components/orders/CustomerInfoModal';
-import { CustomerInfoBadge } from '@/components/orders/CustomerInfoBadge';
 import { CartButton } from '@/components/orders/CartButton';
 
 interface PublicMenuClientProps {
@@ -15,7 +14,7 @@ interface PublicMenuClientProps {
 }
 
 export function PublicMenuClient({ businessId, orderMode, businessSlug, children }: PublicMenuClientProps) {
-  // Si el modo es solo carta, no inyectamos lógica de carrito
+  // Si el modo es solo carta, no inyectamos lógica de carrito ni modal
   if (orderMode === 'menu_only') {
     return <>{children}</>;
   }
@@ -24,7 +23,6 @@ export function PublicMenuClient({ businessId, orderMode, businessSlug, children
     <CartProvider businessId={businessId}>
       {children}
       <CartButton />
-      <CustomerInfoBadge orderMode={orderMode} />
       <Cart businessId={businessId} orderMode={orderMode} businessSlug={businessSlug} />
       <CustomerInfoModal orderMode={orderMode} businessId={businessId} />
     </CartProvider>

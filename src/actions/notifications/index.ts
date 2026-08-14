@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 export async function getUnreadNotifications(businessId: string) {
   try {
     const supabase = await createClient();
-    
+
     // Solo leemos las últimas 50 para no sobrecargar el payload inicial
     const { data, error } = await supabase
       .from('notifications')
@@ -30,13 +30,13 @@ export async function getUnreadNotifications(businessId: string) {
 export async function markAsRead(id: string, businessId: string) {
   try {
     const supabase = await createClient();
-    
+
     await supabase
       .from('notifications')
       .update({ read: true })
       .eq('id', id)
       .eq('business_id', businessId);
-      
+
     // Usamos revalidatePath si es necesario, pero como tenemos Context client-side, 
     // el contexto ya se actualizó localmente.
   } catch (error) {
@@ -47,13 +47,13 @@ export async function markAsRead(id: string, businessId: string) {
 export async function markAllAsRead(businessId: string) {
   try {
     const supabase = await createClient();
-    
+
     await supabase
       .from('notifications')
       .update({ read: true })
       .eq('business_id', businessId)
       .eq('read', false);
-      
+
   } catch (error) {
     console.error('Action markAllAsRead error:', error);
   }
@@ -62,13 +62,13 @@ export async function markAllAsRead(businessId: string) {
 export async function deleteNotification(id: string, businessId: string) {
   try {
     const supabase = await createClient();
-    
+
     await supabase
       .from('notifications')
       .delete()
       .eq('id', id)
       .eq('business_id', businessId);
-      
+
   } catch (error) {
     console.error('Action deleteNotification error:', error);
   }
@@ -92,7 +92,7 @@ export async function createNotification({
 }) {
   try {
     const supabase = await createClient();
-    
+
     await supabase
       .from('notifications')
       .insert({
@@ -103,8 +103,30 @@ export async function createNotification({
         reference_id: referenceId,
         reference_type: referenceType
       });
-      
+
   } catch (error) {
     console.error('Action createNotification error:', error);
+  }
+}
+
+export async function callWaiterAction(businessId: string, tableDisplay: string) {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('notifications')
+      .insert({
+        business_id: businessId,
+        type: 'waiter_call',
+        title: 'Cliente solicita asistencia',
+        description: tableDisplay || 'Mesa no especificada',
+        reference_type: 'table',
+      });
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error calling waiter:', error);
+    return { error: error.message || 'Error al llamar al mozo' };
   }
 }

@@ -5,8 +5,10 @@ import { Product } from '@/types';
 import { SearchBar } from './SearchBar';
 import { ProductGrid } from './ProductGrid';
 import { VintageMenuSection } from './VintageMenuSection';
+import { TableInfoAndWaiterBar } from './TableInfoAndWaiterBar';
 
 interface MenuSectionProps {
+  businessId?: string;
   products: Product[];
   currencySymbol?: string;
   layoutStyle?: string;
@@ -15,7 +17,7 @@ interface MenuSectionProps {
   orderMode?: string;
 }
 
-export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'grid', vintageColorMode = 'multicolor', vintageColor = '#ff4500', orderMode = 'menu_only' }: MenuSectionProps) {
+export function MenuSection({ businessId, products, currencySymbol = '$', layoutStyle = 'grid', vintageColorMode = 'multicolor', vintageColor = '#ff4500', orderMode = 'menu_only' }: MenuSectionProps) {
   if (layoutStyle === 'vintage') {
     return <VintageMenuSection products={products} currencySymbol={currencySymbol} vintageColorMode={vintageColorMode} vintageColor={vintageColor} orderMode={orderMode} />;
   }
@@ -24,11 +26,11 @@ export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'gri
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   const categories = useMemo(() => {
-    const map = new Map<string, { id: string, name: string, count: number }>();
+    const map = new Map<string, { id: string, name: string, icon?: string | null, count: number }>();
     products.forEach(p => {
       if (p.category) {
         if (!map.has(p.category.id)) {
-          map.set(p.category.id, { id: p.category.id, name: p.category.name, count: 0 });
+          map.set(p.category.id, { id: p.category.id, name: p.category.name, icon: (p.category as any).icon, count: 0 });
         }
         map.get(p.category.id)!.count++;
       }
@@ -40,7 +42,7 @@ export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'gri
     const query = searchQuery.toLowerCase().trim();
     let matchSearch = true;
     if (query) {
-      matchSearch = 
+      matchSearch =
         product.name.toLowerCase().includes(query) ||
         (product.description?.toLowerCase().includes(query) ?? false) ||
         (product.category?.name?.toLowerCase().includes(query) ?? false);
@@ -60,18 +62,23 @@ export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'gri
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem' }}>
         {/* Header row */}
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '1.75rem', margin: '0 0 16px' }}>
-            Nuestro Menú
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+            <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '1.75rem', margin: 0 }}>
+              Nuestro Menú
+            </h2>
+            {businessId && (
+              <TableInfoAndWaiterBar businessId={businessId} orderMode={orderMode} />
+            )}
+          </div>
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
         </div>
 
         {/* Categories */}
-        <div style={{ 
-          display: 'flex', 
-          gap: '12px', 
-          marginBottom: '24px', 
-          overflowX: 'auto', 
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          marginBottom: '24px',
+          overflowX: 'auto',
           paddingBottom: '8px',
           scrollbarWidth: 'none',
         }}>
@@ -95,17 +102,17 @@ export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'gri
             }}
           >
             Todo
-            <span style={{ 
-              backgroundColor: selectedCategoryId === null ? 'rgba(255,255,255,0.2)' : 'rgba(128, 128, 128, 0.15)', 
+            <span style={{
+              backgroundColor: selectedCategoryId === null ? 'rgba(255,255,255,0.2)' : 'rgba(128, 128, 128, 0.15)',
               color: selectedCategoryId === null ? '#fff' : 'var(--text-primary)',
-              padding: '2px 8px', 
-              borderRadius: '12px', 
-              fontSize: '0.75rem' 
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontSize: '0.75rem'
             }}>
               {products.length}
             </span>
           </button>
-          
+
           {categories.map(cat => (
             <button
               key={cat.id}
@@ -127,13 +134,13 @@ export function MenuSection({ products, currencySymbol = '$', layoutStyle = 'gri
                 transition: 'background-color 0.2s',
               }}
             >
-              {cat.name}
-              <span style={{ 
-                backgroundColor: selectedCategoryId === cat.id ? 'rgba(255,255,255,0.2)' : 'rgba(128, 128, 128, 0.15)', 
+              {cat.icon ? `${cat.icon} ` : ''}{cat.name}
+              <span style={{
+                backgroundColor: selectedCategoryId === cat.id ? 'rgba(255,255,255,0.2)' : 'rgba(128, 128, 128, 0.15)',
                 color: selectedCategoryId === cat.id ? '#fff' : 'var(--text-primary)',
-                padding: '2px 8px', 
-                borderRadius: '12px', 
-                fontSize: '0.75rem' 
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontSize: '0.75rem'
               }}>
                 {cat.count}
               </span>

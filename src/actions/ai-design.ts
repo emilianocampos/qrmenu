@@ -32,7 +32,7 @@ export async function analyzeMenuDesign(businessId: string, fileUrl: string, mim
     if (inlineData) {
       parts.push({ inlineData });
     }
-    
+
     parts.push({
       text: `Analiza únicamente el diseño visual de esta carta.
 
@@ -91,7 +91,7 @@ No devolver Markdown.
 
     const { GoogleGenAI } = require("@google/genai");
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-    
+
     const response = await ai.models.generateContent({
       model: "gemini-3.5-flash",
       contents: parts,

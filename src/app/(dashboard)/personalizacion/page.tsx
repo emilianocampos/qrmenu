@@ -15,13 +15,13 @@ export default async function PersonalizacionPage() {
     .single();
 
   if (!business) redirect('/dashboard');
-  
+
   const { data: settings } = await supabase
     .from('settings')
     .select('*')
     .eq('business_id', business.id)
     .single();
-    
+
   let businessData = { ...business };
   if (settings) {
     businessData = { ...businessData, ...settings, id: business.id };

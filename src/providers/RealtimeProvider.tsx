@@ -28,56 +28,81 @@ interface RealtimeContextProps {
 const RealtimeContext = createContext<RealtimeContextProps>({
   notifications: [],
   unreadCount: 0,
-  setNotifications: () => {},
-  markAsReadLocal: () => {},
-  markAllAsReadLocal: () => {},
+  setNotifications: () => { },
+  markAsReadLocal: () => { },
+  markAllAsReadLocal: () => { },
 });
 
 export const useRealtime = () => useContext(RealtimeContext);
 
 export function RealtimeProvider({ children, businessId }: { children: React.ReactNode, businessId: string }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Contador derivado en lugar de setState dentro de useEffect
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   // Inicializar notificaciones no leídas
   useEffect(() => {
+    let isMounted = true;
     const fetchInitial = async () => {
+      if (!businessId) return;
       const data = await getUnreadNotifications(businessId);
-      if (data) {
-        setNotifications(data);
-        setUnreadCount(data.length);
+      if (data && isMounted) {
+        setNotifications(data as NotificationItem[]);
       }
     };
     fetchInitial();
+    return () => {
+      isMounted = false;
+    };
   }, [businessId]);
-
-  // Recalcular contador cuando cambian las notificaciones
-  useEffect(() => {
-    setUnreadCount(notifications.filter(n => !n.read).length);
-  }, [notifications]);
 
   useEffect(() => {
     if (!businessId) return;
 
     subscribeToNotifications(businessId, (payload) => {
-      setNotifications(prev => [payload, ...prev]);
-
-      // Reproducir sonido si está activado (esto requiere que el usuario haya interactuado con la página antes)
-      try {
-        // Obtenemos si está habilitado del local storage o asumiendo true por ahora
-        // Idealmente lo validamos desde la base de datos de settings
-        const audio = new Audio('/sounds/universfield-new-notification-036-485897.mp3'); 
-        audio.play().catch(e => console.log('El navegador bloqueó el autoplay del sonido', e));
-        
-        if (navigator.vibrate) {
-          navigator.vibrate([150, 100, 150]);
+      setNotifications(prev => {
+        // Evitar duplicados por id
+        if (prev.some(n => n.id === payload.id)) {
+          return prev.map(n => n.id === payload.id ? { ...n, ...payload } : n);
         }
-      } catch (error) {}
+        return [payload, ...prev];
+      });
 
-      // Mostrar Toast interactivo
-      toast(payload.title, {
+      // Iconos por tipo de notificación
+      const getIcon = (type: string) => {
+        switch (type) {
+          case 'new_order': return '🍽️';
+          case 'waiter_call': return '🔔';
+          case 'order_ready': return '✅';
+          case 'order_cancelled': return '❌';
+          case 'new_review': return '⭐';
+          case 'low_stock': return '⚠️';
+          case 'trial_expiring': return '⏳';
+          default: return '🔔';
+        }
+      };
+
+      // Sonido de notificación con manejo silencioso de restricciones de autoplay
+      try {
+        const audio = new Audio('/sounds/universfield-new-notification-036-485897.mp3');
+        audio.play().catch(() => {
+          // Captura silenciosa si el navegador bloquea la reproducción automática antes de interacción
+        });
+      } catch { }
+
+      // Vibración en dispositivos compatibles
+      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate([200, 100, 200]);
+        } catch { }
+      }
+
+      // Toast interactivo global
+      toast(payload.title || 'Nueva notificación', {
         description: payload.description,
-        icon: '🔔',
+        icon: getIcon(payload.type),
+        duration: 5000,
       });
     });
 

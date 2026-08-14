@@ -22,8 +22,12 @@ export function TourGuide() {
           }
         }, 500);
       };
-
       if (!hasSeenTour) {
+        // Wait for modals to be closed before starting tour
+        if (document.getElementById('customer-info-modal') || document.getElementById('promo-modal')) {
+          return;
+        }
+
         // Pequeño timeout para asegurar que el DOM esté completamente listo
         const timer = setTimeout(() => {
           const isMobile = window.innerWidth < 768;

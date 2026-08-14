@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string, businessId: string }) {
   const { customerInfo, setCustomerInfo, isHydrated, isCustomerModalOpen, setIsCustomerModalOpen } = useCart();
-  
+
   const [tableNumber, setTableNumber] = useState('');
   const [tableCode, setTableCode] = useState('');
   const [name, setName] = useState('');
@@ -20,15 +20,15 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
 
     // Check if we need to show the modal
     if (orderMode === 'menu_only') return;
-    
+
     // Check if we already have the required info
     let needsInfo = false;
-    
+
     if (orderMode === 'table_number' && !customerInfo.tableNumber) needsInfo = true;
     if (orderMode === 'table_code' && !customerInfo.tableCode) needsInfo = true;
     if (orderMode === 'takeaway' && (!customerInfo.name || !customerInfo.phone)) needsInfo = true;
     if (orderMode === 'comanda' && !customerInfo.comanda) needsInfo = true;
-    
+
     if (needsInfo) {
       setIsCustomerModalOpen(true);
     }
@@ -49,12 +49,12 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (orderMode === 'table_number' && !tableNumber) return toast.error('Ingresa tu número de mesa');
     if (orderMode === 'table_code' && !tableCode) return toast.error('Ingresa el código de la mesa');
     if (orderMode === 'takeaway' && (!name || !phone)) return toast.error('Ingresa nombre y teléfono');
     if (orderMode === 'comanda' && !comanda) return toast.error('Ingresa el número de comanda');
-    
+
     setCustomerInfo({
       tableNumber,
       tableCode,
@@ -62,26 +62,30 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
       phone,
       comanda
     });
-    
+
     setIsCustomerModalOpen(false);
     toast.success('¡Listo! Ya puedes armar tu pedido.');
+    setTimeout(() => window.dispatchEvent(new Event('start-tour')), 500);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer" 
+    <div id="customer-info-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer"
         onClick={() => {
           // Permite cerrar si ya tienen la info completa
-          const hasInfo = 
+          const hasInfo =
             (orderMode === 'table_number' && customerInfo.tableNumber) ||
             (orderMode === 'table_code' && customerInfo.tableCode) ||
             (orderMode === 'takeaway' && customerInfo.name && customerInfo.phone) ||
             (orderMode === 'comanda' && customerInfo.comanda);
-          if (hasInfo) setIsCustomerModalOpen(false);
+          if (hasInfo) {
+            setIsCustomerModalOpen(false);
+            setTimeout(() => window.dispatchEvent(new Event('start-tour')), 500);
+          }
         }}
       />
-      
+
       <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-md relative z-10 shadow-2xl animate-in zoom-in-95">
         <div className="text-center mb-6">
           <div className="w-12 h-12 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-3">

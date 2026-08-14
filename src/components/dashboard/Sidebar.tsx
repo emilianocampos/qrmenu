@@ -21,6 +21,7 @@ import {
   X,
   Box,
   ShoppingBag,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { logout } from '@/actions/auth';
 import { Business } from '@/types';
@@ -34,13 +35,13 @@ const navItems = [
   { id: 'tour-pedidos', href: '/orders', icon: ShoppingBag, label: 'Pedidos', color: 'text-orange-400' },
   { id: 'tour-productos', href: '/productos', icon: Package, label: 'Productos', color: 'text-blue-400' },
   { id: 'tour-categorias', href: '/categorias', icon: Tags, label: 'Categorías', color: 'text-violet-400' },
+  { id: 'tour-mesas', href: '/mesas', icon: UtensilsCrossed, label: 'Mesas & Carteles', color: 'text-amber-400' },
   { id: 'tour-modelos', href: '/models', icon: Box, label: 'Modelos 3D', color: 'text-emerald-400' },
   { divider: true },
   { id: 'tour-importar', href: '/importar', icon: Sparkles, label: 'Importar Carta', color: 'text-cyan-400' },
   { id: 'tour-personalizacion', href: '/personalizacion', icon: Palette, label: 'Personalización', color: 'text-pink-400' },
   { divider: true },
-  { id: 'tour-qr', href: '/qr', icon: QrCode, label: 'QR', color: 'text-amber-400' },
-  { id: 'tour-pedidos-settings', href: '/settings/order-mode', icon: Settings, label: 'Modo de Pedidos', color: 'text-orange-400' },
+  { id: 'tour-qr', href: '/qr', icon: QrCode, label: 'Código QR', color: 'text-amber-400' },
   { id: 'tour-configuracion', href: '/configuracion', icon: Settings, label: 'Configuración', color: 'text-gray-400' },
 ];
 
@@ -112,7 +113,7 @@ export function Sidebar({ business }: SidebarProps) {
 
         tourDriver.drive();
       }, 800);
-      
+
       return () => clearTimeout(timer);
     }
   }, [business]);

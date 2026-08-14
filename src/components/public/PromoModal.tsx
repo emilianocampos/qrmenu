@@ -52,6 +52,7 @@ export function PromoModal({ businessId, active, title, description, imageUrl, p
 
   return (
     <Dialog
+      id="promo-modal"
       open={open}
       onClose={handleClose}
       maxWidth="xs"

@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Loader2, Save, Trash2, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, Trash2, AlertTriangle, Volume2, VolumeX, Smartphone } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { PasswordInput } from '@/components/ui/PasswordInput';
+import { ModeSelector } from '@/components/orders/ModeSelector';
 import { updateBusiness, deleteBusiness } from '@/actions/business';
 import { updateUserCredentials } from '@/actions/auth';
 import { Business } from '@/types';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 const FieldInput = ({ label, value, onChange, type = 'text', placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) => (
   <div>
@@ -26,7 +29,7 @@ const FieldInput = ({ label, value, onChange, type = 'text', placeholder }: { la
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
     <h3 className="text-sm font-semibold text-white mb-5 pb-4 border-b border-white/8">{title}</h3>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">{children}</div>
+    <div className="space-y-5">{children}</div>
   </div>
 );
 
@@ -47,19 +50,35 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
   const [form, setForm] = useState({
     name: business.name,
     slug: business.slug,
+    notification_sound_enabled: (business as any).notification_sound_enabled ?? true,
+    notification_vibrate_enabled: (business as any).notification_vibrate_enabled ?? true,
   });
 
   const [accountForm, setAccountForm] = useState({
     email: userEmail,
     password: '',
+    confirmPassword: '',
   });
 
   const handleSave = () => {
     setError(null);
     setSaved(false);
+
+    if (accountForm.password) {
+      if (accountForm.password !== accountForm.confirmPassword) {
+        setError('Las contraseñas no coinciden.');
+        return;
+      }
+    }
+
     startTransition(async () => {
-      const result = await updateBusiness(business.id, form);
-      
+      const result = await updateBusiness(business.id, {
+        name: form.name,
+        slug: form.slug,
+        notification_sound_enabled: form.notification_sound_enabled,
+        notification_vibrate_enabled: form.notification_vibrate_enabled,
+      } as any);
+
       let accountError = null;
       if (accountForm.email !== userEmail || accountForm.password) {
         const accResult = await updateUserCredentials({
@@ -71,9 +90,11 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
 
       if (result.error || accountError) {
         setError(result.error || accountError || 'Error al guardar');
+        toast.error(result.error || accountError || 'Error al guardar la configuración');
       } else {
         setSaved(true);
-        setAccountForm(f => ({ ...f, password: '' }));
+        setAccountForm(f => ({ ...f, password: '', confirmPassword: '' }));
+        toast.success('Configuración guardada correctamente.');
         router.refresh();
         setTimeout(() => setSaved(false), 3000);
       }
@@ -87,6 +108,7 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
         setError(result.error);
         setConfirmDeleteOpen(false);
       } else {
+        toast.success('Negocio eliminado');
         router.push('/dashboard');
       }
     });
@@ -94,7 +116,7 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
 
   const generateSlug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
-  const update = (key: string, value: string) => setForm(f => {
+  const update = (key: string, value: any) => setForm(f => {
     const newForm = { ...f, [key]: value };
     if (key === 'name') {
       newForm.slug = generateSlug(value);
@@ -107,7 +129,7 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
     <div>
       <PageHeader
         title="Configuración"
-        description="Administrá la información de tu negocio"
+        description="Administrá la información de tu negocio y modo de pedidos"
         breadcrumb={[{ label: 'Dashboard' }, { label: 'Configuración' }]}
         action={
           <button
@@ -115,7 +137,7 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
             disabled={isPending}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
                        bg-indigo-500 hover:bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-500/25
-                       disabled:opacity-50"
+                       disabled:opacity-50 cursor-pointer"
           >
             {isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : saved ? '✓ Guardado' : <><Save className="w-4 h-4" /> Guardar</>}
           </button>
@@ -138,26 +160,92 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
 
         {/* General */}
         <Section title="Información básica">
-          <FieldInput label="Nombre del negocio" value={form.name} onChange={v => update('name', v)} />
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Slug (URL)</label>
-            <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden
-                            focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all">
-              <span className="px-3 py-3 text-sm text-gray-600 border-r border-white/10 flex-shrink-0">/c/</span>
-              <input
-                type="text"
-                value={form.slug}
-                onChange={e => update('slug', e.target.value)}
-                className="flex-1 bg-transparent text-white placeholder-gray-600 px-3 py-3 text-sm focus:outline-none"
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <FieldInput label="Nombre del negocio" value={form.name} onChange={v => update('name', v)} />
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Slug (URL)</label>
+              <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden
+                              focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all">
+                <span className="px-3 py-3 text-sm text-gray-600 border-r border-white/10 flex-shrink-0">/c/</span>
+                <input
+                  type="text"
+                  value={form.slug}
+                  onChange={e => update('slug', e.target.value)}
+                  className="flex-1 bg-transparent text-white placeholder-gray-600 px-3 py-3 text-sm focus:outline-none"
+                />
+              </div>
             </div>
+          </div>
+        </Section>
+
+        {/* Modo de Pedidos */}
+        <Section title="Modo de pedidos">
+          <p className="text-xs text-gray-400 -mt-2 mb-4">
+            Seleccioná la modalidad de atención para tus clientes desde la carta digital.
+          </p>
+          <ModeSelector businessId={business.id} initialMode={business.order_mode || 'menu_only'} />
+        </Section>
+
+        {/* Notificaciones Prefeferencias */}
+        <Section title="Sonido y Notificaciones">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
+              <div className="flex items-center gap-3">
+                {form.notification_sound_enabled ? (
+                  <Volume2 className="w-5 h-5 text-indigo-400" />
+                ) : (
+                  <VolumeX className="w-5 h-5 text-gray-500" />
+                )}
+                <div>
+                  <p className="text-sm font-medium text-white">Sonido de notificaciones</p>
+                  <p className="text-xs text-gray-400">Reproducir tono en nuevos pedidos y llamados al mozo</p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={form.notification_sound_enabled}
+                onChange={e => update('notification_sound_enabled', e.target.checked)}
+                className="w-4 h-4 rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500"
+              />
+            </label>
+
+            <label className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
+              <div className="flex items-center gap-3">
+                <Smartphone className="w-5 h-5 text-violet-400" />
+                <div>
+                  <p className="text-sm font-medium text-white">Vibración</p>
+                  <p className="text-xs text-gray-400">Vibrar dispositivo si el navegador lo soporta</p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={form.notification_vibrate_enabled}
+                onChange={e => update('notification_vibrate_enabled', e.target.checked)}
+                className="w-4 h-4 rounded border-white/20 bg-white/5 text-violet-500 focus:ring-violet-500"
+              />
+            </label>
           </div>
         </Section>
 
         {/* Account */}
         <Section title="Cuenta de Acceso">
-          <FieldInput label="Email de inicio de sesión" type="email" value={accountForm.email} onChange={v => updateAccount('email', v)} placeholder="tu@email.com" />
-          <FieldInput label="Nueva contraseña (dejar en blanco para mantener)" type="password" value={accountForm.password} onChange={v => updateAccount('password', v)} placeholder="••••••••" />
+          <div className="space-y-4">
+            <FieldInput label="Email de inicio de sesión" type="email" value={accountForm.email} onChange={v => updateAccount('email', v)} placeholder="tu@email.com" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <PasswordInput
+                label="Nueva contraseña (dejar en blanco para mantener)"
+                value={accountForm.password}
+                onChange={e => updateAccount('password', e.target.value)}
+                placeholder="••••••••"
+              />
+              <PasswordInput
+                label="Confirmar contraseña"
+                value={accountForm.confirmPassword}
+                onChange={e => updateAccount('confirmPassword', e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
         </Section>
 
         {error && (
@@ -180,7 +268,7 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
               <button
                 onClick={() => setConfirmDeleteOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
-                           bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-all"
+                           bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-all cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
                 Eliminar negocio

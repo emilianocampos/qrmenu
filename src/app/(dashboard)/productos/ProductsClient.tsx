@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Plus, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Trash2, Tags, X } from 'lucide-react';
+import Link from 'next/link';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -92,7 +93,13 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
     setCurrentPage(1);
   };
 
+  const [noCategoryModal, setNoCategoryModal] = useState(false);
+
   const openCreate = () => {
+    if (categories.length === 0) {
+      setNoCategoryModal(true);
+      return;
+    }
     setEditProduct(null);
     setForm(defaultForm);
     setImageFile(null);
@@ -128,7 +135,12 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
 
   const handleSave = () => {
     setFormError(null);
+    if (categories.length === 0) {
+      setFormError('Primero debes crear una categoría para poder agregar productos.');
+      return;
+    }
     if (!form.name.trim()) { setFormError('El nombre es requerido'); return; }
+    if (!form.category_id) { setFormError('Debes seleccionar una categoría'); return; }
 
     startTransition(async () => {
       let imageUrl = form.image_url;
@@ -177,8 +189,10 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
       // Refresh local state
       if (editProduct) {
         setProducts(prev => prev.map(p => p.id === editProduct.id ? { ...p, ...updates } : p));
+        toast.success('Producto actualizado correctamente.');
       } else if (result.data) {
         setProducts(prev => [result.data as Product, ...prev]);
+        toast.success('Producto creado correctamente.');
       }
 
       setDialogOpen(false);
@@ -390,6 +404,36 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
         danger
         loading={isPending}
       />
+
+      {/* Dialog para cuando NO existen categorías */}
+      {noCategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setNoCategoryModal(false)} />
+          <div className="relative bg-[#111] border border-white/10 rounded-2xl w-full max-w-md p-6 text-center shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center mx-auto">
+              <Tags className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Categoría requerida</h3>
+            <p className="text-sm text-gray-300">
+              Primero debes crear una categoría para poder agregar productos.
+            </p>
+            <div className="pt-2 flex items-center justify-center gap-3">
+              <button
+                onClick={() => setNoCategoryModal(false)}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+              >
+                Cancelar
+              </button>
+              <Link
+                href="/categorias"
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-500 hover:bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-500/25"
+              >
+                Crear categoría
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

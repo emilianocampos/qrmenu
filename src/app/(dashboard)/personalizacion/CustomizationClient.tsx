@@ -9,6 +9,7 @@ import { updateBusiness } from '@/actions/business';
 import { createClient } from '@/lib/supabase/client';
 import { Business } from '@/types';
 import { DesignAnalysisCard } from './components/DesignAnalysisCard';
+import { toast } from 'sonner';
 
 const typographies = ['Inter', 'Roboto', 'Playfair Display', 'Lato', 'Poppins', 'Oswald', 'Montserrat'];
 const themes = [
@@ -182,8 +183,10 @@ export function CustomizationClient({ business }: { business: Business }) {
 
       if (result.error) {
         setError(result.error);
+        toast.error('Error al guardar personalización');
       } else {
         setSaved(true);
+        toast.success('Personalización guardada correctamente.');
         setTimeout(() => setSaved(false), 3000);
       }
     });
