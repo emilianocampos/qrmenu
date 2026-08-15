@@ -77,7 +77,7 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
                         <p className={`text-sm ${!notif.read ? 'text-white font-medium' : 'text-gray-300'}`}>
                           {notif.title}
                         </p>
-                        <span className="text-[10px] text-gray-500 shrink-0 whitespace-nowrap">
+                        <span className="text-[10px] text-gray-500 shrink-0 whitespace-nowrap" suppressHydrationWarning>
                           {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: es })}
                         </span>
                       </div>

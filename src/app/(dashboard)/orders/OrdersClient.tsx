@@ -58,7 +58,7 @@ export function OrdersClient({ businessId, initialOrders, orderMode }: OrdersCli
     if (filter === 'all') return true;
     if (filter === 'pending') return order.status === 'pending';
     if (filter === 'active') return ['accepted', 'preparing', 'ready'].includes(order.status);
-    if (filter === 'completed') return ['delivered', 'cancelled'].includes(order.status);
+    if (filter === 'completed') return ['delivered', 'paid', 'cancelled'].includes(order.status);
     return true;
   });
 

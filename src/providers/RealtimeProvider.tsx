@@ -74,8 +74,7 @@ export function RealtimeProvider({ children, businessId }: { children: React.Rea
         switch (type) {
           case 'new_order': return '🍽️';
           case 'waiter_call': return '🔔';
-          case 'order_ready': return '✅';
-          case 'order_cancelled': return '❌';
+          case 'order_paid': return '💳';
           case 'new_review': return '⭐';
           case 'low_stock': return '⚠️';
           case 'trial_expiring': return '⏳';

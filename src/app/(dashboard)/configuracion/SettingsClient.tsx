@@ -52,6 +52,7 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
     slug: business.slug,
     notification_sound_enabled: (business as any).notification_sound_enabled ?? true,
     notification_vibrate_enabled: (business as any).notification_vibrate_enabled ?? true,
+    mp_access_token: (business as any).mp_access_token ?? '',
   });
 
   const [accountForm, setAccountForm] = useState({
@@ -224,6 +225,22 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
                 className="w-4 h-4 rounded border-white/20 bg-white/5 text-violet-500 focus:ring-violet-500"
               />
             </label>
+          </div>
+        </Section>
+
+        {/* Mercado Pago */}
+        <Section title="Integración con Mercado Pago">
+          <div className="space-y-3">
+            <p className="text-xs text-gray-400">
+              Ingresá tu Access Token de Mercado Pago para permitir a tus clientes pagar el pedido escaneando o tocando el botón de cobro.
+            </p>
+            <FieldInput
+              label="Access Token de Mercado Pago"
+              type="password"
+              value={form.mp_access_token}
+              onChange={v => update('mp_access_token', v)}
+              placeholder="APP_USR-..."
+            />
           </div>
         </Section>
 

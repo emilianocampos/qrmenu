@@ -52,6 +52,8 @@ export type Business = {
   promo_description?: string | null;
   promo_image?: string | null;
   order_mode?: string | null;
+  mp_access_token?: string | null;
+  mp_public_key?: string | null;
   created_at: string;
   trial_enabled?: boolean;
 };

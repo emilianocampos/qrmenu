@@ -20,13 +20,13 @@ export function TableInfoAndWaiterBar({ businessId, orderMode }: TableInfoAndWai
   if (!isHydrated || orderMode === 'menu_only') return null;
 
   let displayValue = '';
-  if (orderMode === 'table_number' && customerInfo.tableNumber) {
-    displayValue = `Mesa ${customerInfo.tableNumber}`;
-  } else if (orderMode === 'table_code' && customerInfo.tableCode) {
-    displayValue = `Mesa ${customerInfo.tableCode}`;
-  } else if (orderMode === 'takeaway' && customerInfo.name) {
+  const currentTable = customerInfo?.tableNumber || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('table') || new URLSearchParams(window.location.search).get('mesa')) : null);
+
+  if (currentTable) {
+    displayValue = `Mesa ${currentTable}`;
+  } else if (orderMode === 'takeaway' && customerInfo?.name) {
     displayValue = `Retira: ${customerInfo.name}`;
-  } else if (orderMode === 'comanda' && customerInfo.comanda) {
+  } else if (orderMode === 'comanda' && customerInfo?.comanda) {
     displayValue = `Comanda #${customerInfo.comanda}`;
   }
 
@@ -48,7 +48,7 @@ export function TableInfoAndWaiterBar({ businessId, orderMode }: TableInfoAndWai
     }
   };
 
-  const isTableMode = orderMode === 'table_number' || orderMode === 'table_code';
+  const isTableMode = orderMode === 'table_number' || !!currentTable;
 
   return (
     <div className="flex items-center gap-2 sm:gap-3 flex-wrap">

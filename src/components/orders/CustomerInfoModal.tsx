@@ -104,21 +104,7 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
                 required
                 value={tableNumber}
                 onChange={e => setTableNumber(e.target.value)}
-                placeholder="Ej: 14"
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-              />
-            </div>
-          )}
-
-          {orderMode === 'table_code' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Código de Mesa</label>
-              <input
-                type="text"
-                required
-                value={tableCode}
-                onChange={e => setTableCode(e.target.value)}
-                placeholder="Ingresa el código único de tu mesa"
+                placeholder="Ej: 8"
                 className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
               />
             </div>

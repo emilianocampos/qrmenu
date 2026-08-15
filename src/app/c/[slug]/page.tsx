@@ -50,8 +50,10 @@ export default async function PublicMenuPage({ params }: PageProps) {
     );
   }
 
-  const { data: products = [] } = await getProducts(business.id);
-  const { data: reviews = [] } = await getReviews(business.id);
+  const [{ data: products = [] }, { data: reviews = [] }] = await Promise.all([
+    getProducts(business.id),
+    getReviews(business.id),
+  ]);
 
   const reviewCount = reviews.length;
   const rating = reviewCount > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviewCount : 5.0;

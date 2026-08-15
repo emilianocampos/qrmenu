@@ -22,14 +22,7 @@ const MODES = [
     id: 'table_number',
     name: 'Número de Mesa',
     icon: UtensilsCrossed,
-    description: 'Se solicitará un número de mesa al cliente antes de pedir.',
-    disabled: false
-  },
-  {
-    id: 'table_code',
-    name: 'Código de Mesa',
-    icon: KeySquare,
-    description: 'Se solicitará ingresar o escanear el código único de la mesa.',
+    description: 'Se asociará el pedido al número de mesa escaneado en el QR.',
     disabled: false
   },
   {

@@ -172,3 +172,11 @@ BEGIN
     CREATE POLICY "System can insert notifications" ON notifications FOR INSERT WITH CHECK (true);
   END IF;
 END $$;
+
+-- 12. Integración Mercado Pago y estado Paid
+ALTER TABLE public.businesses ADD COLUMN IF NOT EXISTS mp_access_token text;
+ALTER TABLE public.businesses ADD COLUMN IF NOT EXISTS mp_public_key text;
+
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_status text DEFAULT 'pending';
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_id text;
+

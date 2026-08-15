@@ -26,6 +26,7 @@ export function OrderCard({ order, businessId }: OrderCardProps) {
       case 'preparing': return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
       case 'ready': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'delivered': return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+      case 'paid': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
       case 'cancelled': return 'bg-red-500/10 text-red-400 border-red-500/20';
       default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
     }
@@ -39,6 +40,7 @@ export function OrderCard({ order, businessId }: OrderCardProps) {
       case 'preparing': return 'Preparando';
       case 'ready': return 'Listo para entregar';
       case 'delivered': return 'Entregado';
+      case 'paid': return 'Pagado';
       case 'cancelled': return 'Cancelado';
       default: return s;
     }
@@ -49,7 +51,6 @@ export function OrderCard({ order, businessId }: OrderCardProps) {
     try {
       const res = await updateOrderStatus(order.id, businessId, newStatus, order.restaurant_tables?.table_number || order.restaurant_tables?.table_code);
       if (res.error) throw new Error(res.error);
-      toast.success(`Estado actualizado a ${getStatusLabel(newStatus)}`);
     } catch (error) {
       toast.error('Error al actualizar estado');
     } finally {
@@ -66,24 +67,19 @@ export function OrderCard({ order, businessId }: OrderCardProps) {
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${getStatusColor(normalizedStatus)}`}>
               {getStatusLabel(normalizedStatus)}
             </span>
-            <span className="text-xs text-gray-500 flex items-center gap-1">
+            <span className="text-xs text-gray-500 flex items-center gap-1" suppressHydrationWarning>
               <Clock className="w-3 h-3" />
               {formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: es })}
             </span>
           </div>
           <div className="flex items-center gap-3 mt-2">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              {order.restaurant_tables ? (
-                <>
-                  <MapPin className="w-5 h-5 text-indigo-400" />
-                  Mesa {order.restaurant_tables.table_number || order.restaurant_tables.table_code}
-                </>
-              ) : (
-                <>
-                  <User className="w-5 h-5 text-indigo-400" />
-                  Takeaway / Barra
-                </>
-              )}
+              <MapPin className="w-5 h-5 text-indigo-400" />
+              {order.restaurant_tables?.table_number 
+                ? `Mesa ${order.restaurant_tables.table_number}`
+                : order.customer_identifier 
+                  ? (order.customer_identifier.toLowerCase().startsWith('mesa') ? order.customer_identifier : `Mesa ${order.customer_identifier}`)
+                  : 'Takeaway / Barra'}
             </h3>
             <span className="text-xl font-black text-emerald-400">
               ${order.total}
@@ -108,8 +104,10 @@ export function OrderCard({ order, businessId }: OrderCardProps) {
             </div>
           )}
           {order.customer_identifier && (
-            <div className="font-mono bg-black/50 px-2 py-0.5 rounded">
-              ID: {order.customer_identifier}
+            <div className="font-mono bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-2.5 py-0.5 rounded-lg text-xs font-semibold">
+              {order.customer_identifier.toLowerCase().includes('mesa')
+                ? `MESA: ${order.customer_identifier.replace(/mesa\s*/i, '').toUpperCase()}`
+                : `MESA: ${order.customer_identifier.toUpperCase()}`}
             </div>
           )}
         </div>
@@ -208,6 +206,22 @@ export function OrderCard({ order, businessId }: OrderCardProps) {
           >
             <PackageCheck className="w-4 h-4" /> Entregado al cliente
           </button>
+        )}
+
+        {normalizedStatus === 'delivered' && (
+          <button
+            disabled={isUpdating}
+            onClick={() => handleUpdateStatus('paid')}
+            className="col-span-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4" /> Marcar como Pagado
+          </button>
+        )}
+
+        {normalizedStatus === 'paid' && (
+          <div className="col-span-full py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-xs font-bold text-center flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-4 h-4" /> Pedido Pagado Correctamente
+          </div>
         )}
       </div>
     </div>

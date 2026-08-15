@@ -30,12 +30,17 @@ export function Cart({ businessId, orderMode, businessSlug }: CartProps) {
         observations: i.observations
       }));
 
-      // Set table identifier string based on mode
+      // Formatear el identificador de mesa o cliente
       let identifier = '';
-      if (orderMode === 'table_number') identifier = customerInfo.tableNumber;
-      if (orderMode === 'table_code') identifier = customerInfo.tableCode;
-      if (orderMode === 'takeaway') identifier = `${customerInfo.name} - ${customerInfo.phone}`;
-      if (orderMode === 'comanda') identifier = customerInfo.comanda;
+      const tableVal = customerInfo?.tableNumber || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('table') || new URLSearchParams(window.location.search).get('mesa')) : null);
+
+      if (tableVal) {
+        identifier = tableVal.toString().toLowerCase().startsWith('mesa') ? tableVal : `Mesa ${tableVal}`;
+      } else if (orderMode === 'takeaway') {
+        identifier = `${customerInfo?.name || ''} - ${customerInfo?.phone || ''}`;
+      } else if (orderMode === 'comanda') {
+        identifier = `Comanda #${customerInfo?.comanda || ''}`;
+      }
 
       const res = await createOrder({
         businessId,

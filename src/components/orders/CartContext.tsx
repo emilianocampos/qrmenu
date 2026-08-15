@@ -57,14 +57,28 @@ export function CartProvider({ children, businessId }: { children: React.ReactNo
   const [isHydrated, setIsHydrated] = useState(false);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   
-  // Load from local storage on mount
+  // Load from local storage and URL query string on mount
   useEffect(() => {
     const savedCart = localStorage.getItem(`cart_${businessId}`);
     const savedCustomer = localStorage.getItem(`customer_${businessId}`);
     const savedOrderId = localStorage.getItem(`last_order_${businessId}`);
     
+    let parsedCustomer: any = {};
+    if (savedCustomer) {
+      try { parsedCustomer = JSON.parse(savedCustomer); } catch {}
+    }
+
+    // Auto-detectar número de mesa desde el QR (ej: ?table=1 o ?mesa=1)
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tableFromUrl = urlParams.get('table') || urlParams.get('mesa');
+      if (tableFromUrl) {
+        parsedCustomer.tableNumber = tableFromUrl;
+      }
+    }
+
     if (savedCart) setItems(JSON.parse(savedCart));
-    if (savedCustomer) setCustomerInfo(JSON.parse(savedCustomer));
+    setCustomerInfo(parsedCustomer);
     if (savedOrderId) setLastOrderId(savedOrderId);
     
     setIsHydrated(true);

@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 import { createNotification } from '../notifications';
 
 export async function getOrders(businessId: string) {
@@ -61,30 +62,34 @@ export async function updateOrderStatus(orderId: string, businessId: string, sta
 
     if (error) throw error;
 
-    // Crear notificación correspondiente (excepto para pending que se hace al crear)
-    const statusMap: Record<string, string> = {
-      accepted: 'Pedido aceptado',
-      preparing: 'Pedido en preparación',
-      ready: 'Pedido listo',
-      delivered: 'Pedido entregado',
-      cancelled: 'Pedido cancelado'
-    };
-
-    if (statusMap[status]) {
-      await createNotification({
-        businessId,
-        type: `order_${status}`,
-        title: statusMap[status],
-        description: tableName ? `Mesa ${tableName} - Estado: ${statusMap[status]}` : `Estado actualizado a ${statusMap[status]}`,
-        referenceId: orderId,
-        referenceType: 'order'
-      });
-    }
-
     return { success: true };
   } catch (error: any) {
     console.error('Error updating order:', error);
     return { error: error.message };
+  }
+}
+
+export async function markOrderAsPaid(orderId: string, businessId: string, paymentMethod: string = 'manual') {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        status: 'paid',
+        payment_status: 'approved',
+        payment_id: paymentMethod,
+      })
+      .eq('id', orderId)
+      .eq('business_id', businessId);
+
+    if (error) throw error;
+
+    revalidatePath('/orders');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error marking order as paid:', error);
+    return { error: error.message || 'Error al marcar como pagado' };
   }
 }
 
@@ -105,12 +110,32 @@ export async function createOrder(params: CreateOrderParams) {
   try {
     const supabase = await createClient();
     
+    let tableIdToAssign = params.tableId || null;
+
+    // Asignar table_id buscando por table_number si no se envió explícito
+    if (!tableIdToAssign && params.customerIdentifier) {
+      const match = params.customerIdentifier.match(/\d+/);
+      if (match) {
+        const tableNum = parseInt(match[0], 10);
+        const { data: foundTable } = await supabase
+          .from('restaurant_tables')
+          .select('id')
+          .eq('business_id', params.businessId)
+          .eq('table_number', tableNum)
+          .maybeSingle();
+        
+        if (foundTable) {
+          tableIdToAssign = foundTable.id;
+        }
+      }
+    }
+
     // 1. Crear Order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         business_id: params.businessId,
-        table_id: params.tableId,
+        table_id: tableIdToAssign,
         customer_first_name: params.customerFirstName,
         customer_last_name: params.customerLastName,
         customer_phone: params.customerPhone,
