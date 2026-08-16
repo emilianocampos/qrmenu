@@ -11,7 +11,7 @@ let customerOrderChannel: RealtimeChannel | null = null;
  * Suscribe a las notificaciones globales del negocio (Dashboard).
  * Solo se abre UNA conexión por negocio en todo el dashboard.
  */
-export function subscribeToNotifications(businessId: string, callback: SubscriptionCallback<any>) {
+export function subscribeToNotifications(businessId: string, callback: (payload: any, eventType: string) => void) {
   if (notificationsChannel) {
     unsubscribeFromNotifications();
   }
@@ -30,7 +30,7 @@ export function subscribeToNotifications(businessId: string, callback: Subscript
       },
       (payload) => {
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-          callback(payload.new);
+          callback(payload.new, payload.eventType);
         }
       }
     )

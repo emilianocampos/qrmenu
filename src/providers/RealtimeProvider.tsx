@@ -43,6 +43,7 @@ export const useRealtime = () => useContext(RealtimeContext);
 export function RealtimeProvider({ children, businessId }: { children: React.ReactNode, businessId: string }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
+  const processedNotifIds = React.useRef(new Set<string>());
 
   // Contador derivado en lugar de setState dentro de useEffect
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -66,7 +67,7 @@ export function RealtimeProvider({ children, businessId }: { children: React.Rea
   useEffect(() => {
     if (!businessId) return;
 
-    subscribeToNotifications(businessId, (payload) => {
+    subscribeToNotifications(businessId, (payload, eventType) => {
       setNotifications(prev => {
         // Evitar duplicados por id
         if (prev.some(n => n.id === payload.id)) {
@@ -75,45 +76,50 @@ export function RealtimeProvider({ children, businessId }: { children: React.Rea
         return [payload, ...prev];
       });
 
-      // Si la notificación es un llamado de mozo, abrir el modal en vivo
-      if (payload.type === 'waiter_call') {
-        setIsWaiterModalOpen(true);
-      }
+      // Solo disparar efectos secundarios (toast, sonido, modal) si es un INSERT nuevo y no procesado
+      if (eventType === 'INSERT' && !processedNotifIds.current.has(payload.id)) {
+        processedNotifIds.current.add(payload.id);
 
-      // Iconos por tipo de notificación
-      const getIcon = (type: string) => {
-        switch (type) {
-          case 'new_order': return '🍽️';
-          case 'waiter_call': return '🔔';
-          case 'order_paid': return '💳';
-          case 'new_review': return '⭐';
-          case 'low_stock': return '⚠️';
-          case 'trial_expiring': return '⏳';
-          default: return '🔔';
+        // Si la notificación es un llamado de mozo, abrir el modal en vivo
+        if (payload.type === 'waiter_call') {
+          setIsWaiterModalOpen(true);
         }
-      };
 
-      // Sonido de notificación con manejo silencioso de restricciones de autoplay
-      try {
-        const audio = new Audio('/sounds/universfield-new-notification-036-485897.mp3');
-        audio.play().catch(() => {
-          // Captura silenciosa si el navegador bloquea la reproducción automática antes de interacción
-        });
-      } catch { }
+        // Iconos por tipo de notificación
+        const getIcon = (type: string) => {
+          switch (type) {
+            case 'new_order': return '🍽️';
+            case 'waiter_call': return '🔔';
+            case 'order_paid': return '💳';
+            case 'new_review': return '⭐';
+            case 'low_stock': return '⚠️';
+            case 'trial_expiring': return '⏳';
+            default: return '🔔';
+          }
+        };
 
-      // Vibración en dispositivos compatibles
-      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+        // Sonido de notificación con manejo silencioso de restricciones de autoplay
         try {
-          navigator.vibrate([300, 100, 300]);
+          const audio = new Audio('/sounds/universfield-new-notification-036-485897.mp3');
+          audio.play().catch(() => {
+            // Captura silenciosa si el navegador bloquea la reproducción automática antes de interacción
+          });
         } catch { }
-      }
 
-      // Toast interactivo global
-      toast(payload.title || 'Nueva notificación', {
-        description: payload.description,
-        icon: getIcon(payload.type),
-        duration: 5000,
-      });
+        // Vibración en dispositivos compatibles
+        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+          try {
+            navigator.vibrate([300, 100, 300]);
+          } catch { }
+        }
+
+        // Toast interactivo global (1 solo por notificación)
+        toast(payload.title || 'Nueva notificación', {
+          description: payload.description,
+          icon: getIcon(payload.type),
+          duration: 5000,
+        });
+      }
     });
 
     return () => {

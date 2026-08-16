@@ -23,18 +23,9 @@ export function OrdersClient({ businessId, initialOrders, orderMode }: OrdersCli
 
     // Suscripción Exclusiva para esta ruta
     subscribeToOrders(businessId, async (payload) => {
-      // Cuando hay un cambio (Insert/Update/Delete), lo ideal es refrescar la lista 
-      // o actualizar el estado localmente. Refrescar asegura tener los joins completos.
+      // Cuando hay un cambio (Insert/Update/Delete), actualizamos la lista
       const updatedOrders = await getOrders(businessId);
       setOrders(updatedOrders);
-      
-      // Mostrar toast si es insert
-      if (payload.eventType === 'INSERT') {
-         toast.success('¡Nuevo pedido recibido!', {
-             icon: '🛒',
-             description: 'Revisa tu panel de pedidos.'
-         });
-      }
     });
 
     return () => {
