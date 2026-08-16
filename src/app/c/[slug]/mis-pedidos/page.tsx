@@ -1,9 +1,10 @@
 import React from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { getOrderById } from '@/actions/orders';
+import { getBusinessBySlug } from '@/actions/reviews';
 import { OrderTimeline } from '@/components/orders/OrderTimeline';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ShoppingBag } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -29,8 +30,33 @@ export default async function CustomerOrderPage({ params, searchParams }: PagePr
 
   const order = await getOrderById(orderId);
 
-  if (!order || order.businesses.slug !== slug) {
-    notFound();
+  if (!order || !order.businesses || order.businesses.slug !== slug) {
+    const { data: business } = await getBusinessBySlug(slug);
+
+    if (!business) {
+      notFound();
+    }
+
+    const primaryColor = business.color_primary || '#6366f1';
+
+    return (
+      <div className="min-h-screen bg-[#0a0e1a] text-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4">
+          <ShoppingBag className="w-8 h-8 text-gray-400" />
+        </div>
+        <h1 className="text-2xl font-bold text-white mb-2">Pedido No Encontrado</h1>
+        <p className="text-gray-400 text-sm max-w-xs mb-6">
+          No encontramos este pedido. Es posible que haya sido completado o eliminado.
+        </p>
+        <Link
+          href={`/c/${slug}`}
+          className="px-6 py-3 font-bold text-white rounded-xl transition-all shadow-lg text-sm"
+          style={{ backgroundColor: primaryColor }}
+        >
+          Volver al Menú
+        </Link>
+      </div>
+    );
   }
 
   const business = order.businesses;
