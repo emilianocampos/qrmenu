@@ -1,6 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { getBusinessBySlug, getProducts, getReviews } from '@/actions/reviews';
+import { getLoyaltySettings } from '@/actions/loyalty';
 import { Navbar } from '@/components/public/Navbar';
 import { MenuSection } from '@/components/public/MenuSection';
 import { AboutSection } from '@/components/public/AboutSection';
@@ -57,7 +58,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
   ]);
 
   const reviewCount = reviews.length;
-  const rating = reviewCount > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviewCount : 5.0;
+  const rating = reviewCount > 0 ? reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviewCount : 5.0;
   const primaryColor = business.color_primary || '#f97316';
   const primaryColorRgb = hexToRgb(primaryColor);
   const customBg = business.background_color;
