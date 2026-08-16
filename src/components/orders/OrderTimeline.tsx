@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { subscribeToCustomerOrder, unsubscribeFromCustomerOrder } from '@/lib/realtime';
-import { CheckCircle2, Clock, ChefHat, PackageCheck, Receipt, Ban, CreditCard, Loader2 } from 'lucide-react';
+import { CheckCircle2, Clock, ChefHat, PackageCheck, Receipt, Ban, CreditCard, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface OrderTimelineProps {
@@ -22,12 +22,19 @@ const STATUS_STEPS = [
 export function OrderTimeline({ initialOrder, primaryColor }: OrderTimelineProps) {
   const [order, setOrder] = useState<any>(initialOrder);
   const [paying, setPaying] = useState(false);
+  const [isPayModalOpen, setIsPayModalOpen] = useState(
+    initialOrder.status === 'delivered' && !(initialOrder.status === 'paid' || initialOrder.payment_status === 'approved')
+  );
 
   useEffect(() => {
     // Solo suscribirse a este pedido específico
     subscribeToCustomerOrder(order.id, (payload) => {
       // Actualizamos solo el estado y timestamp para que la UI reaccione rápidamente
       setOrder((prev: any) => ({ ...prev, ...payload }));
+
+      if (payload.status === 'delivered') {
+        setIsPayModalOpen(true);
+      }
       
       const step = STATUS_STEPS.find(s => s.id === payload.status);
       if (step) {
@@ -93,35 +100,87 @@ export function OrderTimeline({ initialOrder, primaryColor }: OrderTimelineProps
   }
 
   return (
-    <div className="rounded-3xl p-6 sm:p-8 mt-4 border transition-all duration-300" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', boxShadow: 'var(--shadow-card)', color: 'var(--text-primary)' }}>
-      <h2 className="text-lg font-bold mb-8 pb-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
-        <span>Estado de tu pedido</span>
-        {isPaid && (
-          <span className="text-xs bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 px-3 py-1 rounded-full flex items-center gap-1 font-semibold">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Pagado
-          </span>
-        )}
-      </h2>
-
-      {/* Botón destacado de Pago con Mercado Pago si ya está Entregado */}
-      {order.status === 'delivered' && !isPaid && (
-        <div className="mb-8 p-5 bg-gradient-to-r from-blue-500/10 via-sky-500/10 to-indigo-500/10 border border-sky-500/30 rounded-2xl text-center space-y-3 animate-in fade-in zoom-in-95 duration-300">
-          <div className="w-12 h-12 bg-sky-500/20 text-sky-500 rounded-full flex items-center justify-center mx-auto">
-            <CreditCard className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>¡Tu pedido fue entregado!</h3>
-          <p className="text-xs max-w-sm mx-auto" style={{ color: 'var(--text-muted)' }}>
-            Podés realizar el pago de tu consumición de forma rápida y segura a través de Mercado Pago.
-          </p>
-          <button
-            onClick={handlePayMercadoPago}
-            disabled={paying}
-            className="w-full sm:w-auto px-6 py-3 bg-sky-500 hover:bg-sky-400 text-white font-black text-sm rounded-xl transition-all shadow-lg shadow-sky-500/25 flex items-center justify-center gap-2 mx-auto cursor-pointer"
+    <>
+      {/* Modal Emergente de Pago con Mercado Pago al Entregar */}
+      {isPayModalOpen && order.status === 'delivered' && !isPaid && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-300">
+          <div 
+            className="relative w-full max-w-md rounded-3xl p-6 sm:p-8 text-center border overflow-hidden animate-in zoom-in-95 duration-300"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-color)',
+              color: 'var(--text-primary)',
+              boxShadow: 'var(--shadow-modal)',
+            }}
           >
-            {paying ? <><Loader2 className="w-4 h-4 animate-spin" /> Abriendo Mercado Pago...</> : <><CreditCard className="w-4 h-4" /> Pagar con Mercado Pago</>}
-          </button>
+            {/* Línea de resplandor superior */}
+            <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-sky-500 via-blue-400 to-sky-500 animate-pulse" />
+
+            {/* Botón de cerrar */}
+            <button
+              onClick={() => setIsPayModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full transition-colors cursor-pointer"
+              style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-muted)' }}
+              title="Cerrar"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-16 h-16 rounded-full bg-sky-500/20 text-sky-500 border border-sky-500/30 flex items-center justify-center mx-auto mb-4 animate-bounce">
+              <CreditCard className="w-8 h-8 text-sky-500" />
+            </div>
+
+            <h2 className="text-2xl font-black tracking-wide" style={{ color: 'var(--text-primary)' }}>
+              ¡Tu pedido fue entregado!
+            </h2>
+            <p className="text-sm mt-2 max-w-xs mx-auto" style={{ color: 'var(--text-muted)' }}>
+              Podés realizar el pago de tu consumición de forma rápida y segura a través de Mercado Pago.
+            </p>
+
+            <div 
+              className="my-6 p-4 border rounded-2xl flex items-center justify-between"
+              style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)' }}
+            >
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Total a Pagar</span>
+              <span className="text-xl font-black" style={{ color: primaryColor }}>${order.total}</span>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={handlePayMercadoPago}
+                disabled={paying}
+                className="w-full py-3.5 bg-sky-500 hover:bg-sky-400 text-white font-black text-sm rounded-xl transition-all shadow-lg shadow-sky-500/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {paying ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Abriendo Mercado Pago...</>
+                ) : (
+                  <><CreditCard className="w-4 h-4" /> Pagar con Mercado Pago</>
+                )}
+              </button>
+
+              <button
+                onClick={() => setIsPayModalOpen(false)}
+                className="w-full text-center text-xs py-2 transition-colors cursor-pointer"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Pagaré en efectivo / en el local
+              </button>
+            </div>
+          </div>
         </div>
       )}
+
+      <div className="rounded-3xl p-6 sm:p-8 mt-4 border transition-all duration-300" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', boxShadow: 'var(--shadow-card)', color: 'var(--text-primary)' }}>
+        <h2 className="text-lg font-bold mb-8 pb-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+          <span>Estado de tu pedido</span>
+          {isPaid && (
+            <span className="text-xs bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 px-3 py-1 rounded-full flex items-center gap-1 font-semibold">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Pagado
+            </span>
+          )}
+        </h2>
+
+
 
       {/* Cartel de Confirmación de Pago */}
       {isPaid && (
@@ -215,5 +274,6 @@ export function OrderTimeline({ initialOrder, primaryColor }: OrderTimelineProps
         </a>
       </div>
     </div>
+    </>
   );
 }

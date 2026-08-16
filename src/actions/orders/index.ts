@@ -86,6 +86,7 @@ export async function markOrderAsPaid(orderId: string, businessId: string, payme
     if (error) throw error;
 
     revalidatePath('/orders');
+    revalidatePath('/dashboard');
     return { success: true };
   } catch (error: any) {
     console.error('Error marking order as paid:', error);
