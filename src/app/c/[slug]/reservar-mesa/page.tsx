@@ -37,10 +37,12 @@ export default async function ReservarMesaPage({ params }: PageProps) {
   let defaultCard = '#111827';
   let defaultCardHover = '#151d2e';
   let defaultNav = 'rgba(10, 14, 26, 0.9)';
-  let defaultBorder = '#000000';
+  let defaultBorder = 'rgba(255, 255, 255, 0.1)';
   let defaultText = '#f1f5f9';
   let defaultTextMuted = '#94a3b8';
   let defaultTextFaint = '#64748b';
+  let defaultShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3)';
+  let defaultModalShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.7)';
 
   if (theme === 'light') {
     defaultBg = '#f8fafc';
@@ -51,11 +53,17 @@ export default async function ReservarMesaPage({ params }: PageProps) {
     defaultText = '#0f172a';
     defaultTextMuted = '#475569';
     defaultTextFaint = '#94a3b8';
+    defaultShadow = '0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04)';
+    defaultModalShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.15)';
   } else if (theme === 'custom' && customBg) {
     defaultBg = customBg;
     defaultCard = `${customBg}ee`;
     defaultCardHover = `${customBg}dd`;
     defaultNav = `${customBg}f0`;
+  }
+
+  if (customBg && theme !== 'light') {
+    defaultBg = customBg;
   }
 
   const fontName = business.typography || 'Inter';
@@ -89,6 +97,8 @@ export default async function ReservarMesaPage({ params }: PageProps) {
           --text-primary: ${defaultText};
           --text-muted: ${defaultTextMuted};
           --text-faint: ${defaultTextFaint};
+          --shadow-card: ${defaultShadow};
+          --shadow-modal: ${defaultModalShadow};
         }
         body {
           font-family: var(--font-family);

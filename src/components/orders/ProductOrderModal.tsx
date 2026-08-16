@@ -53,21 +53,29 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol }: 
       />
 
       {/* Modal */}
-      <div className="relative w-full sm:max-w-md bg-[#111] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95">
+      <div 
+        className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 border"
+        style={{
+          backgroundColor: 'var(--bg-card)',
+          borderColor: 'var(--border-color)',
+          color: 'var(--text-primary)',
+          boxShadow: 'var(--shadow-modal)'
+        }}
+      >
         
         {/* Header / Image */}
-        <div className="relative h-48 bg-[#1a1a1a] shrink-0">
+        <div className="relative h-48 shrink-0" style={{ backgroundColor: 'var(--bg-page)' }}>
           {product.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <ShoppingBag className="w-12 h-12 text-gray-500 opacity-20" />
+              <ShoppingBag className="w-12 h-12 text-gray-400 opacity-30" />
             </div>
           )}
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-md transition-colors"
+            className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -76,41 +84,51 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol }: 
         {/* Content */}
         <div className="p-6 overflow-y-auto">
           <div className="flex justify-between items-start gap-4 mb-2">
-            <h2 className="text-2xl font-bold text-white leading-tight">{product.name}</h2>
+            <h2 className="text-2xl font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{product.name}</h2>
           </div>
           
           {product.description && (
-            <p className="text-gray-400 text-sm mb-6">{product.description}</p>
+            <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>{product.description}</p>
           )}
 
           <div className="space-y-6">
             {/* Aclaraciones */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
                 Aclaraciones o instrucciones especiales
               </label>
               <textarea
                 value={observations}
                 onChange={(e) => setObservations(e.target.value)}
                 placeholder="Ej: Sin cebolla, extra de salsa..."
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none h-24"
+                className="w-full rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none h-24 border"
+                style={{
+                  backgroundColor: 'var(--bg-page)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-primary)'
+                }}
               />
             </div>
 
             {/* Quantity */}
-            <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-              <span className="text-gray-300 font-medium">Cantidad</span>
+            <div 
+              className="flex items-center justify-between p-4 rounded-2xl border"
+              style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)' }}
+            >
+              <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Cantidad</span>
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#1a1a1a] border border-white/10 text-white hover:bg-white/10 transition-colors"
+                  className="w-10 h-10 flex items-center justify-center rounded-xl border transition-colors cursor-pointer"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                 >
                   <Minus className="w-4 h-4" />
                 </button>
-                <span className="text-xl font-bold text-white w-8 text-center">{quantity}</span>
+                <span className="text-xl font-bold w-8 text-center" style={{ color: 'var(--text-primary)' }}>{quantity}</span>
                 <button 
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#1a1a1a] border border-white/10 text-white hover:bg-white/10 transition-colors"
+                  className="w-10 h-10 flex items-center justify-center rounded-xl border transition-colors cursor-pointer"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -120,10 +138,10 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol }: 
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-white/10 bg-[#151515] shrink-0">
+        <div className="p-5 border-t shrink-0" style={{ backgroundColor: 'var(--bg-card-hover)', borderColor: 'var(--border-color)' }}>
           <button
             onClick={handleAddToCart}
-            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center justify-between px-6 transition-colors shadow-lg shadow-indigo-500/20"
+            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center justify-between px-6 transition-colors shadow-lg shadow-indigo-500/20 cursor-pointer"
           >
             <span>Agregar al Pedido</span>
             <span className="bg-black/20 px-3 py-1 rounded-lg">

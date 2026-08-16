@@ -98,14 +98,14 @@ export function CallWaiterButton({ businessId, orderMode }: CallWaiterButtonProp
           backdropFilter: 'blur(4px)',
         }}>
           <div style={{
-            backgroundColor: '#161616',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
             borderRadius: 24,
             padding: 24,
             maxWidth: 380,
             width: '100%',
             textAlign: 'center',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            boxShadow: 'var(--shadow-modal)',
           }}>
             <div style={{
               width: 56,
@@ -121,10 +121,10 @@ export function CallWaiterButton({ businessId, orderMode }: CallWaiterButtonProp
               <Bell style={{ width: 28, height: 28 }} />
             </div>
 
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: '0 0 8px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px' }}>
               ¿Querés llamar al mozo?
             </h3>
-            <p style={{ fontSize: '0.875rem', color: '#9ca3af', margin: '0 0 24px' }}>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: '0 0 24px' }}>
               Se enviará un aviso inmediato al panel del personal para asistirte en {getTableDisplay()}.
             </p>
 
@@ -136,9 +136,9 @@ export function CallWaiterButton({ businessId, orderMode }: CallWaiterButtonProp
                   flex: 1,
                   padding: '12px 16px',
                   borderRadius: 14,
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#9ca3af',
+                  backgroundColor: 'var(--bg-page)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-muted)',
                   fontWeight: 600,
                   fontSize: '0.875rem',
                   cursor: 'pointer',

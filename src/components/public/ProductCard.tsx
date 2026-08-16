@@ -27,13 +27,13 @@ export function ProductCard({ product, currencySymbol = '$', layoutStyle = 'grid
   return (
     <>
     <div
-      className="break-inside-avoid"
+      className="break-inside-avoid transition-all duration-300"
       style={{
         backgroundColor: 'var(--bg-card)',
-        borderRadius: 12,
+        borderRadius: 16,
         overflow: 'hidden',
-        border: 'none',
-        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4)',
+        border: '1px solid var(--border-color)',
+        boxShadow: 'var(--shadow-card)',
         display: 'flex',
         flexDirection: layoutStyle === 'list' ? 'row' : 'column',
         height: '100%',

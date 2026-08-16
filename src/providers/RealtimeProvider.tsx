@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { subscribeToNotifications, unsubscribeFromNotifications } from '@/lib/realtime';
 import { toast } from 'sonner';
 import { getUnreadNotifications } from '@/actions/notifications';
+import { WaiterCallModal } from '@/components/notifications/WaiterCallModal';
 
 interface NotificationItem {
   id: string;
@@ -23,6 +24,8 @@ interface RealtimeContextProps {
   setNotifications: React.Dispatch<React.SetStateAction<NotificationItem[]>>;
   markAsReadLocal: (id: string) => void;
   markAllAsReadLocal: () => void;
+  isWaiterModalOpen: boolean;
+  setIsWaiterModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const RealtimeContext = createContext<RealtimeContextProps>({
@@ -31,12 +34,15 @@ const RealtimeContext = createContext<RealtimeContextProps>({
   setNotifications: () => { },
   markAsReadLocal: () => { },
   markAllAsReadLocal: () => { },
+  isWaiterModalOpen: false,
+  setIsWaiterModalOpen: () => { },
 });
 
 export const useRealtime = () => useContext(RealtimeContext);
 
 export function RealtimeProvider({ children, businessId }: { children: React.ReactNode, businessId: string }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
 
   // Contador derivado en lugar de setState dentro de useEffect
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -69,6 +75,11 @@ export function RealtimeProvider({ children, businessId }: { children: React.Rea
         return [payload, ...prev];
       });
 
+      // Si la notificación es un llamado de mozo, abrir el modal en vivo
+      if (payload.type === 'waiter_call') {
+        setIsWaiterModalOpen(true);
+      }
+
       // Iconos por tipo de notificación
       const getIcon = (type: string) => {
         switch (type) {
@@ -93,7 +104,7 @@ export function RealtimeProvider({ children, businessId }: { children: React.Rea
       // Vibración en dispositivos compatibles
       if (typeof window !== 'undefined' && 'vibrate' in navigator) {
         try {
-          navigator.vibrate([200, 100, 200]);
+          navigator.vibrate([300, 100, 300]);
         } catch { }
       }
 
@@ -119,8 +130,9 @@ export function RealtimeProvider({ children, businessId }: { children: React.Rea
   };
 
   return (
-    <RealtimeContext.Provider value={{ notifications, unreadCount, setNotifications, markAsReadLocal, markAllAsReadLocal }}>
+    <RealtimeContext.Provider value={{ notifications, unreadCount, setNotifications, markAsReadLocal, markAllAsReadLocal, isWaiterModalOpen, setIsWaiterModalOpen }}>
       {children}
+      <WaiterCallModal businessId={businessId} />
     </RealtimeContext.Provider>
   );
 }

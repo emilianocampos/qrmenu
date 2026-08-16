@@ -13,39 +13,32 @@ let customerOrderChannel: RealtimeChannel | null = null;
  */
 export function subscribeToNotifications(businessId: string, callback: SubscriptionCallback<any>) {
   if (notificationsChannel) {
-    // Si ya existe, nos desuscribimos primero para evitar duplicados
     unsubscribeFromNotifications();
   }
 
   const supabase = createClient();
   
   notificationsChannel = supabase
-    .channel(`notifications:business_id=eq.${businessId}`)
+    .channel(`notifications-channel-${businessId}`)
     .on(
       'postgres_changes',
       {
-        event: 'INSERT', // Solo escuchamos nuevos inserts (o Updates si es necesario)
+        event: '*', // Escuchar INSERT, UPDATE, DELETE
         schema: 'public',
         table: 'notifications',
         filter: `business_id=eq.${businessId}`,
       },
       (payload) => {
-        callback(payload.new);
+        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+          callback(payload.new);
+        }
       }
     )
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'notifications',
-        filter: `business_id=eq.${businessId}`,
-      },
-      (payload) => {
-        callback(payload.new);
+    .subscribe((status, err) => {
+      if (status === 'CHANNEL_ERROR') {
+        console.error('Error en canal Realtime de notificaciones:', err);
       }
-    )
-    .subscribe();
+    });
 
   return notificationsChannel;
 }
@@ -69,7 +62,7 @@ export function subscribeToOrders(businessId: string, callback: SubscriptionCall
   const supabase = createClient();
   
   ordersChannel = supabase
-    .channel(`orders:business_id=eq.${businessId}`)
+    .channel(`orders-channel-${businessId}`)
     .on(
       'postgres_changes',
       {
@@ -82,7 +75,11 @@ export function subscribeToOrders(businessId: string, callback: SubscriptionCall
         callback(payload);
       }
     )
-    .subscribe();
+    .subscribe((status, err) => {
+      if (status === 'CHANNEL_ERROR') {
+        console.error('Error en canal Realtime de pedidos:', err);
+      }
+    });
 
   return ordersChannel;
 }
@@ -106,20 +103,26 @@ export function subscribeToCustomerOrder(orderId: string, callback: Subscription
   const supabase = createClient();
   
   customerOrderChannel = supabase
-    .channel(`orders:id=eq.${orderId}`)
+    .channel(`customer-order-channel-${orderId}`)
     .on(
       'postgres_changes',
       {
-        event: 'UPDATE', // Al cliente solo le importan los cambios de estado
+        event: '*', // Escuchar cambios de estado
         schema: 'public',
         table: 'orders',
         filter: `id=eq.${orderId}`,
       },
       (payload) => {
-        callback(payload.new);
+        if (payload.new) {
+          callback(payload.new);
+        }
       }
     )
-    .subscribe();
+    .subscribe((status, err) => {
+      if (status === 'CHANNEL_ERROR') {
+        console.error('Error en canal Realtime de pedido del cliente:', err);
+      }
+    });
 
   return customerOrderChannel;
 }

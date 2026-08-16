@@ -86,26 +86,35 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
         }}
       />
 
-      <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-md relative z-10 shadow-2xl animate-in zoom-in-95">
+      <div 
+        className="rounded-2xl p-6 w-full max-w-md relative z-10 animate-in zoom-in-95 border"
+        style={{
+          backgroundColor: 'var(--bg-card)',
+          borderColor: 'var(--border-color)',
+          color: 'var(--text-primary)',
+          boxShadow: 'var(--shadow-modal)'
+        }}
+      >
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 bg-indigo-500/20 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3">
             {orderMode.includes('table') ? <MapPin /> : orderMode === 'takeaway' ? <Phone /> : <Receipt />}
           </div>
-          <h2 className="text-xl font-bold text-white">Antes de comenzar...</h2>
-          <p className="text-gray-400 text-sm mt-1">Por favor, completa esta información para poder enviar tus pedidos.</p>
+          <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Antes de comenzar...</h2>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Por favor, completa esta información para poder enviar tus pedidos.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {orderMode === 'table_number' && (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Número de Mesa</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Número de Mesa</label>
               <input
                 type="number"
                 required
                 value={tableNumber}
                 onChange={e => setTableNumber(e.target.value)}
                 placeholder="Ej: 8"
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="w-full rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all border"
+                style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
               />
             </div>
           )}
@@ -113,25 +122,27 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
           {orderMode === 'takeaway' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Tu Nombre</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Tu Nombre</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={e => setName(e.target.value)}
                   placeholder="¿Cómo te llamas?"
-                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  className="w-full rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all border"
+                  style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Tu WhatsApp</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Tu WhatsApp</label>
                 <input
                   type="tel"
                   required
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   placeholder="Para avisarte cuando esté listo"
-                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  className="w-full rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all border"
+                  style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                 />
               </div>
             </>
@@ -139,21 +150,22 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
 
           {orderMode === 'comanda' && (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Número de Comanda</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Número de Comanda</label>
               <input
                 type="text"
                 required
                 value={comanda}
                 onChange={e => setComanda(e.target.value)}
                 placeholder="Revisa el número en tu ticket"
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="w-full rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all border"
+                style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
               />
             </div>
           )}
 
           <button
             type="submit"
-            className="w-full py-3.5 mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-colors"
+            className="w-full py-3.5 mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-colors shadow-lg shadow-indigo-500/20 cursor-pointer"
           >
             Continuar al Menú
           </button>

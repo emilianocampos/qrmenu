@@ -22,6 +22,7 @@ import {
   Box,
   ShoppingBag,
   UtensilsCrossed,
+  Award,
 } from 'lucide-react';
 import { logout } from '@/actions/auth';
 import { Business } from '@/types';
@@ -36,6 +37,7 @@ const navItems = [
   { id: 'tour-productos', href: '/productos', icon: Package, label: 'Productos', color: 'text-blue-400' },
   { id: 'tour-categorias', href: '/categorias', icon: Tags, label: 'Categorías', color: 'text-violet-400' },
   { id: 'tour-mesas', href: '/mesas', icon: UtensilsCrossed, label: 'Mesas & Carteles', color: 'text-amber-400' },
+  { id: 'tour-fidelidad', href: '/fidelidad', icon: Award, label: 'Fidelización', color: 'text-amber-400' },
   { id: 'tour-modelos', href: '/models', icon: Box, label: 'Modelos 3D', color: 'text-emerald-400' },
   { divider: true },
   { id: 'tour-importar', href: '/importar', icon: Sparkles, label: 'Importar Carta', color: 'text-cyan-400' },

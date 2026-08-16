@@ -196,7 +196,7 @@ export async function getOrderById(orderId: string) {
           products (name, image_url)
         ),
         restaurant_tables (table_number, table_code),
-        businesses (name, slug, color_primary, logo_url)
+        businesses (name, slug, color_primary, logo_url, theme, background_color, typography)
       `)
       .eq('id', orderId)
       .single();

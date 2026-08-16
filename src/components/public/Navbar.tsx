@@ -11,7 +11,11 @@ import ListItemButton from '@mui/material/ListItemButton';
 import Box from '@mui/material/Box';
 import { TourGuide } from './TourGuide';
 
+import { LoyaltyCardModal } from './LoyaltyCardModal';
+import { LoyaltySettings } from '@/actions/loyalty';
+
 interface NavbarProps {
+  businessId?: string;
   name: string;
   slug: string;
   description?: string | null;
@@ -19,10 +23,26 @@ interface NavbarProps {
   hasAbout: boolean;
   rating?: number;
   reviewCount?: number;
+  loyaltyEnabled?: boolean;
+  loyaltySettings?: LoyaltySettings;
+  primaryColor?: string;
 }
 
-export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.0, reviewCount = 0 }: NavbarProps) {
+export function Navbar({
+  businessId,
+  name,
+  slug,
+  description,
+  logoUrl,
+  hasAbout,
+  rating = 5.0,
+  reviewCount = 0,
+  loyaltyEnabled = false,
+  loyaltySettings,
+  primaryColor,
+}: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -31,7 +51,6 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
 
   React.useEffect(() => {
     // Buscar en el localStorage el last_order_id.
-    // Iteramos por las keys buscando alguna que empiece con last_order_
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith('last_order_')) {
@@ -54,12 +73,21 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
     { label: 'Reseñas', id: 'reviews', href: `/c/${slug}#reviews` }
   );
 
+  if (loyaltyEnabled) {
+    navItems.push({ label: '🎟️ Sellos', id: 'loyalty', href: '#' });
+  }
+
   if (lastOrderId) {
     navItems.push({ label: 'Mis Pedidos', id: 'mis-pedidos', href: `/c/${slug}/mis-pedidos?id=${lastOrderId}` });
   }
 
   const handleNav = (item: any) => {
     setMobileOpen(false);
+
+    if (item.id === 'loyalty') {
+      setIsLoyaltyModalOpen(true);
+      return;
+    }
 
     // Cross-page navigation
     if (item.id === 'about' || item.id === 'reservar-mesa' || item.id === 'mis-pedidos' || (item.id === 'menu' && !isHome) || (item.id === 'reviews' && !isHome)) {
@@ -96,6 +124,16 @@ export function Navbar({ name, slug, description, logoUrl, hasAbout, rating = 5.
   return (
     <>
       <TourGuide />
+      {businessId && loyaltySettings && (
+        <LoyaltyCardModal
+          businessId={businessId}
+          businessName={name}
+          isOpen={isLoyaltyModalOpen}
+          onClose={() => setIsLoyaltyModalOpen(false)}
+          settings={loyaltySettings}
+          primaryColor={primaryColor}
+        />
+      )}
       <nav style={navStyle}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Logo + Name */}

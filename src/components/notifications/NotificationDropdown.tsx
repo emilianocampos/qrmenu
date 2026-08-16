@@ -9,7 +9,7 @@ import { es } from 'date-fns/locale';
 import Link from 'next/link';
 
 export function NotificationDropdown({ businessId, onClose }: { businessId: string, onClose: () => void }) {
-  const { notifications, markAsReadLocal, markAllAsReadLocal } = useRealtime();
+  const { notifications, markAsReadLocal, markAllAsReadLocal, setIsWaiterModalOpen } = useRealtime();
 
   const handleMarkAsRead = async (id: string) => {
     markAsReadLocal(id);
@@ -101,10 +101,17 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
                         )}
                         {!notif.read && (
                           <button
-                            onClick={() => handleMarkAsRead(notif.id)}
+                            onClick={() => {
+                              if (notif.type === 'waiter_call') {
+                                setIsWaiterModalOpen(true);
+                                onClose();
+                              } else {
+                                handleMarkAsRead(notif.id);
+                              }
+                            }}
                             className="text-[11px] font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded transition-colors"
                           >
-                            {notif.type === 'waiter_call' ? 'Atender / Marcar atendido' : 'Marcar leído'}
+                            {notif.type === 'waiter_call' ? 'Ver Llamado / Atender' : 'Marcar leído'}
                           </button>
                         )}
                       </div>
