@@ -36,18 +36,19 @@ export async function POST(req: NextRequest) {
     }
 
     const business = order.businesses;
-    const accessToken = business?.mp_access_token;
+    const accessToken = business?.mp_access_token || process.env.MP_ACCESS_TOKEN;
 
     if (!accessToken) {
-      return NextResponse.json({ error: 'El negocio no tiene configurado Mercado Pago' }, { status: 400 });
+      return NextResponse.json({ error: 'El negocio no tiene configurado su token de Mercado Pago en la sección de Configuración.' }, { status: 400 });
     }
 
     const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const isHttps = origin.startsWith('https://');
 
     // Formatear items para Mercado Pago
     const items = order.order_items?.map((item: any) => ({
       title: item.products?.name || 'Producto',
-      quantity: item.quantity,
+      quantity: Number(item.quantity) || 1,
       unit_price: Number(item.unit_price),
       currency_id: 'ARS',
     })) || [
@@ -59,10 +60,9 @@ export async function POST(req: NextRequest) {
       }
     ];
 
-    const body = {
+    const body: any = {
       items,
       external_reference: order.id,
-      notification_url: `${origin}/api/mercadopago/webhook`,
       back_urls: {
         success: `${origin}/c/${business.slug}/mis-pedidos?id=${order.id}&payment=success`,
         failure: `${origin}/c/${business.slug}/mis-pedidos?id=${order.id}&payment=failure`,
@@ -70,6 +70,10 @@ export async function POST(req: NextRequest) {
       },
       auto_return: 'approved',
     };
+
+    if (isHttps) {
+      body.notification_url = `${origin}/api/mercadopago/webhook`;
+    }
 
     const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
@@ -87,7 +91,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: mpData.message || 'Error al comunicarse con Mercado Pago' }, { status: mpResponse.status });
     }
 
-    return NextResponse.json({ init_point: mpData.init_point, sandbox_init_point: mpData.sandbox_init_point });
+    const checkoutUrl = mpData.init_point || mpData.sandbox_init_point;
+    return NextResponse.json({ init_point: checkoutUrl });
   } catch (error: any) {
     console.error('Error POST /api/mercadopago/preference:', error);
     return NextResponse.json({ error: error.message || 'Error del servidor' }, { status: 500 });

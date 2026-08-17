@@ -12,14 +12,17 @@ export async function getSalesStatistics(businessId: string) {
     const firstDayOfMonth = startOfMonth(new Date());
     const sevenDaysAgo = subDays(today, 6);
 
-    // 1. Pedidos entregados o pagados (incluyendo Mercado Pago) para calcular ganancias
+    // 1. Pedidos entregados o pagados para calcular ganancias
     const { data: deliveredOrders, error: deliveredErr } = await supabase
       .from('orders')
-      .select('id, total, created_at, status, payment_status')
+      .select('id, total, created_at, status')
       .eq('business_id', businessId)
-      .or('status.eq.delivered,status.eq.paid,payment_status.eq.approved');
+      .in('status', ['delivered', 'paid']);
 
-    if (deliveredErr) throw deliveredErr;
+    if (deliveredErr) {
+      console.error('Error in deliveredOrders query:', deliveredErr);
+      throw deliveredErr;
+    }
 
     let todayEarnings = 0;
     let monthEarnings = 0;

@@ -5,7 +5,9 @@
 -- Supabase Dashboard -> SQL Editor -> New Query -> Run
 -- =========================================================================
 
--- 1. Configurar REPLICA IDENTITY FULL para capturar payloads completos en tiempo real
+-- 1. Configurar REPLICA IDENTITY FULL y columnas para capturar payloads completos en tiempo real
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status text DEFAULT 'pending';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_id text;
 ALTER TABLE orders REPLICA IDENTITY FULL;
 ALTER TABLE notifications REPLICA IDENTITY FULL;
 

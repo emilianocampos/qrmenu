@@ -1,6 +1,6 @@
 import React from 'react';
 import { notFound, redirect } from 'next/navigation';
-import { getOrderById } from '@/actions/orders';
+import { getOrderById, markOrderAsPaid } from '@/actions/orders';
 import { getBusinessBySlug } from '@/actions/reviews';
 import { OrderTimeline } from '@/components/orders/OrderTimeline';
 import Link from 'next/link';
@@ -8,7 +8,7 @@ import { ArrowLeft, ShoppingBag } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ id?: string }>;
+  searchParams: Promise<{ id?: string; payment?: string }>;
 }
 
 function hexToRgb(hex: string): string {
@@ -22,13 +22,20 @@ function hexToRgb(hex: string): string {
 
 export default async function CustomerOrderPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
-  const { id: orderId } = await searchParams;
+  const { id: orderId, payment } = await searchParams;
 
   if (!orderId) {
     redirect(`/c/${slug}`);
   }
 
-  const order = await getOrderById(orderId);
+  let order = await getOrderById(orderId);
+
+  // Si regresa de Mercado Pago con pago exitoso, actualizar estado
+  if (order && payment === 'success' && order.payment_status !== 'approved') {
+    await markOrderAsPaid(order.id, order.business_id, 'mercadopago');
+    order.status = 'paid';
+    order.payment_status = 'approved';
+  }
 
   if (!order || !order.businesses || order.businesses.slug !== slug) {
     const { data: business } = await getBusinessBySlug(slug);
