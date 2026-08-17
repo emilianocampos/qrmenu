@@ -45,8 +45,22 @@ export function RealtimeProvider({ children, businessId }: { children: React.Rea
   const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
   const processedNotifIds = React.useRef(new Set<string>());
 
-  // Contador derivado en lugar de setState dentro de useEffect
+  // Contador derivado de notificaciones no leídas
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Actualizar el título de la pestaña del navegador estilo YouTube / WhatsApp Web ((N) Título)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const currentTitle = document.title;
+    const cleanTitle = currentTitle.replace(/^\(\d+\)\s*(🔔\s*)?/, '').trim() || 'Panel de Administración';
+
+    if (unreadCount > 0) {
+      document.title = `(${unreadCount}) 🔔 ${cleanTitle}`;
+    } else {
+      document.title = cleanTitle;
+    }
+  }, [unreadCount]);
 
   // Inicializar notificaciones no leídas
   useEffect(() => {
