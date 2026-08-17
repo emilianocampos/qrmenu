@@ -111,26 +111,20 @@ export function ProductCard({ product, currencySymbol = '$', layoutStyle = 'grid
               </span>
             )}
 
-            {/* 3D Buttons */}
+            {/* Botón de Modelo 3D & Realidad Aumentada */}
             {has3DModel && (
               <button
                 onClick={() => setIs3DModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full transition-all cursor-pointer shadow-sm hover:scale-105"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  padding: '6px 12px',
-                  borderRadius: 9999,
-                  backgroundColor: 'var(--bg-page)',
+                  backgroundColor: 'rgba(99, 102, 241, 0.15)',
                   color: 'var(--primary-color)',
-                  border: '1px solid var(--primary-color)',
-                  cursor: 'pointer',
+                  border: '1.5px solid var(--primary-color)',
                 }}
+                title="Ver plato en Realidad Aumentada (Cámara)"
               >
-                <Box size={14} />
-                3D
+                <Box size={14} className="animate-pulse" />
+                <span>📱 Ver en Realidad Aumentada</span>
               </button>
             )}
           </div>

@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Trash2, Box } from 'lucide-react';
+import { Trash2, Box, Upload } from 'lucide-react';
 import { Product } from '@/types';
 import { StatusBadge } from './StatusBadge';
 import { GenerateModelButton } from './GenerateModelButton';
 import { ModelViewerModal } from './ModelViewerModal';
+import { UploadGLBModal } from './UploadGLBModal';
 import { toast } from 'sonner';
 
 interface Product3DCardProps {
@@ -18,6 +19,7 @@ export function Product3DCard({ initialProduct, onDelete, onRefresh }: Product3D
   const [product, setProduct] = useState(initialProduct);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   const handleDelete = async () => {
     if (!confirm('¿Seguro que deseas eliminar el modelo 3D? Esta acción no se puede deshacer.')) return;
@@ -77,6 +79,14 @@ export function Product3DCard({ initialProduct, onDelete, onRefresh }: Product3D
 
           <div className="flex flex-wrap items-center gap-3 mt-auto">
             <GenerateModelButton product={product} onGenerationComplete={onRefresh} />
+
+            <button
+              onClick={() => setIsUploadOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded-xl text-sm font-semibold transition-all cursor-pointer"
+            >
+              <Upload className="w-4 h-4" />
+              <span>{hasModel ? 'Cambiar .GLB' : 'Subir .GLB'}</span>
+            </button>
             
             {hasModel && (
               <>
@@ -106,6 +116,13 @@ export function Product3DCard({ initialProduct, onDelete, onRefresh }: Product3D
         product={product}
         isOpen={isViewerOpen}
         onClose={() => setIsViewerOpen(false)}
+      />
+
+      <UploadGLBModal
+        product={product}
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onSuccess={onRefresh}
       />
     </>
   );

@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
@@ -59,6 +60,26 @@ export function Navbar({
       }
     }
   }, []);
+
+  const handleShareMenu = async () => {
+    const url = typeof window !== 'undefined' ? window.location.origin + `/c/${slug}` : `https://mambaqr.com/c/${slug}`;
+    const title = `Menú de ${name}`;
+    const text = `¡Mirá la carta digital de ${name}! 🍽️`;
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+        return;
+      } catch {}
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('¡Enlace del menú copiado al portapapeles! 📋');
+    } catch {
+      toast.error('No se pudo copiar el enlace');
+    }
+  };
 
   const navItems = [
     { label: 'Menú', id: 'menu', href: `/c/${slug}` },
@@ -158,7 +179,7 @@ export function Navbar({
           </button>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex" style={{ gap: 4 }}>
+          <div className="hidden md:flex items-center" style={{ gap: 4 }}>
             {navItems.map(item => (
               <button
                 key={item.id}
@@ -188,6 +209,21 @@ export function Navbar({
               </button>
             ))}
 
+            {/* Botón Compartir Menú */}
+            <button
+              onClick={handleShareMenu}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer hover:opacity-90 ml-2"
+              style={{
+                backgroundColor: 'var(--bg-card-hover)',
+                borderColor: 'var(--border-color)',
+                color: 'var(--text-primary)',
+              }}
+              title="Compartir Carta"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Compartir</span>
+            </button>
+
             {reviewCount >= 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '16px', fontSize: '0.9rem', fontWeight: 600 }}>
                 <svg style={{ width: 16, height: 16, color: '#facc15' }} fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
@@ -200,7 +236,14 @@ export function Navbar({
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-1">
+            <button
+              onClick={handleShareMenu}
+              className="p-2 text-gray-400 hover:text-white rounded-full transition-colors cursor-pointer"
+              title="Compartir Carta"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
             <IconButton id="hamburger-menu-btn" onClick={() => setMobileOpen(true)} style={{ color: 'var(--text-muted)' }} className="transition-transform duration-300 hover:rotate-90 active:scale-90">
               <Menu className="w-5 h-5" />
             </IconButton>
@@ -247,6 +290,16 @@ export function Navbar({
                 </ListItemButton>
               </ListItem>
             ))}
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => { setMobileOpen(false); handleShareMenu(); }}
+                style={{ borderRadius: 12, marginBottom: 4, padding: '14px 16px' }}
+              >
+                <span className="flex items-center gap-2" style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '1rem' }}>
+                  <Share2 className="w-4 h-4" /> Compartir Carta
+                </span>
+              </ListItemButton>
+            </ListItem>
           </List>
           <div style={{ marginTop: 'auto', paddingTop: '2rem', textAlign: 'center' }}>
             <p style={{ color: 'var(--text-faint)', fontSize: '0.75rem' }}>

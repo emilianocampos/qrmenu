@@ -66,7 +66,7 @@ export function ModelViewerModal({ product, isOpen, onClose }: ModelViewerModalP
             </div>
           )}
           
-          {/* model-viewer tag */}
+          {/* model-viewer tag con Realidad Aumentada */}
           <ModelViewer
             src={product.model_3d_url}
             alt={product.name}
@@ -79,7 +79,12 @@ export function ModelViewerModal({ product, isOpen, onClose }: ModelViewerModalP
             poster={product.image_url || undefined}
             style={{ width: '100%', height: '100%', outline: 'none' }}
           >
-            {/* Botón personalizado de AR que model-viewer inserta automáticamente si detecta AR, pero podemos estilizar el default */}
+            <button
+              slot="ar-button"
+              className="absolute bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm rounded-full shadow-2xl flex items-center gap-2 border border-white/20 cursor-pointer animate-bounce z-20"
+            >
+              📸 Ver en tu Mesa (Realidad Aumentada)
+            </button>
           </ModelViewer>
         </div>
         

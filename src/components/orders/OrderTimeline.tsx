@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { subscribeToCustomerOrder, unsubscribeFromCustomerOrder } from '@/lib/realtime';
-import { CheckCircle2, Clock, ChefHat, PackageCheck, Receipt, Ban, CreditCard, Loader2, X } from 'lucide-react';
+import { CheckCircle2, Clock, ChefHat, PackageCheck, Receipt, Ban, CreditCard, Loader2, X, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface OrderTimelineProps {
@@ -25,6 +25,26 @@ export function OrderTimeline({ initialOrder, primaryColor }: OrderTimelineProps
   const [isPayModalOpen, setIsPayModalOpen] = useState(
     initialOrder.status === 'delivered' && !(initialOrder.status === 'paid' || initialOrder.payment_status === 'approved')
   );
+
+  const handleShareOrderStatus = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const title = `Seguimiento de mi pedido en ${order.businesses?.name || 'Local'}`;
+    const text = `Mirá el estado de nuestro pedido en tiempo real 🍽️`;
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+        return;
+      } catch {}
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('¡Enlace del pedido copiado al portapapeles! 📋');
+    } catch {
+      toast.error('No se pudo copiar el enlace');
+    }
+  };
 
   useEffect(() => {
     // Solo suscribirse a este pedido específico
@@ -171,13 +191,24 @@ export function OrderTimeline({ initialOrder, primaryColor }: OrderTimelineProps
       )}
 
       <div className="rounded-3xl p-6 sm:p-8 mt-4 border transition-all duration-300" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', boxShadow: 'var(--shadow-card)', color: 'var(--text-primary)' }}>
-        <h2 className="text-lg font-bold mb-8 pb-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+        <h2 className="text-lg font-bold mb-8 pb-4 flex items-center justify-between gap-2" style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
           <span>Estado de tu pedido</span>
-          {isPaid && (
-            <span className="text-xs bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 px-3 py-1 rounded-full flex items-center gap-1 font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Pagado
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShareOrderStatus}
+              className="px-3 py-1.5 text-xs font-bold rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-80"
+              style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+              title="Compartir Estado del Pedido"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Compartir</span>
+            </button>
+            {isPaid && (
+              <span className="text-xs bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 px-3 py-1 rounded-full flex items-center gap-1 font-semibold shrink-0">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Pagado
+              </span>
+            )}
+          </div>
         </h2>
 
 
