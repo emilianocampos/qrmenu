@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getOrderById, markOrderAsPaid } from '@/actions/orders';
 import { getBusinessBySlug } from '@/actions/reviews';
 import { OrderTimeline } from '@/components/orders/OrderTimeline';
+import { OrderCheckOrEmpty } from '@/components/orders/OrderCheckOrEmpty';
 import Link from 'next/link';
 import { ArrowLeft, ShoppingBag } from 'lucide-react';
 
@@ -25,7 +26,14 @@ export default async function CustomerOrderPage({ params, searchParams }: PagePr
   const { id: orderId, payment } = await searchParams;
 
   if (!orderId) {
-    redirect(`/c/${slug}`);
+    const { data: business } = await getBusinessBySlug(slug);
+    return (
+      <OrderCheckOrEmpty
+        slug={slug}
+        primaryColor={business?.color_primary || '#6366f1'}
+        businessName={business?.name || 'el local'}
+      />
+    );
   }
 
   let order = await getOrderById(orderId);
@@ -37,7 +45,10 @@ export default async function CustomerOrderPage({ params, searchParams }: PagePr
     order.payment_status = 'approved';
   }
 
-  if (!order || !order.businesses || order.businesses.slug !== slug) {
+  const decodedSlug = decodeURIComponent(slug || '').toLowerCase().trim();
+  const orderBusinessSlug = decodeURIComponent(order?.businesses?.slug || '').toLowerCase().trim();
+
+  if (!order || !order.businesses || orderBusinessSlug !== decodedSlug) {
     const { data: business } = await getBusinessBySlug(slug);
 
     if (!business) {
@@ -140,11 +151,11 @@ export default async function CustomerOrderPage({ params, searchParams }: PagePr
 
       <div style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', minHeight: '100vh' }}>
         {/* Header */}
-        <div 
+        <div
           className="p-4 flex items-center sticky top-0 backdrop-blur-md z-10"
           style={{ backgroundColor: 'var(--bg-navbar)', borderBottom: '1px solid var(--border-color)' }}
         >
-          <Link 
+          <Link
             href={`/c/${slug}`}
             className="p-2 -ml-2 rounded-full transition-colors"
             style={{ backgroundColor: 'transparent' }}
@@ -162,8 +173,8 @@ export default async function CustomerOrderPage({ params, searchParams }: PagePr
           <div className="text-center mb-8">
             {business.logo_url && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img 
-                src={business.logo_url} 
+              <img
+                src={business.logo_url}
                 alt={business.name}
                 className="w-20 h-20 rounded-full mx-auto object-cover border-4 mb-3"
                 style={{ borderColor: primaryColor, boxShadow: 'var(--shadow-card)' }}

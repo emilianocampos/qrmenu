@@ -90,16 +90,13 @@ export function Navbar({
   }
 
   navItems.push(
+    { label: 'Mis Pedidos', id: 'mis-pedidos', href: lastOrderId ? `/c/${slug}/mis-pedidos?id=${lastOrderId}` : `/c/${slug}/mis-pedidos` },
     { label: 'Reservar Mesa', id: 'reservar-mesa', href: `/c/${slug}/reservar-mesa` },
     { label: 'Reseñas', id: 'reviews', href: `/c/${slug}#reviews` }
   );
 
   if (loyaltyEnabled) {
     navItems.push({ label: '🎟️ Sellos', id: 'loyalty', href: '#' });
-  }
-
-  if (lastOrderId) {
-    navItems.push({ label: 'Mis Pedidos', id: 'mis-pedidos', href: `/c/${slug}/mis-pedidos?id=${lastOrderId}` });
   }
 
   const handleNav = (item: any) => {
@@ -110,8 +107,23 @@ export function Navbar({
       return;
     }
 
+    if (item.id === 'mis-pedidos') {
+      let targetId = lastOrderId;
+      if (!targetId && typeof window !== 'undefined') {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('last_order_')) {
+            targetId = localStorage.getItem(key);
+            break;
+          }
+        }
+      }
+      router.push(targetId ? `/c/${slug}/mis-pedidos?id=${targetId}` : `/c/${slug}/mis-pedidos`);
+      return;
+    }
+
     // Cross-page navigation
-    if (item.id === 'about' || item.id === 'reservar-mesa' || item.id === 'mis-pedidos' || (item.id === 'menu' && !isHome) || (item.id === 'reviews' && !isHome)) {
+    if (item.id === 'about' || item.id === 'reservar-mesa' || (item.id === 'menu' && !isHome) || (item.id === 'reviews' && !isHome)) {
       router.push(item.href);
       return;
     }

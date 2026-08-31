@@ -124,9 +124,23 @@ export function OrderCard({ order, businessId }: OrderCardProps) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{item.products?.name || 'Producto eliminado'}</p>
                 {item.observations && (
-                  <p className="text-xs text-orange-300/80 mt-0.5 break-words bg-orange-500/10 p-1.5 rounded-md border border-orange-500/10">
-                    "{item.observations}"
-                  </p>
+                  <div className="mt-1 space-y-1">
+                    {item.observations.split(' | ').map((obs: string, idx: number) => {
+                      const isAddition = obs.toLowerCase().startsWith('adición:') || obs.toLowerCase().startsWith('adicion:');
+                      return (
+                        <p 
+                          key={idx} 
+                          className={`text-xs break-words px-2 py-0.5 rounded-md border font-medium ${
+                            isAddition 
+                              ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' 
+                              : 'bg-orange-500/10 text-orange-300 border-orange-500/20'
+                          }`}
+                        >
+                          {obs}
+                        </p>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
               <div className="text-sm text-gray-400 shrink-0">

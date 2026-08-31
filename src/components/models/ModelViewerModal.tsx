@@ -66,7 +66,7 @@ export function ModelViewerModal({ product, isOpen, onClose }: ModelViewerModalP
             </div>
           )}
           
-          {/* model-viewer tag con Realidad Aumentada */}
+          {/* model-viewer tag con Realidad Aumentada e Iluminación Realista */}
           <ModelViewer
             src={product.model_3d_url}
             alt={product.name}
@@ -74,7 +74,11 @@ export function ModelViewerModal({ product, isOpen, onClose }: ModelViewerModalP
             camera-controls
             ar
             ar-modes="webxr scene-viewer quick-look"
-            shadow-intensity="1"
+            environment-image="neutral"
+            exposure="1.1"
+            shadow-intensity="1.2"
+            shadow-softness="0.8"
+            tone-mapping="neutral"
             loading="lazy"
             poster={product.image_url || undefined}
             style={{ width: '100%', height: '100%', outline: 'none' }}

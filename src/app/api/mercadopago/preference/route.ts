@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -9,19 +9,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order ID es requerido' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
-    // Obtener pedido con negocio y productos
+    // 1. Obtener pedido con items de forma segura
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
         *,
-        businesses (
-          id,
-          name,
-          slug,
-          mp_access_token
-        ),
         order_items (
           quantity,
           unit_price,
@@ -29,49 +23,81 @@ export async function POST(req: NextRequest) {
         )
       `)
       .eq('id', orderId)
-      .single();
+      .maybeSingle();
 
     if (orderError || !order) {
+      console.error('Error finding order for MP preference:', orderError?.message || orderError);
       return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
     }
 
-    const business = order.businesses;
+    // 2. Obtener datos del negocio
+    let business: any = null;
+    if (order.business_id) {
+      const { data: busData, error: busError } = await supabase
+        .from('businesses')
+        .select('id, name, slug, mp_access_token')
+        .eq('id', order.business_id)
+        .maybeSingle();
+      
+      if (!busError && busData) {
+        business = busData;
+      }
+    }
+
+    const businessSlug = business?.slug || '';
     const accessToken = business?.mp_access_token || process.env.MP_ACCESS_TOKEN;
 
     if (!accessToken) {
-      return NextResponse.json({ error: 'El negocio no tiene configurado su token de Mercado Pago en la sección de Configuración.' }, { status: 400 });
+      return NextResponse.json({ 
+        error: 'No se encontró el Token de Mercado Pago configurado.' 
+      }, { status: 400 });
     }
 
     const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     const isHttps = origin.startsWith('https://');
 
     // Formatear items para Mercado Pago
-    const items = order.order_items?.map((item: any) => ({
-      title: item.products?.name || 'Producto',
-      quantity: Number(item.quantity) || 1,
-      unit_price: Number(item.unit_price),
-      currency_id: 'ARS',
-    })) || [
+    const mappedItems = order.order_items
+      ?.filter((item: any) => Number(item.unit_price) > 0)
+      ?.map((item: any) => ({
+        title: item.products?.name || 'Producto',
+        quantity: Math.max(1, Number(item.quantity) || 1),
+        unit_price: Number(Number(item.unit_price).toFixed(2)),
+        currency_id: 'ARS',
+      })) || [];
+
+    const items = mappedItems.length > 0 ? mappedItems : [
       {
-        title: `Pedido en ${business.name}`,
+        title: `Pedido en ${business?.name || 'Local'}`,
         quantity: 1,
-        unit_price: Number(order.total),
+        unit_price: Math.max(1, Number(Number(order.total || 1).toFixed(2))),
         currency_id: 'ARS',
       }
     ];
 
+    const successUrl = businessSlug 
+      ? `${origin}/c/${businessSlug}/mis-pedidos?id=${order.id}&payment=success` 
+      : `${origin}/?payment=success`;
+    const failureUrl = businessSlug 
+      ? `${origin}/c/${businessSlug}/mis-pedidos?id=${order.id}&payment=failure` 
+      : `${origin}/?payment=failure`;
+    const pendingUrl = businessSlug 
+      ? `${origin}/c/${businessSlug}/mis-pedidos?id=${order.id}&payment=pending` 
+      : `${origin}/?payment=pending`;
+
     const body: any = {
       items,
-      external_reference: order.id,
+      external_reference: String(order.id),
       back_urls: {
-        success: `${origin}/c/${business.slug}/mis-pedidos?id=${order.id}&payment=success`,
-        failure: `${origin}/c/${business.slug}/mis-pedidos?id=${order.id}&payment=failure`,
-        pending: `${origin}/c/${business.slug}/mis-pedidos?id=${order.id}&payment=pending`,
+        success: successUrl,
+        failure: failureUrl,
+        pending: pendingUrl,
       },
-      auto_return: 'approved',
     };
 
+    // auto_return y webhook solo son permitidos por Mercado Pago en dominios públicos HTTPS
     if (isHttps) {
+      body.auto_return = 'approved';
       body.notification_url = `${origin}/api/mercadopago/webhook`;
     }
 
@@ -88,7 +114,9 @@ export async function POST(req: NextRequest) {
 
     if (!mpResponse.ok) {
       console.error('Error Mercado Pago API:', mpData);
-      return NextResponse.json({ error: mpData.message || 'Error al comunicarse con Mercado Pago' }, { status: mpResponse.status });
+      return NextResponse.json({ 
+        error: mpData.message || mpData.cause?.[0]?.description || 'Error al comunicarse con Mercado Pago' 
+      }, { status: mpResponse.status });
     }
 
     const checkoutUrl = mpData.init_point || mpData.sandbox_init_point;

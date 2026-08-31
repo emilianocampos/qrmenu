@@ -16,17 +16,25 @@ interface ProductOrderModalProps {
 export function ProductOrderModal({ product, isOpen, onClose, currencySymbol }: ProductOrderModalProps) {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [observations, setObservations] = useState('');
+  const [detail, setDetail] = useState('');
+  const [addition, setAddition] = useState('');
 
   if (!isOpen) return null;
 
   const handleAddToCart = () => {
+    const parts: string[] = [];
+    if (detail.trim()) parts.push(`Detalle: ${detail.trim()}`);
+    if (addition.trim()) parts.push(`Adición: ${addition.trim()}`);
+    const observations = parts.join(' | ');
+
     addItem({
       productId: product.id,
       name: product.name,
       price: product.price,
       quantity,
-      observations: observations.trim(),
+      detail: detail.trim(),
+      addition: addition.trim(),
+      observations,
       image_url: product.image_url || ''
     });
     
@@ -35,7 +43,8 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol }: 
     });
     
     setQuantity(1);
-    setObservations('');
+    setDetail('');
+    setAddition('');
     onClose();
   };
 
@@ -64,7 +73,7 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol }: 
       >
         
         {/* Header / Image */}
-        <div className="relative h-48 shrink-0" style={{ backgroundColor: 'var(--bg-page)' }}>
+        <div className="relative h-44 shrink-0" style={{ backgroundColor: 'var(--bg-page)' }}>
           {product.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
@@ -82,26 +91,54 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol }: 
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto">
-          <div className="flex justify-between items-start gap-4 mb-2">
-            <h2 className="text-2xl font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{product.name}</h2>
+        <div className="p-5 overflow-y-auto space-y-4">
+          <div>
+            <h2 className="text-xl font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{product.name}</h2>
+            {product.description && (
+              <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{product.description}</p>
+            )}
           </div>
-          
-          {product.description && (
-            <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>{product.description}</p>
-          )}
 
-          <div className="space-y-6">
-            {/* Aclaraciones */}
+          {/* Form Fields: Detalle & Adición */}
+          <div className="space-y-3.5 pt-1">
+            {/* Detalle */}
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
-                Aclaraciones o instrucciones especiales
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                  <span>📝</span>
+                  <span>Detalle (Aclaraciones)</span>
+                </label>
+                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Opcional</span>
+              </div>
               <textarea
-                value={observations}
-                onChange={(e) => setObservations(e.target.value)}
-                placeholder="Ej: Sin cebolla, extra de salsa..."
-                className="w-full rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none h-24 border"
+                value={detail}
+                onChange={(e) => setDetail(e.target.value)}
+                placeholder="Ej: Sin hielo, sin cebolla, punto de cocción..."
+                rows={2}
+                className="w-full rounded-xl px-3.5 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none resize-none border transition-all"
+                style={{
+                  backgroundColor: 'var(--bg-page)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-primary)'
+                }}
+              />
+            </div>
+
+            {/* Adición */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                  <span>➕</span>
+                  <span>Adicional (Adición)</span>
+                </label>
+                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Opcional</span>
+              </div>
+              <textarea
+                value={addition}
+                onChange={(e) => setAddition(e.target.value)}
+                placeholder="Ej: Con limón, extra queso cheddar, doble salsa..."
+                rows={2}
+                className="w-full rounded-xl px-3.5 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none resize-none border transition-all"
                 style={{
                   backgroundColor: 'var(--bg-page)',
                   borderColor: 'var(--border-color)',
@@ -112,25 +149,25 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol }: 
 
             {/* Quantity */}
             <div 
-              className="flex items-center justify-between p-4 rounded-2xl border"
+              className="flex items-center justify-between p-3 rounded-xl border"
               style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)' }}
             >
-              <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Cantidad</span>
-              <div className="flex items-center gap-4">
+              <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Cantidad</span>
+              <div className="flex items-center gap-3">
                 <button 
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl border transition-colors cursor-pointer"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border transition-colors cursor-pointer"
                   style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-xl font-bold w-8 text-center" style={{ color: 'var(--text-primary)' }}>{quantity}</span>
+                <span className="text-base font-bold w-6 text-center" style={{ color: 'var(--text-primary)' }}>{quantity}</span>
                 <button 
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl border transition-colors cursor-pointer"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border transition-colors cursor-pointer"
                   style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

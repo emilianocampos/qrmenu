@@ -145,7 +145,13 @@ export function Cart({ businessId, orderMode, businessSlug }: CartProps) {
                       </button>
                     </div>
                     {item.observations && (
-                      <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{item.observations}</p>
+                      <div className="mt-1 space-y-0.5">
+                        {item.observations.split(' | ').map((obs, idx) => (
+                          <p key={idx} className="text-xs leading-tight font-medium" style={{ color: 'var(--text-muted)' }}>
+                            {obs}
+                          </p>
+                        ))}
+                      </div>
                     )}
                     <div className="mt-auto flex items-center justify-between pt-2">
                       <span className="font-bold text-indigo-500">${item.price}</span>

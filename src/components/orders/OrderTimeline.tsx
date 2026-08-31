@@ -277,7 +277,18 @@ export function OrderTimeline({ initialOrder, primaryColor }: OrderTimelineProps
             <div key={item.id} className="flex justify-between items-start text-sm">
               <div className="flex gap-2">
                 <span className="font-bold" style={{ color: 'var(--text-muted)' }}>{item.quantity}x</span>
-                <span style={{ color: 'var(--text-primary)' }}>{item.products?.name}</span>
+                <div>
+                  <span style={{ color: 'var(--text-primary)' }}>{item.products?.name}</span>
+                  {item.observations && (
+                    <div className="mt-0.5 space-y-0.5">
+                      {item.observations.split(' | ').map((obs: string, idx: number) => (
+                        <p key={idx} className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                          {obs}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               <span style={{ color: 'var(--text-muted)' }}>${item.unit_price}</span>
             </div>
@@ -287,6 +298,43 @@ export function OrderTimeline({ initialOrder, primaryColor }: OrderTimelineProps
           <span style={{ color: 'var(--text-primary)' }}>Total</span>
           <span style={{ color: primaryColor }}>${order.total}</span>
         </div>
+
+        {/* Botón de Checkout Pro de Mercado Pago (Solo visible a partir de que el pedido es Aceptado) */}
+        {!isPaid && (
+          <div className="mt-6 pt-4" style={{ borderTop: '1px solid var(--border-color)' }}>
+            {order.status === 'pending' ? (
+              <div 
+                className="p-4 rounded-2xl border text-center flex flex-col items-center justify-center gap-1.5 animate-in fade-in"
+                style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)' }}
+              >
+                <div className="flex items-center gap-2 font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+                  <Clock className="w-4 h-4 text-amber-500 animate-spin" />
+                  <span>Esperando confirmación del mozo</span>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  El botón de pago con Mercado Pago se habilitará automáticamente en cuanto el local acepte tu pedido.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 animate-in zoom-in-95 duration-300">
+                <button
+                  onClick={handlePayMercadoPago}
+                  disabled={paying}
+                  className="w-full py-4 bg-sky-500 hover:bg-sky-400 active:scale-[0.99] text-white font-black text-sm rounded-2xl transition-all shadow-lg shadow-sky-500/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {paying ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Conectando con Mercado Pago...</>
+                  ) : (
+                    <><CreditCard className="w-5 h-5" /> Pagar con Mercado Pago (${order.total})</>
+                  )}
+                </button>
+                <p className="text-[11px] text-center" style={{ color: 'var(--text-muted)' }}>
+                  Podés pagar con Débito, Crédito o dinero en cuenta de Mercado Pago.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Botón para volver al menú y realizar otro pedido */}

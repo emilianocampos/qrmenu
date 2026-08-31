@@ -1,13 +1,14 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { createNotification } from '../notifications';
 
 export async function getOrders(businessId: string) {
   try {
     const supabase = await createClient();
-    
+
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -32,7 +33,7 @@ export async function getOrders(businessId: string) {
 export async function deleteAllOrders(businessId: string) {
   try {
     const supabase = await createClient();
-    
+
     // We only need to delete from orders, order_items cascades if FK has ON DELETE CASCADE.
     // If not, we still just delete from orders, Supabase/Postgres might reject if no cascade,
     // but in add_orders_module.sql: REFERENCES orders(id) ON DELETE CASCADE
@@ -53,7 +54,7 @@ export async function deleteAllOrders(businessId: string) {
 export async function updateOrderStatus(orderId: string, businessId: string, status: string, tableName?: string) {
   try {
     const supabase = await createClient();
-    
+
     const { error } = await supabase
       .from('orders')
       .update({ status })
@@ -71,7 +72,7 @@ export async function updateOrderStatus(orderId: string, businessId: string, sta
 
 export async function markOrderAsPaid(orderId: string, businessId: string, paymentMethod: string = 'manual') {
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from('orders')
@@ -109,8 +110,8 @@ interface CreateOrderParams {
 
 export async function createOrder(params: CreateOrderParams) {
   try {
-    const supabase = await createClient();
-    
+    const supabase = createAdminClient();
+
     let tableIdToAssign = params.tableId || null;
 
     // Asignar table_id buscando por table_number si no se envió explícito
@@ -124,7 +125,7 @@ export async function createOrder(params: CreateOrderParams) {
           .eq('business_id', params.businessId)
           .eq('table_number', tableNum)
           .maybeSingle();
-        
+
         if (foundTable) {
           tableIdToAssign = foundTable.id;
         }
@@ -170,7 +171,7 @@ export async function createOrder(params: CreateOrderParams) {
       businessId: params.businessId,
       type: 'new_order',
       title: 'Nuevo Pedido',
-      description: params.tableDisplay 
+      description: params.tableDisplay
         ? `${params.tableDisplay} realizó un pedido por $${params.total}`
         : `Nuevo pedido por $${params.total}`,
       referenceId: order.id,
@@ -186,8 +187,8 @@ export async function createOrder(params: CreateOrderParams) {
 
 export async function getOrderById(orderId: string) {
   try {
-    const supabase = await createClient();
-    
+    const supabase = createAdminClient();
+
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -202,7 +203,10 @@ export async function getOrderById(orderId: string) {
       .eq('id', orderId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error query getOrderById:', error);
+      throw error;
+    }
     return data;
   } catch (error) {
     console.error('Error fetching order:', error);
