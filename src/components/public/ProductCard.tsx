@@ -168,6 +168,7 @@ export function ProductCard({ product, currencySymbol = '$', layoutStyle = 'grid
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
         currencySymbol={currencySymbol}
+        layoutStyle={layoutStyle}
       />
     )}
     </>

@@ -102,7 +102,12 @@ export default async function PublicMenuPage({ params }: PageProps) {
   const hasAbout = business.show_about_us !== false;
 
   return (
-    <PublicMenuClient businessId={business.id} orderMode={business.order_mode || 'menu_only'} businessSlug={business.slug}>
+    <PublicMenuClient
+      businessId={business.id}
+      orderMode={business.order_mode || 'menu_only'}
+      businessSlug={business.slug}
+      layoutStyle={business.layout_style || 'grid'}
+    >
       <link
         rel="stylesheet"
         href={`https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, '+')}:wght@300;400;500;600;700;800;900&display=swap`}

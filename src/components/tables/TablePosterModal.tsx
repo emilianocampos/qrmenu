@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { Download, Printer, X, Smartphone, Store } from 'lucide-react';
+import { Download, Printer, X, QrCode, Copy, Check, ExternalLink } from 'lucide-react';
 import { Business } from '@/types';
+import { toast } from 'sonner';
 
 interface RestaurantTableItem {
   id: string;
@@ -29,13 +30,65 @@ export function TablePosterModal({
   onClose,
 }: TablePosterModalProps) {
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
 
   if (!open || !table) return null;
 
-  // URL del QR para la mesa (ej: https://mambaqr.com/c/mi-local?table=8)
-  const tableQrUrl = `${publicUrl}?table=${table.table_number}`;
+  // 1. Obtener identificador real de mesa (ej: '1', '2', '1B', '26A', '100')
+  const mesaIdentifier = table.table_name
+    ? table.table_name.replace(/^Mesa\s*/i, '').trim()
+    : String(table.table_number);
+
+  // 2. Resolver la URL pública asegurando que no sea "localhost" (inaccesible desde celulares)
+  let effectivePublicUrl = publicUrl;
+  if (typeof window !== 'undefined') {
+    if (effectivePublicUrl.includes('localhost') || effectivePublicUrl.includes('127.0.0.1')) {
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        effectivePublicUrl = `${window.location.protocol}//${window.location.host}/c/${business.slug}`;
+      } else {
+        effectivePublicUrl = effectivePublicUrl.replace('localhost', '192.168.1.9');
+      }
+    }
+  }
+
+  // URL del QR para la mesa (ej: http://192.168.1.9:3000/c/muud?table=1B)
+  const tableQrUrl = `${effectivePublicUrl}?table=${encodeURIComponent(mesaIdentifier)}`;
   const displayTableName = table.table_name || `MESA ${table.table_number}`;
 
+  const copyLink = () => {
+    navigator.clipboard.writeText(tableQrUrl);
+    setCopied(true);
+    toast.success('¡Enlace de la mesa copiado al portapapeles!');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // 1. Descargar ÚNICAMENTE el código QR (fondo blanco limpio)
+  const downloadQRCodeOnly = () => {
+    const canvas = canvasContainerRef.current?.querySelector('canvas') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    // Crear canvas con margen blanco para fácil lectura y stickers
+    const qrCanvas = document.createElement('canvas');
+    const padding = 40;
+    qrCanvas.width = canvas.width + padding * 2;
+    qrCanvas.height = canvas.height + padding * 2;
+    const ctx = qrCanvas.getContext('2d');
+    if (!ctx) return;
+
+    // Fondo blanco
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, qrCanvas.width, qrCanvas.height);
+
+    // Dibujar QR
+    ctx.drawImage(canvas, padding, padding);
+
+    const link = document.createElement('a');
+    link.download = `QR-Solo-${business.slug}-Mesa-${table.table_number}.png`;
+    link.href = qrCanvas.toDataURL('image/png');
+    link.click();
+  };
+
+  // 2. Descargar el Cartel Completo diseñado
   const downloadPNG = () => {
     const canvas = canvasContainerRef.current?.querySelector('canvas') as HTMLCanvasElement;
     if (!canvas) return;
@@ -61,14 +114,14 @@ export function TablePosterModal({
     ctx.textAlign = 'center';
     ctx.fillText('📱', posterCanvas.width / 2, 120);
 
-    // Texto ESCANEÁ EL QR
+    // Texto ¡PEDÍ DIRECTO DESDE ACÁ!
     ctx.fillStyle = '#ffffff';
-    ctx.font = '900 48px sans-serif';
-    ctx.fillText('ESCANEÁ EL QR', posterCanvas.width / 2, 200);
+    ctx.font = '900 44px sans-serif';
+    ctx.fillText('¡PEDÍ DIRECTO DESDE ACÁ!', posterCanvas.width / 2, 195);
 
     ctx.fillStyle = '#94a3b8';
-    ctx.font = '500 24px sans-serif';
-    ctx.fillText('PARA VER LA CARTA Y PEDIR', posterCanvas.width / 2, 245);
+    ctx.font = '500 22px sans-serif';
+    ctx.fillText('ESCANEÁ CON TU CELULAR • DIRECTO A LA COCINA', posterCanvas.width / 2, 240);
 
     // Dibujar QR al centro
     ctx.fillStyle = '#ffffff';
@@ -88,7 +141,7 @@ export function TablePosterModal({
     // Pie de página
     ctx.fillStyle = '#64748b';
     ctx.font = '400 20px sans-serif';
-    ctx.fillText('Powered by MambaQR', posterCanvas.width / 2, 980);
+    ctx.fillText('MambaQR • Pedí sin esperar', posterCanvas.width / 2, 980);
 
     const link = document.createElement('a');
     link.download = `Cartel-${business.slug}-Mesa-${table.table_number}.png`;
@@ -96,6 +149,7 @@ export function TablePosterModal({
     link.click();
   };
 
+  // 3. Imprimir Cartel
   const handlePrint = () => {
     const canvas = canvasContainerRef.current?.querySelector('canvas') as HTMLCanvasElement;
     if (!canvas) return;
@@ -139,8 +193,8 @@ export function TablePosterModal({
             background: #0f172a;
           }
           .icon { font-size: 40pt; margin-bottom: 5mm; }
-          .header-title { font-size: 32pt; font-weight: 900; letter-spacing: 1px; margin: 0; }
-          .header-subtitle { font-size: 14pt; color: #94a3b8; margin-top: 2mm; }
+          .header-title { font-size: 28pt; font-weight: 900; letter-spacing: 1px; margin: 0; }
+          .header-subtitle { font-size: 13pt; color: #94a3b8; margin-top: 2mm; }
           .qr-box {
             background: #ffffff;
             padding: 6mm;
@@ -158,8 +212,8 @@ export function TablePosterModal({
         <div class="poster">
           <div>
             <div class="icon">📱</div>
-            <h1 class="header-title">ESCANEÁ EL QR</h1>
-            <p class="header-subtitle">PARA ACCEDER A LA CARTA Y PEDIR</p>
+            <h1 class="header-title">¡PEDÍ DIRECTO DESDE ACÁ!</h1>
+            <p class="header-subtitle">ESCANEÁ CON TU CELULAR • DIRECTO A LA COCINA</p>
           </div>
           
           <div class="qr-box">
@@ -169,7 +223,7 @@ export function TablePosterModal({
           <div>
             <h2 class="table-title">${displayTableName.toUpperCase()}</h2>
             <div class="business-name">${business.name}</div>
-            <div class="footer">MambaQR • Menú Digital e Inteligente</div>
+            <div class="footer">MambaQR • Pedí sin esperar</div>
           </div>
         </div>
         <script>
@@ -194,9 +248,9 @@ export function TablePosterModal({
         <div className="px-6 py-4 border-b border-white/8 flex items-center justify-between bg-[#161616]">
           <h3 className="text-base font-bold text-white flex items-center gap-2">
             <Printer className="w-5 h-5 text-indigo-400" />
-            Cartel de Mesa imprimible
+            Cartel de Mesa y Código QR
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -206,8 +260,8 @@ export function TablePosterModal({
           <div className="w-full max-w-xs bg-slate-900 border-4 border-indigo-500 rounded-3xl p-6 text-center shadow-2xl flex flex-col items-center gap-4">
             <div>
               <span className="text-4xl block mb-1">📱</span>
-              <h2 className="text-xl font-black text-white tracking-wide">ESCANEÁ EL QR</h2>
-              <p className="text-[11px] text-slate-400 mt-0.5 uppercase tracking-wider">Para acceder a la carta y pedir</p>
+              <h2 className="text-lg font-black text-white tracking-wide">¡PEDÍ DIRECTO DESDE ACÁ!</h2>
+              <p className="text-[11px] text-slate-400 mt-0.5 uppercase tracking-wider">Escaneá con tu celular • Directo a cocina</p>
             </div>
 
             {/* QR Box */}
@@ -226,28 +280,68 @@ export function TablePosterModal({
                 {displayTableName}
               </h1>
               <p className="text-sm font-bold text-white mt-0.5">{business.name}</p>
-              <p className="text-[10px] text-slate-500 mt-2">MambaQR</p>
+              <p className="text-[10px] text-slate-500 mt-2">MambaQR • Pedí sin esperar</p>
             </div>
+          </div>
+
+          {/* Direct URL Box & Wi-Fi tip */}
+          <div className="w-full max-w-xs mt-4 bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1.5 text-xs text-slate-300">
+            <span className="text-[10px] uppercase font-bold text-slate-400">Enlace codificado en el QR:</span>
+            <div className="flex items-center gap-2 bg-black/40 border border-white/5 px-2.5 py-1.5 rounded-lg overflow-hidden">
+              <span className="truncate flex-1 font-mono text-indigo-300 select-all text-[11px]">{tableQrUrl}</span>
+              <button
+                onClick={copyLink}
+                className="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                title="Copiar enlace"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+              <a
+                href={tableQrUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="p-1 text-slate-400 hover:text-white transition-colors"
+                title="Probar en pestaña nueva"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+            <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
+              📶 <strong>Para probar desde tu celular:</strong> Conecta tu teléfono a la misma red Wi-Fi de tu PC (<code className="text-emerald-400">192.168.1.9</code>). En producción online funcionará con 4G en cualquier lugar.
+            </p>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-white/8 bg-[#161616] grid grid-cols-2 gap-3">
+        <div className="px-6 py-4 border-t border-white/8 bg-[#161616] flex flex-col sm:flex-row items-center gap-2.5">
+          <button
+            onClick={downloadQRCodeOnly}
+            className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold
+                       bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all cursor-pointer"
+            title="Descargar solo la imagen del código QR con margen blanco"
+          >
+            <QrCode className="w-4 h-4" />
+            Solo QR
+          </button>
+          
           <button
             onClick={downloadPNG}
-            className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold
+            className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold
                        bg-white/10 hover:bg-white/15 text-white border border-white/10 transition-all cursor-pointer"
+            title="Descargar imagen del cartel completo para imprimir"
           >
             <Download className="w-4 h-4" />
-            Descargar PNG
+            Cartel PNG
           </button>
+          
           <button
             onClick={handlePrint}
-            className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold
+            className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold
                        bg-indigo-500 hover:bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-500/25 cursor-pointer"
+            title="Imprimir cartel en tamaño A4"
           >
             <Printer className="w-4 h-4" />
-            Imprimir Cartel
+            Imprimir
           </button>
         </div>
       </div>

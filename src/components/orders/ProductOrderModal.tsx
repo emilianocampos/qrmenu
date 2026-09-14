@@ -11,9 +11,10 @@ interface ProductOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   currencySymbol: string;
+  layoutStyle?: string;
 }
 
-export function ProductOrderModal({ product, isOpen, onClose, currencySymbol }: ProductOrderModalProps) {
+export function ProductOrderModal({ product, isOpen, onClose, currencySymbol, layoutStyle = 'grid' }: ProductOrderModalProps) {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [detail, setDetail] = useState('');
@@ -72,23 +73,32 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol }: 
         }}
       >
         
-        {/* Header / Image */}
-        <div className="relative h-44 shrink-0" style={{ backgroundColor: 'var(--bg-page)' }}>
-          {product.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
+        {/* Header / Image (Omitida en modo lista sin imagen) */}
+        {layoutStyle !== 'list' && product.image_url ? (
+          <div className="relative h-44 shrink-0" style={{ backgroundColor: 'var(--bg-page)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <ShoppingBag className="w-12 h-12 text-gray-400 opacity-30" />
-            </div>
-          )}
-          <button 
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+            <button 
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        ) : (
+          <div className="px-5 pt-5 pb-2 flex items-center justify-between" style={{ backgroundColor: 'var(--bg-card)' }}>
+            <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border" style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)', color: 'var(--primary-color)' }}>
+              {product.category?.name || 'Producto'}
+            </span>
+            <button 
+              onClick={onClose}
+              className="p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
         {/* Content */}
         <div className="p-5 overflow-y-auto space-y-4">

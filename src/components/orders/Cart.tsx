@@ -12,9 +12,10 @@ interface CartProps {
   businessId: string;
   orderMode: string;
   businessSlug: string;
+  layoutStyle?: string;
 }
 
-export function Cart({ businessId, orderMode, businessSlug }: CartProps) {
+export function Cart({ businessId, orderMode, businessSlug, layoutStyle = 'grid' }: CartProps) {
   const { items, removeItem, updateQuantity, total, isOpen, setIsOpen, clearCart, customerInfo, setLastOrderId } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -153,10 +154,12 @@ export function Cart({ businessId, orderMode, businessSlug }: CartProps) {
                         boxShadow: 'var(--shadow-card)'
                       }}
                     >
-                      <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0" style={{ backgroundColor: 'var(--bg-card)' }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={item.image_url || '/placeholder.png'} alt={item.name} className="w-full h-full object-cover" />
-                      </div>
+                      {layoutStyle !== 'list' && (
+                        <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0" style={{ backgroundColor: 'var(--bg-card)' }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.image_url || '/placeholder.png'} alt={item.name} className="w-full h-full object-cover" />
+                        </div>
+                      )}
                       <div className="flex-1 flex flex-col">
                         <div className="flex justify-between items-start gap-2">
                           <h3 className="font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>{item.name}</h3>

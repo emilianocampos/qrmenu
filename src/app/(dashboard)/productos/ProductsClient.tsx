@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Plus, ChevronLeft, ChevronRight, Trash2, Tags, X } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Trash2, Tags, X, Sparkles, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -57,6 +57,72 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
   const [uploading, setUploading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+  const [isAutoImaging, setIsAutoImaging] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiOptions, setAiOptions] = useState({
+    descriptions: true,
+    images: true,
+    overwrite: false,
+  });
+
+  const runAiAssistant = async () => {
+    setIsAutoImaging(true);
+    setAiModalOpen(false);
+
+    let toastMsg = 'El Asistente IA está analizando tu menú y completando los datos...';
+    if (!aiOptions.descriptions && !aiOptions.images) {
+      toastMsg = 'Eliminando fotos y descripciones de los productos...';
+    } else if (!aiOptions.descriptions) {
+      toastMsg = 'Actualizando fotos y eliminando descripciones...';
+    } else if (!aiOptions.images) {
+      toastMsg = 'Generando descripciones y eliminando fotos...';
+    }
+
+    const toastId = toast.loading(toastMsg);
+    try {
+      const res = await fetch('/api/products/auto-images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: business.id,
+          includeDescriptions: aiOptions.descriptions,
+          includeImages: aiOptions.images,
+          overwriteExisting: aiOptions.overwrite,
+          useGemini: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al procesar la solicitud');
+
+      toast.dismiss(toastId);
+      if (!aiOptions.descriptions && !aiOptions.images) {
+        toast.success('Se eliminaron todas las fotos y descripciones de los productos.');
+      } else if (!aiOptions.descriptions) {
+        toast.success('Se actualizaron las fotos y se eliminaron las descripciones.');
+      } else if (!aiOptions.images) {
+        toast.success('Se generaron descripciones gourmet y se eliminaron las fotos.');
+      } else {
+        const modeMsg = data.usedGemini ? 'con Gemini AI' : 'con catálogo culinario';
+        toast.success(`¡Completado ${modeMsg}! Se actualizaron ${data.updatedCount} platos.`);
+      }
+
+      // Recargar productos actualizados
+      const supabase = createClient();
+      const { data: updatedProds } = await supabase
+        .from('products')
+        .select('*')
+        .eq('business_id', business.id)
+        .order('item_order', { ascending: true });
+      if (updatedProds) {
+        setProducts(updatedProds);
+      }
+    } catch (err: unknown) {
+      toast.dismiss(toastId);
+      toast.error(err instanceof Error ? err.message : 'Error en el Asistente IA');
+    } finally {
+      setIsAutoImaging(false);
+    }
+  };
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -261,14 +327,36 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
         action={
           <div className="flex flex-wrap items-center justify-center gap-3 w-full">
             {products.length > 0 && (
-              <button
-                onClick={() => setConfirmDeleteAll(true)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
-                           bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-all cursor-pointer"
-              >
-                <Trash2 className="w-4 h-4" />
-                Eliminar Todo
-              </button>
+              <>
+                <button
+                  onClick={() => setAiModalOpen(true)}
+                  disabled={isAutoImaging}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                             bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20
+                             text-indigo-400 border border-indigo-500/20 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
+                  title="Abrir Asistente con IA para fotos y descripciones"
+                >
+                  {isAutoImaging ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                      <span>Procesando con IA...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-indigo-400" />
+                      <span>Asistente IA</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setConfirmDeleteAll(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                             bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Eliminar Todo
+                </button>
+              </>
             )}
             <button
               onClick={openCreate}
@@ -430,6 +518,149 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
               >
                 Crear categoría
               </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Asistente IA de Carta */}
+      {aiModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setAiModalOpen(false)} />
+          <div className="relative bg-[#111] border border-white/10 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-white/8 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Asistente IA de Carta</h3>
+                  <p className="text-xs text-gray-400">Elegí qué querés autocompletar en tu menú</p>
+                </div>
+              </div>
+              <button onClick={() => setAiModalOpen(false)} className="text-gray-400 hover:text-white transition-colors cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5">
+              {/* Opción 1: Descripciones con IA */}
+              <label className={`flex items-start gap-3.5 p-4 rounded-xl border transition-all cursor-pointer ${
+                aiOptions.descriptions 
+                  ? 'border-indigo-500/30 bg-indigo-500/[0.04]' 
+                  : 'border-rose-500/20 bg-rose-500/[0.03]'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={aiOptions.descriptions}
+                  onChange={(e) => setAiOptions(o => ({ ...o, descriptions: e.target.checked }))}
+                  className="mt-1 w-4 h-4 rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-white block">Generar descripciones gourmet con IA</span>
+                    {!aiOptions.descriptions && (
+                      <span className="text-[10px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                        Se borrarán
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-400 block mt-0.5 leading-relaxed">
+                    {aiOptions.descriptions
+                      ? 'Gemini AI analiza el nombre y categoría de cada producto para redactar descripciones apetitosas, profesionales y concisas.'
+                      : '⚠️ Al estar desmarcado, se eliminarán las descripciones existentes de los platos.'}
+                  </span>
+                </div>
+              </label>
+
+              {/* Opción 2: Fotos gastronómicas */}
+              <label className={`flex items-start gap-3.5 p-4 rounded-xl border transition-all cursor-pointer ${
+                aiOptions.images 
+                  ? 'border-indigo-500/30 bg-indigo-500/[0.04]' 
+                  : 'border-rose-500/20 bg-rose-500/[0.03]'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={aiOptions.images}
+                  onChange={(e) => setAiOptions(o => ({ ...o, images: e.target.checked }))}
+                  className="mt-1 w-4 h-4 rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-white block">Asignar fotografías profesionales HD</span>
+                    {!aiOptions.images && (
+                      <span className="text-[10px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                        Se borrarán
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-400 block mt-0.5 leading-relaxed">
+                    {aiOptions.images
+                      ? 'Asocia fotos reales de catálogo gastronómico (cafetería, pastelería, almuerzos, tragos, vinos) a cada producto.'
+                      : '⚠️ Al estar desmarcado, se eliminarán las fotos de los productos.'}
+                  </span>
+                </div>
+              </label>
+
+              {/* Opción 3: Sobreescribir */}
+              {(aiOptions.descriptions || aiOptions.images) && (
+                <label className="flex items-start gap-3.5 p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] transition-all cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={aiOptions.overwrite}
+                    onChange={(e) => setAiOptions(o => ({ ...o, overwrite: e.target.checked }))}
+                    className="mt-1 w-4 h-4 rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <span className="text-xs font-semibold text-gray-300 block">Sobreescribir productos que ya tengan datos</span>
+                    <span className="text-[11px] text-gray-500 block mt-0.5">
+                      Si está desmarcado, solo completará los platos que tengan la foto o la descripción vacía.
+                    </span>
+                  </div>
+                </label>
+              )}
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-3 border-t border-white/8">
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={runAiAssistant}
+                disabled={isAutoImaging}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg disabled:opacity-50 cursor-pointer ${
+                  !aiOptions.descriptions && !aiOptions.images
+                    ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/25'
+                    : 'bg-indigo-500 hover:bg-indigo-600 text-white shadow-indigo-500/25'
+                }`}
+              >
+                {isAutoImaging ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Procesando...</span>
+                  </>
+                ) : !aiOptions.descriptions && !aiOptions.images ? (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Borrar fotos y descripciones</span>
+                  </>
+                ) : !aiOptions.descriptions || !aiOptions.images ? (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Aplicar cambios</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Iniciar Asistente IA</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
