@@ -99,15 +99,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
   }
 
   const fontName = business.typography || 'Inter';
-  const hasAbout = business.show_about_us !== false && !!(
-    business.about_title ||
-    business.about_description ||
-    business.cover_image ||
-    business.slogan ||
-    business.address ||
-    business.phone ||
-    business.schedule
-  );
+  const hasAbout = business.show_about_us !== false;
 
   return (
     <PublicMenuClient businessId={business.id} orderMode={business.order_mode || 'menu_only'} businessSlug={business.slug}>
@@ -247,6 +239,8 @@ export default async function PublicMenuPage({ params }: PageProps) {
             businessId={business.id}
             initialReviews={reviews}
             businessName={business.name}
+            googleReviewsEnabled={business.google_reviews_enabled}
+            googleReviewsUrl={business.google_reviews_url}
           />
         </main>
       </div>

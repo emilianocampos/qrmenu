@@ -12,9 +12,17 @@ interface ReviewSectionProps {
   businessId: string;
   initialReviews: Review[];
   businessName: string;
+  googleReviewsEnabled?: boolean;
+  googleReviewsUrl?: string | null;
 }
 
-export function ReviewSection({ businessId, initialReviews, businessName }: ReviewSectionProps) {
+export function ReviewSection({
+  businessId,
+  initialReviews,
+  businessName,
+  googleReviewsEnabled,
+  googleReviewsUrl,
+}: ReviewSectionProps) {
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -79,7 +87,12 @@ export function ReviewSection({ businessId, initialReviews, businessName }: Revi
           `}</style>
 
           {/* Left: Overall Rating */}
-          <OverallRating reviews={reviews} />
+          <OverallRating
+            reviews={reviews}
+            googleReviewsEnabled={googleReviewsEnabled}
+            googleReviewsUrl={googleReviewsUrl}
+            businessName={businessName}
+          />
 
           {/* Right: List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { subscribeToCustomerOrder, unsubscribeFromCustomerOrder } from '@/lib/realtime';
-import { CheckCircle2, Clock, ChefHat, PackageCheck, Receipt, Ban, CreditCard, Loader2, X, Share2 } from 'lucide-react';
+import { CheckCircle2, Clock, ChefHat, PackageCheck, Receipt, Ban, CreditCard, Loader2, X, Share2, Star, MessageSquarePlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface OrderTimelineProps {
@@ -211,7 +212,44 @@ export function OrderTimeline({ initialOrder, primaryColor }: OrderTimelineProps
           </div>
         </h2>
 
+      {/* Cartel de Pedido Listo con Enlace a Reseñas */}
+      {(order.status === 'ready' || order.status === 'delivered' || order.status === 'paid') && (
+        <div 
+          className="mb-8 p-6 rounded-2xl border text-center relative overflow-hidden animate-in zoom-in-95 duration-500"
+          style={{
+            backgroundColor: 'var(--bg-page)',
+            borderColor: 'var(--border-color)',
+            boxShadow: 'var(--shadow-card)',
+          }}
+        >
+          {/* Subtle glow border top */}
+          <div 
+            className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-80" 
+          />
 
+          <div className="w-14 h-14 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto mb-3 shadow-lg shadow-amber-500/10 animate-bounce">
+            <Star className="w-7 h-7 fill-amber-400 text-amber-400" />
+          </div>
+
+          <h3 className="text-xl font-extrabold mb-1" style={{ color: 'var(--text-primary)' }}>
+            {order.status === 'ready' ? '🍽️ ¡Tu pedido ya está listo!' : '✨ ¡Esperamos que disfrutes tu pedido!'}
+          </h3>
+          <p className="text-xs sm:text-sm max-w-sm mx-auto mb-5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            Contanos qué te pareció tu experiencia. ¡Tu opinión nos ayuda a seguir brindándote lo mejor!
+          </p>
+
+          <Link
+            href={`/c/${order.businesses?.slug || ''}#reviews`}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-white transition-all shadow-lg hover:scale-105 active:scale-95"
+            style={{
+              backgroundColor: primaryColor,
+            }}
+          >
+            <MessageSquarePlus className="w-4 h-4" />
+            <span>Dejar mi opinión / Ver reseñas</span>
+          </Link>
+        </div>
+      )}
 
       {/* Cartel de Confirmación de Pago */}
       {isPaid && (

@@ -67,15 +67,7 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
   }
 
   const fontName = business.typography || 'Inter';
-  const hasAbout = !!(
-    business.about_title ||
-    business.about_description ||
-    business.cover_image ||
-    business.slogan ||
-    business.address ||
-    business.phone ||
-    business.schedule
-  );
+  const hasAbout = business.show_about_us !== false;
 
   return (
     <>

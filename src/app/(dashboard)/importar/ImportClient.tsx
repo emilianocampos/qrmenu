@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Sparkles, Loader2, Check, Plus, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Sparkles, Loader2, Check, Plus, Trash2, X, ChevronDown, ChevronUp, Database } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { UploadDropzone } from '@/components/ui/UploadDropzone';
 import { createClient } from '@/lib/supabase/client';
+import { MaxiRestImportTab } from '@/components/import/MaxiRestImportTab';
 import { Business } from '@/types';
 import { toast } from 'sonner';
 
@@ -25,6 +26,7 @@ interface ImportClientProps {
 }
 
 export function ImportClient({ business }: ImportClientProps) {
+  const [activeTab, setActiveTab] = useState<'maxirest' | 'ai'>('maxirest');
   const [file, setFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -215,25 +217,57 @@ export function ImportClient({ business }: ImportClientProps) {
   return (
     <div>
       <PageHeader
-        title="Importar Carta con IA"
-        description="Subí una imagen o PDF de tu menú y la IA extraerá categorías y productos automáticamente"
-        breadcrumb={[{ label: 'Dashboard' }, { label: 'Importar Carta' }]}
+        title="Importar Carta"
+        description="Importa tu menú completo desde MaxiRest o digitalízalo con IA desde fotos y PDF"
+        breadcrumb={[{ label: 'Dashboard' }, { label: 'Importar' }]}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Upload */}
-        <div className="space-y-5">
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-white mb-4">1. Subí tu menú</h3>
-            <UploadDropzone
-              accept="image/*,application/pdf"
-              onFileSelect={handleFileSelect}
-              preview={filePreview}
-              onClear={() => { setFile(null); setFilePreview(null); setAiResult(null); setEditableResult(null); }}
-              sublabel="PNG, JPG, PDF — hasta 10MB"
-              loading={isAnalyzing}
-            />
-          </div>
+      {/* Tabs */}
+      <div className="flex items-center gap-2 p-1 bg-white/[0.03] border border-white/10 rounded-2xl w-fit mb-8">
+        <button
+          type="button"
+          onClick={() => setActiveTab('maxirest')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'maxirest'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
+              : 'text-gray-400 hover:text-white hover:bg-white/5'
+          }`}
+        >
+          <Database className="w-4 h-4" />
+          Desde MaxiRest (SQL)
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('ai')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'ai'
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
+              : 'text-gray-400 hover:text-white hover:bg-white/5'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          Con Inteligencia Artificial (Fotos / PDF)
+        </button>
+      </div>
+
+      {activeTab === 'maxirest' ? (
+        <MaxiRestImportTab business={business} />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Upload */}
+          <div className="space-y-5">
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-white mb-4">1. Subí tu menú</h3>
+              <UploadDropzone
+                accept="image/*,application/pdf"
+                onFileSelect={handleFileSelect}
+                preview={filePreview}
+                onClear={() => { setFile(null); setFilePreview(null); setAiResult(null); setEditableResult(null); }}
+                sublabel="PNG, JPG, PDF — hasta 10MB"
+                loading={isAnalyzing}
+              />
+            </div>
 
           {file && !aiResult && (
             <button
@@ -391,6 +425,7 @@ export function ImportClient({ business }: ImportClientProps) {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

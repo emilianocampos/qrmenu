@@ -3,6 +3,15 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 
 type SubscriptionCallback<T> = (payload: T) => void;
 
+let supabaseInstance: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseClient() {
+  if (!supabaseInstance) {
+    supabaseInstance = createClient();
+  }
+  return supabaseInstance;
+}
+
 let notificationsChannel: RealtimeChannel | null = null;
 let ordersChannel: RealtimeChannel | null = null;
 let customerOrderChannel: RealtimeChannel | null = null;
@@ -12,12 +21,12 @@ let customerOrderChannel: RealtimeChannel | null = null;
  * Solo se abre UNA conexión por negocio en todo el dashboard.
  */
 export function subscribeToNotifications(businessId: string, callback: (payload: any, eventType: string) => void) {
+  const supabase = getSupabaseClient();
+
   if (notificationsChannel) {
     unsubscribeFromNotifications();
   }
 
-  const supabase = createClient();
-  
   notificationsChannel = supabase
     .channel(`notifications-channel-${businessId}`)
     .on(
@@ -34,9 +43,9 @@ export function subscribeToNotifications(businessId: string, callback: (payload:
         }
       }
     )
-    .subscribe((status, err) => {
+    .subscribe((status) => {
       if (status === 'CHANNEL_ERROR') {
-        console.error('Error en canal Realtime de notificaciones:', err);
+        console.warn('Realtime (Notificaciones): Reconectando canal...');
       }
     });
 
@@ -45,7 +54,8 @@ export function subscribeToNotifications(businessId: string, callback: (payload:
 
 export function unsubscribeFromNotifications() {
   if (notificationsChannel) {
-    notificationsChannel.unsubscribe();
+    const supabase = getSupabaseClient();
+    supabase.removeChannel(notificationsChannel);
     notificationsChannel = null;
   }
 }
@@ -55,12 +65,12 @@ export function unsubscribeFromNotifications() {
  * Se debe usar ÚNICAMENTE en la página /dashboard/orders.
  */
 export function subscribeToOrders(businessId: string, callback: SubscriptionCallback<any>) {
+  const supabase = getSupabaseClient();
+
   if (ordersChannel) {
     unsubscribeFromOrders();
   }
 
-  const supabase = createClient();
-  
   ordersChannel = supabase
     .channel(`orders-channel-${businessId}`)
     .on(
@@ -75,9 +85,9 @@ export function subscribeToOrders(businessId: string, callback: SubscriptionCall
         callback(payload);
       }
     )
-    .subscribe((status, err) => {
+    .subscribe((status) => {
       if (status === 'CHANNEL_ERROR') {
-        console.error('Error en canal Realtime de pedidos:', err);
+        console.warn('Realtime (Pedidos): Reconectando canal...');
       }
     });
 
@@ -86,7 +96,8 @@ export function subscribeToOrders(businessId: string, callback: SubscriptionCall
 
 export function unsubscribeFromOrders() {
   if (ordersChannel) {
-    ordersChannel.unsubscribe();
+    const supabase = getSupabaseClient();
+    supabase.removeChannel(ordersChannel);
     ordersChannel = null;
   }
 }
@@ -96,14 +107,14 @@ export function unsubscribeFromOrders() {
  * Se usa ÚNICAMENTE en la vista de seguimiento del cliente.
  */
 export function subscribeToCustomerOrder(orderId: string, callback: SubscriptionCallback<any>) {
+  const supabase = getSupabaseClient();
+
   if (customerOrderChannel) {
     unsubscribeFromCustomerOrder();
   }
 
-  const supabase = createClient();
-  
   customerOrderChannel = supabase
-    .channel(`customer-order-channel-${orderId}`)
+    .channel(`customer-order-${orderId}-${Date.now()}`)
     .on(
       'postgres_changes',
       {
@@ -118,9 +129,9 @@ export function subscribeToCustomerOrder(orderId: string, callback: Subscription
         }
       }
     )
-    .subscribe((status, err) => {
+    .subscribe((status) => {
       if (status === 'CHANNEL_ERROR') {
-        console.error('Error en canal Realtime de pedido del cliente:', err);
+        console.warn('Realtime (Pedido Cliente): Reconectando canal...');
       }
     });
 
@@ -129,7 +140,9 @@ export function subscribeToCustomerOrder(orderId: string, callback: Subscription
 
 export function unsubscribeFromCustomerOrder() {
   if (customerOrderChannel) {
-    customerOrderChannel.unsubscribe();
+    const supabase = getSupabaseClient();
+    supabase.removeChannel(customerOrderChannel);
     customerOrderChannel = null;
   }
 }
+

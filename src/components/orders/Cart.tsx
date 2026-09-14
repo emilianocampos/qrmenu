@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useCart } from './CartContext';
-import { ShoppingBag, X, Plus, Minus, Check, Trash2, ArrowRight } from 'lucide-react';
+import { ShoppingBag, X, Plus, Minus, Trash2, ArrowRight, Loader2 } from 'lucide-react';
 import { createOrder } from '@/actions/orders';
 import { addDailyStamp } from '@/actions/loyalty';
 import { toast } from 'sonner';
@@ -19,10 +19,10 @@ export function Cart({ businessId, orderMode, businessSlug }: CartProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  if (!isOpen) return null;
-
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setIsOpen(false); // Se cierra el carrito inmediatamente al enviar
+
     try {
       const orderItems = items.map(i => ({
         productId: i.productId,
@@ -51,7 +51,6 @@ export function Cart({ businessId, orderMode, businessSlug }: CartProps) {
         customerPhone: customerInfo.phone,
         customerIdentifier: identifier,
         tableDisplay: identifier,
-        // Si tienes tableId real puedes enviarlo
       });
 
       if (res.error) throw new Error(res.error);
@@ -64,147 +63,169 @@ export function Cart({ businessId, orderMode, businessSlug }: CartProps) {
 
       toast.success('¡Pedido enviado con éxito!');
       clearCart();
-      setIsOpen(false);
       setLastOrderId(res.orderId);
-      
-      // Redirigir a mis-pedidos
       router.push(`/c/${businessSlug}/mis-pedidos?id=${res.orderId}`);
-      
-    } catch (error) {
-      toast.error('Ocurrió un error al enviar el pedido');
-    } finally {
+    } catch (error: any) {
       setIsSubmitting(false);
+      toast.error(error?.message || 'Ocurrió un error al enviar el pedido');
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Overlay */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-        onClick={() => setIsOpen(false)}
-      />
-
-      {/* Cart Panel */}
-      <div 
-        className="relative w-full max-w-md h-full flex flex-col animate-in slide-in-from-right duration-300"
-        style={{
-          backgroundColor: 'var(--bg-card)',
-          color: 'var(--text-primary)',
-          borderLeft: '1px solid var(--border-color)',
-          boxShadow: 'var(--shadow-modal)'
-        }}
-      >
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--border-color)' }}>
-          <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-            <ShoppingBag className="w-5 h-5 text-indigo-500" />
-            Tu Pedido
-          </h2>
-          <button 
-            onClick={() => setIsOpen(false)}
-            className="p-2 rounded-full transition-colors cursor-pointer"
-            style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-muted)' }}
+    <>
+      {/* Loader circular cuando el carrito se cierra y el pedido se está enviando */}
+      {isSubmitting && (
+        <div 
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          }}
+        >
+          <div 
+            className="p-6 rounded-2xl flex flex-col items-center justify-center gap-3 shadow-2xl border animate-in zoom-in-95 duration-200"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-color)',
+              boxShadow: 'var(--shadow-modal)'
+            }}
           >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5">
-          {items.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center" style={{ color: 'var(--text-muted)' }}>
-              <ShoppingBag className="w-12 h-12 mb-4 opacity-30" />
-              <p>Tu carrito está vacío</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {items.map((item, index) => (
-                <div 
-                  key={`${item.productId}-${index}`} 
-                  className="flex gap-4 p-4 rounded-2xl border"
-                  style={{
-                    backgroundColor: 'var(--bg-page)',
-                    borderColor: 'var(--border-color)',
-                    boxShadow: 'var(--shadow-card)'
-                  }}
-                >
-                  <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0" style={{ backgroundColor: 'var(--bg-card)' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.image_url || '/placeholder.png'} alt={item.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 flex flex-col">
-                    <div className="flex justify-between items-start gap-2">
-                      <h3 className="font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>{item.name}</h3>
-                      <button 
-                        onClick={() => removeItem(item.productId, item.observations)}
-                        className="text-gray-400 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                    {item.observations && (
-                      <div className="mt-1 space-y-0.5">
-                        {item.observations.split(' | ').map((obs, idx) => (
-                          <p key={idx} className="text-xs leading-tight font-medium" style={{ color: 'var(--text-muted)' }}>
-                            {obs}
-                          </p>
-                        ))}
-                      </div>
-                    )}
-                    <div className="mt-auto flex items-center justify-between pt-2">
-                      <span className="font-bold text-indigo-500">${item.price}</span>
-                      
-                      <div 
-                        className="flex items-center gap-3 rounded-lg p-1 border"
-                        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
-                      >
-                        <button 
-                          onClick={() => updateQuantity(item.productId, item.observations, item.quantity - 1)}
-                          className="w-6 h-6 flex items-center justify-center rounded-md transition-colors"
-                          style={{ color: 'var(--text-primary)' }}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="text-sm font-semibold w-4 text-center" style={{ color: 'var(--text-primary)' }}>{item.quantity}</span>
-                        <button 
-                          onClick={() => updateQuantity(item.productId, item.observations, item.quantity + 1)}
-                          className="w-6 h-6 flex items-center justify-center rounded-md transition-colors"
-                          style={{ color: 'var(--text-primary)' }}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        {items.length > 0 && (
-          <div className="p-5 border-t" style={{ backgroundColor: 'var(--bg-card-hover)', borderColor: 'var(--border-color)' }}>
-            <div className="flex items-center justify-between mb-4">
-              <span style={{ color: 'var(--text-muted)' }}>Total</span>
-              <span className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>${total}</span>
-            </div>
-            <button
-              disabled={isSubmitting}
-              onClick={handleSubmit}
-              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-lg shadow-indigo-500/20 cursor-pointer"
-            >
-              {isSubmitting ? (
-                'Enviando...'
-              ) : (
-                <>Enviar Pedido <ArrowRight className="w-5 h-5" /></>
-              )}
-            </button>
+            <Loader2 
+              className="w-10 h-10 animate-spin" 
+              style={{ color: 'var(--text-primary)' }}
+            />
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              Enviando pedido...
+            </p>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+
+      {/* Cart Drawer Panel */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Overlay */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Cart Panel */}
+          <div 
+            className="relative w-full max-w-md h-full flex flex-col animate-in slide-in-from-right duration-300"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              borderLeft: '1px solid var(--border-color)',
+              boxShadow: 'var(--shadow-modal)'
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <ShoppingBag className="w-5 h-5 text-indigo-500" />
+                Tu Pedido
+              </h2>
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="p-2 rounded-full transition-colors cursor-pointer"
+                style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-muted)' }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-5">
+              {items.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center" style={{ color: 'var(--text-muted)' }}>
+                  <ShoppingBag className="w-12 h-12 mb-4 opacity-30" />
+                  <p>Tu carrito está vacío</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {items.map((item, index) => (
+                    <div 
+                      key={`${item.productId}-${index}`} 
+                      className="flex gap-4 p-4 rounded-2xl border"
+                      style={{
+                        backgroundColor: 'var(--bg-page)',
+                        borderColor: 'var(--border-color)',
+                        boxShadow: 'var(--shadow-card)'
+                      }}
+                    >
+                      <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0" style={{ backgroundColor: 'var(--bg-card)' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={item.image_url || '/placeholder.png'} alt={item.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 flex flex-col">
+                        <div className="flex justify-between items-start gap-2">
+                          <h3 className="font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>{item.name}</h3>
+                          <button 
+                            onClick={() => removeItem(item.productId, item.observations)}
+                            className="text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {item.observations && (
+                          <div className="mt-1 space-y-0.5">
+                            {item.observations.split(' | ').map((obs, idx) => (
+                              <p key={idx} className="text-xs leading-tight font-medium" style={{ color: 'var(--text-muted)' }}>
+                                {obs}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                        <div className="mt-auto flex items-center justify-between pt-2">
+                          <span className="font-bold text-indigo-500">${item.price}</span>
+                          
+                          <div 
+                            className="flex items-center gap-3 rounded-lg p-1 border"
+                            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+                          >
+                            <button 
+                              onClick={() => updateQuantity(item.productId, item.observations, item.quantity - 1)}
+                              className="w-6 h-6 flex items-center justify-center rounded-md transition-colors"
+                              style={{ color: 'var(--text-primary)' }}
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="text-sm font-semibold w-4 text-center" style={{ color: 'var(--text-primary)' }}>{item.quantity}</span>
+                            <button 
+                              onClick={() => updateQuantity(item.productId, item.observations, item.quantity + 1)}
+                              className="w-6 h-6 flex items-center justify-center rounded-md transition-colors"
+                              style={{ color: 'var(--text-primary)' }}
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {items.length > 0 && (
+              <div className="p-5 border-t" style={{ backgroundColor: 'var(--bg-card-hover)', borderColor: 'var(--border-color)' }}>
+                <div className="flex items-center justify-between mb-4">
+                  <span style={{ color: 'var(--text-muted)' }}>Total</span>
+                  <span className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>${total}</span>
+                </div>
+                <button
+                  disabled={isSubmitting}
+                  onClick={handleSubmit}
+                  className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-60 shadow-lg shadow-indigo-500/25 cursor-pointer"
+                >
+                  Enviar Pedido <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

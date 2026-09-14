@@ -37,6 +37,8 @@ export function CustomizationClient({ business }: { business: Business }) {
     banner_image: business.banner_image || '',
     slogan: business.slogan || '',
     show_about_us: business.show_about_us !== false,
+    google_reviews_enabled: business.google_reviews_enabled || false,
+    google_reviews_url: business.google_reviews_url || '',
     address: business.address || '',
     phone: business.phone || business.whatsapp || '',
     email: business.email || '',
@@ -168,6 +170,8 @@ export function CustomizationClient({ business }: { business: Business }) {
         banner_image: bannerUrl || null,
         slogan: form.slogan || null,
         show_about_us: form.show_about_us,
+        google_reviews_enabled: form.google_reviews_enabled,
+        google_reviews_url: form.google_reviews_url || null,
         address: form.address || null,
         phone: form.phone || null,
         email: form.email || null,
@@ -607,6 +611,61 @@ export function CustomizationClient({ business }: { business: Business }) {
                     onClear={() => { setPromoPreview(null); setPromoFile(null); setForm(f => ({ ...f, promo_image: '' })); }}
                     loading={uploading || isPending}
                   />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Google Reviews Section */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-0.5">Reseñas en Google (Google Maps)</h3>
+                  <p className="text-xs text-gray-400">Mostrá un botón directo debajo del resumen de opiniones para que los clientes califiquen en Google.</p>
+                </div>
+              </div>
+              <label className="flex items-center cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={form.google_reviews_enabled || false}
+                    onChange={(e) => setForm(f => ({ ...f, google_reviews_enabled: e.target.checked }))}
+                  />
+                  <div className={`block w-10 h-6 rounded-full transition-colors ${form.google_reviews_enabled ? 'bg-indigo-500' : 'bg-gray-600'}`}></div>
+                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${form.google_reviews_enabled ? 'transform translate-x-4' : ''}`}></div>
+                </div>
+                <span className="ml-3 text-sm font-medium text-gray-300">
+                  {form.google_reviews_enabled ? 'Activado' : 'Desactivado'}
+                </span>
+              </label>
+            </div>
+
+            {form.google_reviews_enabled && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 border-t border-white/10 pt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Enlace de Reseña de Google Maps / Google Perfil de Negocio
+                  </label>
+                  <input
+                    type="url"
+                    value={form.google_reviews_url}
+                    onChange={e => setForm(f => ({ ...f, google_reviews_url: e.target.value }))}
+                    placeholder="Ej: https://g.page/r/.../review o https://maps.app.goo.gl/..."
+                    className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                  />
+                  <p className="text-xs text-gray-400 mt-2">
+                    💡 <strong>Cómo obtenerlo:</strong> Ingresá a tu perfil en Google Maps o Google Mi Negocio, hacé clic en <em>"Solicitar opiniones"</em> y pegá aquí el link corto que te proporciona Google.
+                  </p>
                 </div>
               </div>
             )}
