@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { DEFAULT_LOYALTY_WA_MESSAGE } from '@/lib/loyalty-utils';
+import { DEFAULT_LOYALTY_WA_MESSAGE, arePhonesMatching } from '@/lib/loyalty-utils';
 
 export interface LoyaltySettings {
   loyalty_enabled: boolean;
@@ -169,6 +169,162 @@ export async function subscribeOrGetLoyaltyCard(businessId: string, email: strin
     return { error: err.message || 'Error al procesar la tarjeta de fidelidad' };
   }
 }
+
+/**
+ * Autentica al cliente con su email y número de teléfono (como contraseña) para abrir el gestor de sellos.
+ */
+export async function loginLoyaltyCustomer(businessId: string, email: string, phone: string) {
+  try {
+    const supabase = await createClient();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPhone = (phone || '').trim();
+
+    if (!cleanEmail) {
+      return { error: 'Ingresa tu correo electrónico.' };
+    }
+    if (!cleanPhone) {
+      return { error: 'Ingresa tu número de teléfono como contraseña.' };
+    }
+
+    const { data: loyalty, error } = await supabase
+      .from('customer_loyalty')
+      .select('*')
+      .eq('business_id', businessId)
+      .eq('customer_email', cleanEmail)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!loyalty) {
+      return { 
+        error: 'No se encontró ninguna tarjeta registrada con este email. Por favor regístrate en "Guardar mis datos".' 
+      };
+    }
+
+    // Validar teléfono como contraseña
+    if (loyalty.customer_phone) {
+      const match = arePhonesMatching(cleanPhone, loyalty.customer_phone);
+      if (!match) {
+        return { 
+          error: 'El número de teléfono no coincide con el registrado para esta cuenta.' 
+        };
+      }
+    } else {
+      // Si no tenía teléfono guardado previamente, lo vinculamos ahora
+      await supabase
+        .from('customer_loyalty')
+        .update({ customer_phone: cleanPhone, updated_at: new Date().toISOString() })
+        .eq('id', loyalty.id);
+      loyalty.customer_phone = cleanPhone;
+    }
+
+    // Verificar si ya sumó sello hoy
+    const today = new Date().toISOString().split('T')[0];
+    const { data: todayStamp } = await supabase
+      .from('loyalty_stamps_log')
+      .select('id')
+      .eq('loyalty_id', loyalty.id)
+      .eq('stamp_date', today)
+      .maybeSingle();
+
+    return {
+      success: true,
+      card: {
+        ...loyalty,
+        hasStampedToday: !!todayStamp,
+      } as CustomerLoyaltyData,
+    };
+  } catch (err: any) {
+    console.error('Error in loginLoyaltyCustomer:', err);
+    return { error: err.message || 'Error al validar credenciales de fidelidad' };
+  }
+}
+
+/**
+ * Acredita un sello automáticamente cuando el cliente realiza una compra desde la app.
+ */
+export async function awardStampFromOrder(businessId: string, phone?: string, email?: string) {
+  try {
+    const supabase = await createClient();
+
+    // 1. Verificar si el negocio tiene habilitado el programa de sellos
+    const { data: biz } = await supabase
+      .from('businesses')
+      .select('loyalty_enabled')
+      .eq('id', businessId)
+      .maybeSingle();
+
+    if (!biz || !biz.loyalty_enabled) {
+      return { success: false, reason: 'disabled' };
+    }
+
+    let customerLoyalty: any = null;
+
+    // 2. Buscar por email si está disponible
+    if (email && email.trim()) {
+      const cleanEmail = email.trim().toLowerCase();
+      const { data } = await supabase
+        .from('customer_loyalty')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('customer_email', cleanEmail)
+        .maybeSingle();
+      if (data) customerLoyalty = data;
+    }
+
+    // 3. Si no se encontró por email, buscar por teléfono
+    if (!customerLoyalty && phone && phone.trim()) {
+      const cleanPhone = phone.trim();
+      const { data: candidates } = await supabase
+        .from('customer_loyalty')
+        .select('*')
+        .eq('business_id', businessId)
+        .not('customer_phone', 'is', null);
+
+      if (candidates && candidates.length > 0) {
+        customerLoyalty = candidates.find(c => arePhonesMatching(cleanPhone, c.customer_phone || ''));
+      }
+    }
+
+    // Si no está registrado en fidelidad, no sumamos
+    if (!customerLoyalty) {
+      return { success: false, reason: 'customer_not_found' };
+    }
+
+    // 4. Intentar registrar el sello del día
+    const today = new Date().toISOString().split('T')[0];
+    const { error: logError } = await supabase
+      .from('loyalty_stamps_log')
+      .insert({
+        business_id: businessId,
+        loyalty_id: customerLoyalty.id,
+        stamp_date: today,
+      });
+
+    if (logError) {
+      // Ya sumó sello hoy
+      return { success: true, awarded: false, alreadyStampedToday: true };
+    }
+
+    // 5. Incrementar sellos ganados
+    const newCount = (customerLoyalty.stamps_count || 0) + 1;
+    const newTotal = (customerLoyalty.total_stamps_earned || 0) + 1;
+
+    await supabase
+      .from('customer_loyalty')
+      .update({
+        stamps_count: newCount,
+        total_stamps_earned: newTotal,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', customerLoyalty.id);
+
+    return { success: true, awarded: true, stampsCount: newCount };
+  } catch (err: any) {
+    console.error('Error in awardStampFromOrder:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 
 export async function addDailyStamp(businessId: string, email: string) {
   try {

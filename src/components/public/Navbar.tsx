@@ -61,6 +61,30 @@ export function Navbar({
     }
   }, []);
 
+  // En celular se abre automáticamente el menú hamburguesa
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      const timer = setTimeout(() => {
+        setMobileOpen(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Eventos globales para controlar el drawer desde el Tour
+  React.useEffect(() => {
+    const handleOpen = () => setMobileOpen(true);
+    const handleClose = () => setMobileOpen(false);
+
+    window.addEventListener('open-mobile-menu', handleOpen);
+    window.addEventListener('close-mobile-menu', handleClose);
+
+    return () => {
+      window.removeEventListener('open-mobile-menu', handleOpen);
+      window.removeEventListener('close-mobile-menu', handleClose);
+    };
+  }, []);
+
   const handleShareMenu = async () => {
     const url = typeof window !== 'undefined' ? window.location.origin + `/c/${slug}` : `https://mambaqr.com/c/${slug}`;
     const title = `Menú de ${name}`;
@@ -156,7 +180,11 @@ export function Navbar({
 
   return (
     <>
-      <TourGuide />
+      <TourGuide 
+        loyaltyEnabled={loyaltyEnabled}
+        rewardTitle={loyaltySettings?.loyalty_reward_title}
+        onOpenLoyalty={() => setIsLoyaltyModalOpen(true)}
+      />
       {businessId && loyaltySettings && (
         <LoyaltyCardModal
           businessId={businessId}
@@ -248,7 +276,23 @@ export function Navbar({
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center gap-1">
+          <div className="md:hidden flex items-center gap-1.5">
+            {loyaltyEnabled && (
+              <button
+                id="mobile-loyalty-btn"
+                onClick={() => setIsLoyaltyModalOpen(true)}
+                className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-xl border transition-all cursor-pointer shadow-sm active:scale-95 mr-0.5"
+                style={{
+                  backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                  borderColor: 'rgba(168, 85, 247, 0.35)',
+                  color: '#c084fc',
+                }}
+                title="Club de Sellos"
+              >
+                <span>🎟️</span>
+                <span>Sellos</span>
+              </button>
+            )}
             <button
               onClick={handleShareMenu}
               className="p-2 text-gray-400 hover:text-white rounded-full transition-colors cursor-pointer"
@@ -275,7 +319,7 @@ export function Navbar({
           paper: { style: { backgroundColor: 'var(--bg-card)', borderLeft: '1px solid var(--border-color)', width: 280 } }
         }}
       >
-        <Box style={{ padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box id="mobile-drawer-box" style={{ padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 32px' }}>
             <div>
               <span style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '1.1rem', display: 'block' }}>{name}</span>
@@ -291,10 +335,11 @@ export function Navbar({
               <X className="w-5 h-5" />
             </IconButton>
           </div>
-          <List style={{ padding: 0 }}>
+          <List id="mobile-drawer-list" style={{ padding: 0 }}>
             {navItems.map(item => (
               <ListItem key={item.id} disablePadding>
                 <ListItemButton
+                  id={`drawer-nav-${item.id}`}
                   onClick={() => handleNav(item)}
                   style={{ borderRadius: 12, marginBottom: 4, padding: '14px 16px' }}
                 >

@@ -11,9 +11,16 @@ interface ProductCardProps {
   currencySymbol?: string;
   layoutStyle?: string;
   orderMode?: string;
+  isFirst?: boolean;
 }
 
-export function ProductCard({ product, currencySymbol = '$', layoutStyle = 'grid', orderMode = 'menu_only' }: ProductCardProps) {
+export function ProductCard({ 
+  product, 
+  currencySymbol = '$', 
+  layoutStyle = 'grid', 
+  orderMode = 'menu_only',
+  isFirst = false 
+}: ProductCardProps) {
   const [is3DModalOpen, setIs3DModalOpen] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
@@ -131,6 +138,7 @@ export function ProductCard({ product, currencySymbol = '$', layoutStyle = 'grid
 
           {orderMode !== 'menu_only' && (
             <button
+              id={isFirst ? "tour-order-btn" : undefined}
               onClick={() => setIsOrderModalOpen(true)}
               style={{
                 display: 'flex',

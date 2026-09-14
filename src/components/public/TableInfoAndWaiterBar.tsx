@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useCart } from '@/components/orders/CartContext';
-import { MapPin, Edit2, Bell, Check, Loader2 } from 'lucide-react';
+import { MapPin, Bell, Check, Loader2 } from 'lucide-react';
 import { callWaiterAction } from '@/actions/notifications';
 import { toast } from 'sonner';
 
@@ -65,24 +65,14 @@ export function TableInfoAndWaiterBar({ businessId, orderMode }: TableInfoAndWai
         >
           <MapPin className="w-4 h-4 text-indigo-500" />
           <span>{displayValue}</span>
-          <button
-            onClick={() => setIsCustomerModalOpen(true)}
-            className="ml-1 text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
-            style={{ color: 'var(--text-muted)' }}
-            title="Cambiar mesa"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Cambiar</span>
-          </button>
         </div>
       ) : (
-        <button
-          onClick={() => setIsCustomerModalOpen(true)}
-          className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold hover:bg-indigo-500/20 transition-all cursor-pointer shadow-sm"
+        <div
+          className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shadow-sm"
         >
           <MapPin className="w-4 h-4" />
-          <span>Ingresar Mesa</span>
-        </button>
+          <span>Mesa</span>
+        </div>
       )}
 
       {/* Button Llamar al Mozo */}

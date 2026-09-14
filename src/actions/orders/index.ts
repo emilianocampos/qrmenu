@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { createNotification } from '../notifications';
+import { awardStampFromOrder } from '../loyalty';
 
 export async function getOrders(businessId: string) {
   try {
@@ -124,6 +125,7 @@ interface CreateOrderParams {
   customerFirstName?: string;
   customerLastName?: string;
   customerPhone?: string;
+  customerEmail?: string;
   customerIdentifier?: string; // para codigo de mesa o comanda
   comments?: string;
   total: number;
@@ -201,7 +203,18 @@ export async function createOrder(params: CreateOrderParams) {
       referenceType: 'order'
     });
 
-    return { success: true, orderId: order.id };
+    // 4. Acreditar sello de fidelización si el cliente está registrado en el programa
+    let stampAwarded = false;
+    try {
+      const loyaltyRes = await awardStampFromOrder(params.businessId, params.customerPhone, params.customerEmail);
+      if (loyaltyRes?.awarded) {
+        stampAwarded = true;
+      }
+    } catch (loyaltyErr) {
+      console.error('Error awarding stamp on order:', loyaltyErr);
+    }
+
+    return { success: true, orderId: order.id, stampAwarded };
   } catch (error: any) {
     console.error('Error creating order:', error);
     return { error: error.message };

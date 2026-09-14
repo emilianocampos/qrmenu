@@ -69,3 +69,18 @@ export function buildWhatsAppUrl(phone: string, text: string): string {
   const encodedText = encodeURIComponent(text);
   return `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedText}`;
 }
+
+/**
+ * Compara dos números de teléfono de forma tolerante (mismo número con o sin prefijos internacionales, 15, 0, etc.)
+ */
+export function arePhonesMatching(phone1: string, phone2: string): boolean {
+  const d1 = (phone1 || '').replace(/\D/g, '');
+  const d2 = (phone2 || '').replace(/\D/g, '');
+  if (!d1 || !d2) return false;
+  if (d1 === d2) return true;
+  // Comparar los últimos 8 o 9 dígitos
+  const last8_1 = d1.slice(-8);
+  const last8_2 = d2.slice(-8);
+  return last8_1.length >= 7 && last8_1 === last8_2;
+}
+

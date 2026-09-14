@@ -510,15 +510,15 @@ export function LoyaltyClient({
                             <span className="hidden md:inline">Email</span>
                           </button>
 
-                          {/* Botón Sello Manual */}
+                          {/* Botón Sello Manual desde Panel Admin */}
                           <button
                             onClick={() => handleManualAddStamp(sub)}
                             disabled={isLoading}
-                            className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white font-medium text-xs rounded-xl transition-all flex items-center gap-1 cursor-pointer border border-white/10"
-                            title="Sumar 1 sello manualmente"
+                            className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1 cursor-pointer border border-amber-500/40 shadow-sm disabled:opacity-50"
+                            title="Agregar 1 sello a este cliente desde el panel admin"
                           >
-                            <Plus className="w-3.5 h-3.5 text-amber-400" />
-                            <span className="hidden sm:inline">+1 Sello</span>
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>+ Sello</span>
                           </button>
 
                           {/* Botón Canjear */}

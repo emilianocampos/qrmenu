@@ -44,22 +44,24 @@ export function Cart({ businessId, orderMode, businessSlug, layoutStyle = 'grid'
         identifier = `Comanda #${customerInfo?.comanda || ''}`;
       }
 
+      // Email de fidelización si está guardado en el dispositivo
+      const savedLoyaltyEmail = typeof window !== 'undefined' ? localStorage.getItem(`loyalty_email_${businessId}`) : null;
+
       const res = await createOrder({
         businessId,
         items: orderItems,
         total,
         customerFirstName: customerInfo.name,
         customerPhone: customerInfo.phone,
+        customerEmail: savedLoyaltyEmail || undefined,
         customerIdentifier: identifier,
         tableDisplay: identifier,
       });
 
       if (res.error) throw new Error(res.error);
 
-      // Intentar sumar sello de fidelización automático si hay email guardado en el navegador
-      const savedLoyaltyEmail = localStorage.getItem(`loyalty_email_${businessId}`);
-      if (savedLoyaltyEmail) {
-        addDailyStamp(businessId, savedLoyaltyEmail).catch(() => {});
+      if (res.stampAwarded) {
+        toast.success('🎉 ¡Sumaste 1 sello de fidelidad con tu pedido!', { icon: '🎟️', duration: 4000 });
       }
 
       toast.success('¡Pedido enviado con éxito!');

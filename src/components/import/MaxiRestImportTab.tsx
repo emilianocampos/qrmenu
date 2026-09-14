@@ -17,10 +17,11 @@ export function MaxiRestImportTab({ business, onSuccess }: MaxiRestImportTabProp
   const [parsedData, setParsedData] = useState<MaxiRestParsedData | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [importTables, setImportTables] = useState(true);
+  const [importWaiters, setImportWaiters] = useState(true);
   const [expandedCats, setExpandedCats] = useState<Set<number>>(new Set());
   const [isPending, startTransition] = useTransition();
   const [importDone, setImportDone] = useState(false);
-  const [stats, setStats] = useState<{ categories: number; products: number; tables: number } | null>(null);
+  const [stats, setStats] = useState<{ categories: number; products: number; tables: number; waiters: number } | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -42,10 +43,10 @@ export function MaxiRestImportTab({ business, onSuccess }: MaxiRestImportTabProp
           setParsedData(parsed);
           setExpandedCats(new Set(parsed.categories.map((_, i) => i)));
           
-          if (parsed.categories.length === 0 && parsed.tables.length === 0) {
-            toast.warning('No se detectaron productos o tablas con datos. Asegúrate de exportar desde HeidiSQL con "Datos: Insertar".');
+          if (parsed.categories.length === 0 && parsed.tables.length === 0 && parsed.waiters.length === 0) {
+            toast.warning('No se detectaron productos, tablas ni mozos. Asegúrate de exportar desde HeidiSQL con "Datos: Insertar".');
           } else {
-            toast.success(`Detectados: ${parsed.stats.totalProducts} productos en ${parsed.stats.totalCategories} categorías y ${parsed.stats.totalTables} mesas.`);
+            toast.success(`Detectados: ${parsed.stats.totalProducts} productos, ${parsed.stats.totalCategories} categorías, ${parsed.stats.totalTables} mesas y ${parsed.stats.totalWaiters} mozos.`);
           }
         } catch (parseErr) {
           console.error(parseErr);
@@ -72,7 +73,7 @@ export function MaxiRestImportTab({ business, onSuccess }: MaxiRestImportTabProp
     if (!sqlContent || !parsedData) return;
 
     startTransition(async () => {
-      const toastId = toast.loading('Importando menú y mesas desde MaxiRest...');
+      const toastId = toast.loading('Importando menú, mesas y mozos desde MaxiRest...');
       try {
         const res = await fetch('/api/maxirest/import', {
           method: 'POST',
@@ -81,6 +82,7 @@ export function MaxiRestImportTab({ business, onSuccess }: MaxiRestImportTabProp
             businessId: business.id,
             sqlContent,
             importTables,
+            importWaiters,
           }),
         });
 
@@ -95,6 +97,7 @@ export function MaxiRestImportTab({ business, onSuccess }: MaxiRestImportTabProp
           categories: data.categoriesCreated,
           products: data.productsCreated,
           tables: data.tablesCreated,
+          waiters: data.waitersCreated || 0,
         });
         setImportDone(true);
         if (onSuccess) onSuccess();
@@ -125,10 +128,13 @@ export function MaxiRestImportTab({ business, onSuccess }: MaxiRestImportTabProp
           Se crearon exitosamente <strong className="text-emerald-400">{stats.categories} categorías</strong>,{' '}
           <strong className="text-emerald-400">{stats.products} productos</strong>
           {stats.tables > 0 && (
-            <> y <strong className="text-emerald-400">{stats.tables} mesas</strong></>
+            <>, <strong className="text-emerald-400">{stats.tables} mesas</strong></>
+          )}
+          {stats.waiters > 0 && (
+            <> y <strong className="text-purple-400">{stats.waiters} mozos</strong></>
           )}.
         </p>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap justify-center">
           <a
             href="/productos"
             className="px-6 py-3 rounded-xl text-sm font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-all shadow-lg shadow-emerald-500/20"
@@ -141,6 +147,14 @@ export function MaxiRestImportTab({ business, onSuccess }: MaxiRestImportTabProp
               className="px-6 py-3 rounded-xl text-sm font-semibold bg-white/10 hover:bg-white/20 text-white transition-all"
             >
               Ver mesas y QRs →
+            </a>
+          )}
+          {stats.waiters > 0 && (
+            <a
+              href="/configuracion"
+              className="px-6 py-3 rounded-xl text-sm font-semibold bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 transition-all"
+            >
+              Ver mozos →
             </a>
           )}
         </div>
@@ -239,7 +253,25 @@ export function MaxiRestImportTab({ business, onSuccess }: MaxiRestImportTabProp
                 type="checkbox"
                 checked={importTables}
                 onChange={(e) => setImportTables(e.target.checked)}
-                className="w-5 h-5 rounded border-white/20 bg-white/10 text-emerald-500 focus:ring-emerald-500"
+                className="w-5 h-5 rounded border-white/20 bg-white/10 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+              />
+            </div>
+          )}
+
+          {parsedData.waiters.length > 0 && (
+            <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Users className="w-5 h-5 text-purple-400" />
+                <div>
+                  <p className="text-sm font-medium text-white">Importar mozos automáticamente ({parsedData.waiters.length} detectados)</p>
+                  <p className="text-xs text-gray-400">Activa la asignación de mozos y los sincroniza para la apertura de mesas</p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={importWaiters}
+                onChange={(e) => setImportWaiters(e.target.checked)}
+                className="w-5 h-5 rounded border-white/20 bg-white/10 text-purple-500 focus:ring-purple-500 cursor-pointer"
               />
             </div>
           )}

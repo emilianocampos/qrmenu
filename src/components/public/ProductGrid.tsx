@@ -66,13 +66,14 @@ export function ProductGrid({ products, currencySymbol = '$', layoutStyle = 'gri
         @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         `}
       `}</style>
-      {products.map(product => (
+      {products.map((product, index) => (
         <ProductCard 
           key={product.id} 
           product={product} 
           currencySymbol={currencySymbol} 
           layoutStyle={layoutStyle} 
           orderMode={orderMode}
+          isFirst={index === 0}
         />
       ))}
     </div>
