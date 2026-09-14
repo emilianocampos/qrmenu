@@ -55,16 +55,16 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol, la
   }).format(product.price * quantity);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       {/* Overlay */}
       <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div 
-        className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 border"
+        className="relative w-full max-w-md my-auto rounded-3xl overflow-hidden flex flex-col max-h-[88vh] border shadow-2xl z-10"
         style={{
           backgroundColor: 'var(--bg-card)',
           borderColor: 'var(--border-color)',

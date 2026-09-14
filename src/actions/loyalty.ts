@@ -2,12 +2,14 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { DEFAULT_LOYALTY_WA_MESSAGE } from '@/lib/loyalty-utils';
 
 export interface LoyaltySettings {
   loyalty_enabled: boolean;
   loyalty_stamps_required: number;
   loyalty_reward_title: string;
   loyalty_reward_description: string;
+  loyalty_whatsapp_message?: string;
 }
 
 export interface CustomerLoyaltyData {
@@ -40,14 +42,20 @@ export async function getLoyaltySettings(businessId: string): Promise<LoyaltySet
         loyalty_stamps_required: 5,
         loyalty_reward_title: '¡Premio de Fidelidad!',
         loyalty_reward_description: 'Consigue tus sellos consumiendo en días distintos para desbloquear tu beneficio.',
+        loyalty_whatsapp_message: DEFAULT_LOYALTY_WA_MESSAGE,
       };
     }
+
+    // Separar descripción del mensaje de WhatsApp si fue guardado con el delimitador
+    const rawDesc = data.loyalty_reward_description || '';
+    const [descPart, waPart] = rawDesc.split('\n---WA_MSG---\n');
 
     return {
       loyalty_enabled: data.loyalty_enabled ?? false,
       loyalty_stamps_required: data.loyalty_stamps_required || 5,
       loyalty_reward_title: data.loyalty_reward_title || '¡Premio de Fidelidad!',
-      loyalty_reward_description: data.loyalty_reward_description || 'Consigue tus sellos consumiendo en días distintos para desbloquear tu beneficio.',
+      loyalty_reward_description: descPart?.trim() || 'Consigue tus sellos consumiendo en días distintos para desbloquear tu beneficio.',
+      loyalty_whatsapp_message: waPart?.trim() || DEFAULT_LOYALTY_WA_MESSAGE,
     };
   } catch (err) {
     console.error('Error fetching loyalty settings:', err);
@@ -56,6 +64,7 @@ export async function getLoyaltySettings(businessId: string): Promise<LoyaltySet
       loyalty_stamps_required: 5,
       loyalty_reward_title: '¡Premio de Fidelidad!',
       loyalty_reward_description: 'Consigue tus sellos consumiendo en días distintos para desbloquear tu beneficio.',
+      loyalty_whatsapp_message: DEFAULT_LOYALTY_WA_MESSAGE,
     };
   }
 }
@@ -64,13 +73,18 @@ export async function updateLoyaltySettings(businessId: string, settings: Partia
   try {
     const supabase = await createClient();
 
+    // Empaquetar la descripción y el mensaje de WhatsApp de forma transparente
+    const cleanDesc = (settings.loyalty_reward_description || '').trim();
+    const cleanWaMsg = (settings.loyalty_whatsapp_message || DEFAULT_LOYALTY_WA_MESSAGE).trim();
+    const fullDescription = `${cleanDesc}\n---WA_MSG---\n${cleanWaMsg}`;
+
     const { error } = await supabase
       .from('businesses')
       .update({
         loyalty_enabled: settings.loyalty_enabled,
         loyalty_stamps_required: settings.loyalty_stamps_required,
         loyalty_reward_title: settings.loyalty_reward_title,
-        loyalty_reward_description: settings.loyalty_reward_description,
+        loyalty_reward_description: fullDescription,
       })
       .eq('id', businessId);
 

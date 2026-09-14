@@ -17,14 +17,29 @@ export function QRPageClient({ business, publicUrl }: QRPageClientProps) {
   const [qrColor, setQrColor] = useState('#000000');
   const [bgColor, setBgColor] = useState('#ffffff');
   const [size, setSize] = useState(256);
-  const [margin, setMargin] = useState(2);
+  const [margin, setMargin] = useState(3);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  let effectivePublicUrl = publicUrl;
+  if (typeof window !== 'undefined') {
+    if (
+      effectivePublicUrl.includes('localhost') ||
+      effectivePublicUrl.includes('127.0.0.1') ||
+      effectivePublicUrl.includes('mambaqr.vercel.app')
+    ) {
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        effectivePublicUrl = `${window.location.protocol}//${window.location.host}/c/${business.slug}`;
+      } else {
+        effectivePublicUrl = `http://192.168.1.9:3000/c/${business.slug}`;
+      }
+    }
+  }
+
   const handleCopy = useCallback(async () => {
-    await navigator.clipboard.writeText(publicUrl);
+    await navigator.clipboard.writeText(effectivePublicUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [publicUrl]);
+  }, [effectivePublicUrl]);
 
   const downloadPNG = useCallback(() => {
     const canvas = document.querySelector('#qr-canvas canvas') as HTMLCanvasElement;
@@ -80,11 +95,11 @@ export function QRPageClient({ business, publicUrl }: QRPageClientProps) {
             {/* QR Canvas */}
             <div id="qr-canvas" className="p-6 rounded-2xl shadow-2xl" style={{ backgroundColor: bgColor }}>
               <QRCodeCanvas
-                value={publicUrl}
+                value={effectivePublicUrl}
                 size={size}
                 fgColor={qrColor}
                 bgColor={bgColor}
-                level="H"
+                level="M"
                 marginSize={margin}
               />
             </div>
@@ -92,7 +107,7 @@ export function QRPageClient({ business, publicUrl }: QRPageClientProps) {
             {/* URL Display */}
             <div className="w-full flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
               <ExternalLink className="w-4 h-4 text-gray-500 flex-shrink-0" />
-              <span className="flex-1 text-sm text-gray-400 truncate">{publicUrl}</span>
+              <span className="flex-1 text-sm text-gray-400 truncate">{effectivePublicUrl}</span>
             </div>
 
             {/* Actions */}

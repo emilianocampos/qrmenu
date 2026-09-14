@@ -71,6 +71,15 @@ export async function updateBusiness(businessId: string, updates: Record<string,
 
   // Update business if there are updates
   if (Object.keys(businessUpdates).length > 0) {
+    if ('about_description' in businessUpdates && businessUpdates.about_description !== undefined) {
+      const { data: current } = await supabase.from('businesses').select('about_description').eq('id', businessId).single();
+      const currentRaw = current?.about_description || '';
+      if (currentRaw.includes('\n---WAITERS_CONFIG---\n')) {
+        const configPart = currentRaw.split('\n---WAITERS_CONFIG---\n')[1];
+        const newClean = (businessUpdates.about_description || '').split('\n---WAITERS_CONFIG---\n')[0].trim();
+        businessUpdates.about_description = newClean ? `${newClean}\n---WAITERS_CONFIG---\n${configPart}` : `\n---WAITERS_CONFIG---\n${configPart}`;
+      }
+    }
     if (businessUpdates.slug) {
       const { data: existing } = await supabase
         .from('businesses')

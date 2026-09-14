@@ -103,16 +103,16 @@ export function Cart({ businessId, orderMode, businessSlug, layoutStyle = 'grid'
 
       {/* Cart Drawer Panel */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-[100] flex justify-end">
           {/* Overlay */}
           <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
             onClick={() => setIsOpen(false)}
           />
 
           {/* Cart Panel */}
           <div 
-            className="relative w-full max-w-md h-full flex flex-col animate-in slide-in-from-right duration-300"
+            className="relative w-full max-w-md h-full flex flex-col z-10 shadow-2xl"
             style={{
               backgroundColor: 'var(--bg-card)',
               color: 'var(--text-primary)',

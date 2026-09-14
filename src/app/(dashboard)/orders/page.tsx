@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { OrdersClient } from './OrdersClient';
 import { getOrders } from '@/actions/orders';
+import { getWaiterSettings } from '@/actions/waiters';
 
 export default async function OrdersPage() {
   const supabase = await createClient();
@@ -19,7 +20,17 @@ export default async function OrdersPage() {
     return <div className="p-8 text-center">Debes configurar tu negocio primero.</div>;
   }
 
-  const initialOrders = await getOrders(business.id);
+  const [initialOrders, waiterSettings] = await Promise.all([
+    getOrders(business.id),
+    getWaiterSettings(business.id),
+  ]);
 
-  return <OrdersClient businessId={business.id} initialOrders={initialOrders || []} orderMode={business.order_mode || 'menu_only'} />;
+  return (
+    <OrdersClient
+      businessId={business.id}
+      initialOrders={initialOrders || []}
+      orderMode={business.order_mode || 'menu_only'}
+      waiterSettings={waiterSettings}
+    />
+  );
 }

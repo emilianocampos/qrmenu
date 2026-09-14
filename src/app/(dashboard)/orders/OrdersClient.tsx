@@ -7,13 +7,16 @@ import { getOrders, deleteAllOrders } from '@/actions/orders';
 import { OrderCard } from '@/components/orders/OrderCard';
 import { toast } from 'sonner';
 
+import { WaiterSettings } from '@/actions/waiters';
+
 interface OrdersClientProps {
   businessId: string;
   initialOrders: any[];
   orderMode: string;
+  waiterSettings?: WaiterSettings;
 }
 
-export function OrdersClient({ businessId, initialOrders, orderMode }: OrdersClientProps) {
+export function OrdersClient({ businessId, initialOrders, orderMode, waiterSettings }: OrdersClientProps) {
   const [orders, setOrders] = useState<any[]>(initialOrders);
   const [filter, setFilter] = useState<string>('all'); // all, pending, active, completed
   const [isDeletingAll, setIsDeletingAll] = useState(false);
@@ -130,7 +133,7 @@ export function OrdersClient({ businessId, initialOrders, orderMode }: OrdersCli
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filteredOrders.map(order => (
-            <OrderCard key={order.id} order={order} businessId={businessId} />
+            <OrderCard key={order.id} order={order} businessId={businessId} waiterSettings={waiterSettings} />
           ))}
         </div>
       )}

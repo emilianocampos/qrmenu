@@ -32,7 +32,7 @@ export function CustomizationClient({ business }: { business: Business }) {
     layout_style: business.layout_style ?? 'grid',
     description: business.description ?? '',
     about_title: business.about_title || '',
-    about_description: business.about_description || '',
+    about_description: (business.about_description || '').split('\n---WAITERS_CONFIG---\n')[0].trim(),
     cover_image: business.cover_image || '',
     banner_image: business.banner_image || '',
     slogan: business.slogan || '',

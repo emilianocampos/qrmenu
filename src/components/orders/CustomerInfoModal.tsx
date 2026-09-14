@@ -69,9 +69,9 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
   };
 
   return (
-    <div id="customer-info-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div id="customer-info-modal" className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm cursor-pointer"
         onClick={() => {
           // Permite cerrar si ya tienen la info completa
           const hasInfo =
@@ -87,7 +87,7 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
       />
 
       <div 
-        className="rounded-2xl p-6 w-full max-w-md relative z-10 animate-in zoom-in-95 border"
+        className="rounded-2xl p-6 w-full max-w-md relative z-10 border shadow-2xl"
         style={{
           backgroundColor: 'var(--bg-card)',
           borderColor: 'var(--border-color)',

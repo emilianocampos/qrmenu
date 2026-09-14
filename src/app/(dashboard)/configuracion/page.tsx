@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { SettingsClient } from './SettingsClient';
 import { Business } from '@/types';
+import { getWaiterSettings } from '@/actions/waiters';
 
 export default async function ConfiguracionPage() {
   const supabase = await createClient();
@@ -19,9 +20,11 @@ export default async function ConfiguracionPage() {
   const [
     { count: productsCount },
     { count: categoriesCount },
+    waiterSettings,
   ] = await Promise.all([
     supabase.from('products').select('*', { count: 'exact', head: true }).eq('business_id', business.id),
     supabase.from('categories').select('*', { count: 'exact', head: true }).eq('business_id', business.id),
+    getWaiterSettings(business.id),
   ]);
 
   return (
@@ -30,6 +33,7 @@ export default async function ConfiguracionPage() {
       productsCount={productsCount ?? 0}
       categoriesCount={categoriesCount ?? 0}
       userEmail={user.email ?? ''}
+      initialWaiterSettings={waiterSettings}
     />
   );
 }

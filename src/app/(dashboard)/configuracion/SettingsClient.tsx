@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Loader2, Save, Trash2, AlertTriangle, Volume2, VolumeX, Smartphone } from 'lucide-react';
+import { Loader2, Save, Trash2, AlertTriangle, Volume2, VolumeX, Smartphone, UserCheck, Plus, X, User } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { ModeSelector } from '@/components/orders/ModeSelector';
 import { updateBusiness, deleteBusiness } from '@/actions/business';
 import { updateUserCredentials } from '@/actions/auth';
+import { updateWaiterSettings, WaiterSettings } from '@/actions/waiters';
 import { Business } from '@/types';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -38,9 +39,10 @@ interface SettingsClientProps {
   productsCount: number;
   categoriesCount: number;
   userEmail: string;
+  initialWaiterSettings?: WaiterSettings;
 }
 
-export function SettingsClient({ business, productsCount, categoriesCount, userEmail }: SettingsClientProps) {
+export function SettingsClient({ business, productsCount, categoriesCount, userEmail, initialWaiterSettings }: SettingsClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -61,6 +63,33 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
     confirmPassword: '',
   });
 
+  const [waiterEnabled, setWaiterEnabled] = useState(
+    initialWaiterSettings?.waiter_assignment_enabled ?? false
+  );
+  const [waitersList, setWaitersList] = useState<string[]>(
+    initialWaiterSettings?.waiters ?? ['Agustina', 'Camila', 'Facundo', 'Juan', 'Lucas', 'Sofía']
+  );
+  const [newWaiterName, setNewWaiterName] = useState('');
+
+  const handleAddWaiter = () => {
+    const trimmed = newWaiterName.trim();
+    if (!trimmed) return;
+    if (waitersList.some(w => w.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error('Ese mozo ya existe en la lista');
+      return;
+    }
+    setWaitersList(prev => [...prev, trimmed]);
+    setNewWaiterName('');
+  };
+
+  const handleRemoveWaiter = (nameToRemove: string) => {
+    if (waitersList.length <= 1) {
+      toast.error('Debe haber al menos un mozo configurado');
+      return;
+    }
+    setWaitersList(prev => prev.filter(w => w !== nameToRemove));
+  };
+
   const handleSave = () => {
     setError(null);
     setSaved(false);
@@ -80,6 +109,12 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
         notification_vibrate_enabled: form.notification_vibrate_enabled,
       } as any);
 
+      // Save waiters config
+      const waiterResult = await updateWaiterSettings(business.id, {
+        waiter_assignment_enabled: waiterEnabled,
+        waiters: waitersList,
+      });
+
       let accountError = null;
       if (accountForm.email !== userEmail || accountForm.password) {
         const accResult = await updateUserCredentials({
@@ -89,9 +124,9 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
         if (accResult.error) accountError = accResult.error;
       }
 
-      if (result.error || accountError) {
-        setError(result.error || accountError || 'Error al guardar');
-        toast.error(result.error || accountError || 'Error al guardar la configuración');
+      if (result.error || accountError || waiterResult.error) {
+        setError(result.error || accountError || waiterResult.error || 'Error al guardar');
+        toast.error(result.error || accountError || waiterResult.error || 'Error al guardar la configuración');
       } else {
         setSaved(true);
         setAccountForm(f => ({ ...f, password: '', confirmPassword: '' }));
@@ -185,6 +220,90 @@ export function SettingsClient({ business, productsCount, categoriesCount, userE
             Seleccioná la modalidad de atención para tus clientes desde la carta digital.
           </p>
           <ModeSelector businessId={business.id} initialMode={business.order_mode || 'menu_only'} />
+        </Section>
+
+        {/* Gestión de Mozos / MaxiRest */}
+        <Section title="Gestión de Mozos (Integración MaxiRest / Comandas)">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl">
+              <div className="flex items-center gap-3 pr-4">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">Asignar mozo al aceptar pedidos</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Al aceptar un pedido desde el panel, podrás seleccionar qué mozo atiende la mesa. Esto prepara el pedido para abrir la comanda en MaxiRest.
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={waiterEnabled}
+                  onChange={(e) => setWaiterEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+
+            {waiterEnabled && (
+              <div className="space-y-4 p-4 bg-white/[0.02] border border-white/8 rounded-xl">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                    Lista de Mozos ({waitersList.length})
+                  </label>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {waitersList.map((waiter) => (
+                      <span
+                        key={waiter}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-medium"
+                      >
+                        <User className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>{waiter}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveWaiter(waiter)}
+                          className="text-gray-500 hover:text-red-400 transition-colors p-0.5 cursor-pointer"
+                          title="Eliminar mozo"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newWaiterName}
+                      onChange={(e) => setNewWaiterName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddWaiter();
+                        }
+                      }}
+                      placeholder="Nombre del nuevo mozo..."
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddWaiter}
+                      className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" /> Agregar
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-xs text-indigo-300 leading-relaxed">
+                  💡 <strong>Flujo MaxiRest / Sistema Local:</strong> Cada vez que aceptes un pedido con un mozo asignado, la orden registrará la mesa y el mozo. Tu agente de escritorio local (<code>.exe</code> en la PC del restaurante) capturará esta acción en tiempo real y abrirá la comanda en MaxiRest.
+                </div>
+              </div>
+            )}
+          </div>
         </Section>
 
         {/* Notificaciones Prefeferencias */}

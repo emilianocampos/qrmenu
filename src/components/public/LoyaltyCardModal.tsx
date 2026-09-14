@@ -60,6 +60,7 @@ export function LoyaltyCardModal({
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return toast.error('Ingresa tu email');
+    if (!phone.trim()) return toast.error('Ingresa tu número de WhatsApp / celular');
 
     setLoading(true);
     try {
@@ -210,15 +211,16 @@ export function LoyaltyCardModal({
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>
-                  WhatsApp / Celular (opcional)
+                  WhatsApp / Celular *
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 absolute left-3.5 top-3.5" style={{ color: 'var(--text-muted)' }} />
                   <input
                     type="tel"
+                    required
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
-                    placeholder="Para notificar tus premios"
+                    placeholder="Ej: 11 2345-6789 o 54 9 11..."
                     className="w-full rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none border transition-all"
                     style={{
                       backgroundColor: 'var(--bg-page)',
@@ -227,6 +229,9 @@ export function LoyaltyCardModal({
                     }}
                   />
                 </div>
+                <p className="text-[11px] mt-1 text-gray-500">
+                  Para notificarte tus premios y beneficios exclusivos por WhatsApp.
+                </p>
               </div>
 
               <button
@@ -271,7 +276,7 @@ export function LoyaltyCardModal({
                   {settings.loyalty_reward_title}
                 </p>
                 <p className="text-xs text-amber-200/80 max-w-xs mx-auto">
-                  {settings.loyalty_reward_description || 'Muestra esta pantalla al mozo o personal para reclamar tu beneficio.'}
+                  {(settings.loyalty_reward_description || '').split('\n---WA_MSG---\n')[0]?.trim() || 'Muestra esta pantalla al mozo o personal para reclamar tu beneficio.'}
                 </p>
               </div>
             )}

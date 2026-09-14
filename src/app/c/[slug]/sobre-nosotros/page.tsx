@@ -154,9 +154,9 @@ export default async function SobreNosotrosPage({ params }: PageProps) {
             <div className="space-y-8">
               <div>
                 <h2 className="text-2xl font-bold mb-4">Nuestra Historia</h2>
-                {business.about_description ? (
+                {business.about_description && business.about_description.split('\n---WAITERS_CONFIG---\n')[0].trim() ? (
                   <div className="space-y-4 text-sm md:text-base leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-muted)' }}>
-                    {business.about_description}
+                    {business.about_description.split('\n---WAITERS_CONFIG---\n')[0].trim()}
                   </div>
                 ) : (
                   <p className="text-sm md:text-base text-[var(--text-muted)] italic">Historia aún no agregada.</p>

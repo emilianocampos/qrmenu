@@ -39,14 +39,18 @@ export function TablePosterModal({
     ? table.table_name.replace(/^Mesa\s*/i, '').trim()
     : String(table.table_number);
 
-  // 2. Resolver la URL pública asegurando que no sea "localhost" (inaccesible desde celulares)
+  // 2. Resolver la URL pública asegurando que no sea "localhost" ni "127.0.0.1" (inaccesible desde celulares)
   let effectivePublicUrl = publicUrl;
   if (typeof window !== 'undefined') {
-    if (effectivePublicUrl.includes('localhost') || effectivePublicUrl.includes('127.0.0.1')) {
+    if (
+      effectivePublicUrl.includes('localhost') || 
+      effectivePublicUrl.includes('127.0.0.1') ||
+      effectivePublicUrl.includes('mambaqr.vercel.app')
+    ) {
       if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
         effectivePublicUrl = `${window.location.protocol}//${window.location.host}/c/${business.slug}`;
       } else {
-        effectivePublicUrl = effectivePublicUrl.replace('localhost', '192.168.1.9');
+        effectivePublicUrl = `http://192.168.1.9:3000/c/${business.slug}`;
       }
     }
   }
@@ -264,12 +268,13 @@ export function TablePosterModal({
               <p className="text-[11px] text-slate-400 mt-0.5 uppercase tracking-wider">Escaneá con tu celular • Directo a cocina</p>
             </div>
 
-            {/* QR Box */}
-            <div ref={canvasContainerRef} className="bg-white p-3 rounded-2xl shadow-xl my-1">
+            {/* QR Box con alto contraste y margen óptico */}
+            <div ref={canvasContainerRef} className="bg-white p-4 rounded-2xl shadow-xl my-1 flex items-center justify-center">
               <QRCodeCanvas
                 value={tableQrUrl}
-                size={180}
-                level="H"
+                size={220}
+                level="M"
+                marginSize={3}
                 fgColor="#000000"
                 bgColor="#ffffff"
               />

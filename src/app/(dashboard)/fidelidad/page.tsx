@@ -26,6 +26,7 @@ export default async function LoyaltyPage() {
     <LoyaltyClient
       businessId={business.id}
       businessSlug={business.slug}
+      businessName={business.name}
       initialSettings={settings}
       initialSubscribers={subscribers}
     />

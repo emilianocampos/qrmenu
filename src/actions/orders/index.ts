@@ -51,13 +51,36 @@ export async function deleteAllOrders(businessId: string) {
   }
 }
 
-export async function updateOrderStatus(orderId: string, businessId: string, status: string, tableName?: string) {
+export async function updateOrderStatus(
+  orderId: string,
+  businessId: string,
+  status: string,
+  tableName?: string,
+  waiterName?: string
+) {
   try {
     const supabase = await createClient();
 
+    const updatePayload: Record<string, any> = { status };
+
+    if (waiterName) {
+      const { data: currentOrder } = await supabase
+        .from('orders')
+        .select('comments')
+        .eq('id', orderId)
+        .single();
+
+      const existingComments = (currentOrder?.comments || '').replace(/\[Mozo:\s*[^\]]+\]/g, '').trim();
+      const updatedComments = existingComments 
+        ? `[Mozo: ${waiterName.trim()}] ${existingComments}` 
+        : `[Mozo: ${waiterName.trim()}]`;
+
+      updatePayload.comments = updatedComments;
+    }
+
     const { error } = await supabase
       .from('orders')
-      .update({ status })
+      .update(updatePayload)
       .eq('id', orderId)
       .eq('business_id', businessId);
 
