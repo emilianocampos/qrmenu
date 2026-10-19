@@ -18,16 +18,30 @@ export function OrderCheckOrEmpty({ slug, primaryColor, businessName }: OrderChe
   useEffect(() => {
     if (typeof window !== 'undefined') {
       let foundId: string | null = null;
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('last_order_')) {
-          foundId = localStorage.getItem(key);
-          if (foundId) break;
+      // 1. Priorizar el pedido específico de este negocio/slug
+      foundId = localStorage.getItem(`last_order_${slug}`);
+
+      // 2. Buscar por last_order_active
+      if (!foundId) {
+        foundId = localStorage.getItem('last_order_active');
+      }
+
+      // 3. Fallback a cualquier clave last_order_
+      if (!foundId) {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('last_order_') && !key.includes('time')) {
+            const val = localStorage.getItem(key);
+            if (val && val.trim()) {
+              foundId = val.trim();
+              break;
+            }
+          }
         }
       }
 
-      if (foundId) {
-        router.replace(`/c/${slug}/mis-pedidos?id=${foundId}`);
+      if (foundId && foundId.trim()) {
+        router.replace(`/c/${slug}/mis-pedidos?id=${foundId.trim()}`);
         return;
       }
       setChecking(false);

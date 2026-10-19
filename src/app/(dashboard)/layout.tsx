@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/dashboard/Sidebar';
 import { WelcomeEmptyState } from '@/components/dashboard/WelcomeEmptyState';
 import { Business } from '@/types';
 import { RealtimeProvider } from '@/providers/RealtimeProvider';
-import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { DashboardTopNav } from '@/components/dashboard/DashboardTopNav';
 
 export default async function DashboardLayout({
   children,
@@ -37,9 +37,9 @@ export default async function DashboardLayout({
         <div className="relative z-10 flex-1 flex flex-col w-full h-full overflow-y-auto">
           {business ? (
             <RealtimeProvider businessId={business.id}>
-              {/* Floating Notification Bell */}
+              {/* Floating Top Nav (Info & Notification Bell) */}
               <div className="fixed top-4 right-4 z-50">
-                <NotificationBell businessId={business.id} />
+                <DashboardTopNav businessId={business.id} businessSlug={business.slug} />
               </div>
 
               <div className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">

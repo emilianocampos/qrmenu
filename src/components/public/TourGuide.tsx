@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 
@@ -10,198 +10,138 @@ interface TourGuideProps {
   onOpenLoyalty?: () => void;
 }
 
-export function TourGuide({ loyaltyEnabled, rewardTitle, onOpenLoyalty }: TourGuideProps) {
-  useEffect(() => {
-    const handleStartTour = () => {
-      const forceTour = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('tour');
-      const hasSeenTour = localStorage.getItem('hasSeenOrderTour_v4');
-      
-      const triggerLogoSpin = () => {
-        setTimeout(() => {
-          const logo = document.getElementById('banner-logo');
-          if (logo) {
-            logo.style.transition = 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)';
-            logo.style.transform = 'rotate(360deg) scale(1.05)';
-            setTimeout(() => {
-              logo.style.transition = 'transform 0.5s'; 
-              logo.style.transform = ''; 
-            }, 1000);
-          }
-        }, 500);
-      };
+export function TourGuide({ loyaltyEnabled = false, rewardTitle = '' }: TourGuideProps) {
+  const activeDriverRef = useRef<ReturnType<typeof driver> | null>(null);
+  const scheduledTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isTourInitiatedRef = useRef(false);
 
-      if (forceTour || !hasSeenTour) {
-        // Esperar a que se cierren otros modales iniciales si los hay
-        if (document.getElementById('customer-info-modal') || document.getElementById('promo-modal')) {
+  useEffect(() => {
+    const triggerLogoSpin = () => {
+      setTimeout(() => {
+        const logo = document.getElementById('banner-logo');
+        if (logo) {
+          logo.style.transition = 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)';
+          logo.style.transform = 'rotate(360deg) scale(1.05)';
+          setTimeout(() => {
+            logo.style.transition = 'transform 0.5s';
+            logo.style.transform = '';
+          }, 1000);
+        }
+      }, 300);
+    };
+
+    const handleStartTour = () => {
+      if (typeof window === 'undefined') return;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const forceTour = urlParams.has('tour');
+      const hasSeenInSession = sessionStorage.getItem('hasSeenOrderTour_session_v11');
+
+      // Si ya está activo, no duplicar
+      if (activeDriverRef.current?.isActive()) return;
+
+      // Solo se muestra 1 vez por sesión (a menos que se fuerce con ?tour)
+      if (!forceTour) {
+        if (isTourInitiatedRef.current || hasSeenInSession) {
+          return;
+        }
+      } else {
+        sessionStorage.removeItem('hasSeenOrderTour_session_v11');
+      }
+
+      // Si hay un modal inicial abierto en pantalla, posponer tour
+      if (
+        document.getElementById('customer-info-modal') ||
+        document.getElementById('promo-modal')
+      ) {
+        return;
+      }
+
+      // Marcar inmediatamente para esta sesión
+      isTourInitiatedRef.current = true;
+      sessionStorage.setItem('hasSeenOrderTour_session_v11', 'true');
+
+      // Limpiar ?tour de la barra de direcciones para no ensuciar futuras navegaciones
+      if (window.location.search.includes('tour')) {
+        try {
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete('tour');
+          window.history.replaceState(null, '', cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : '') + cleanUrl.hash);
+        } catch {}
+      }
+
+      if (scheduledTimerRef.current) {
+        clearTimeout(scheduledTimerRef.current);
+      }
+
+      // Esperar a que los elementos del navbar estén montados
+      scheduledTimerRef.current = setTimeout(() => {
+        // Limpiar overlays anteriores si los hubiera
+        if (activeDriverRef.current) {
+          try {
+            activeDriverRef.current.destroy();
+          } catch {}
+          activeDriverRef.current = null;
+        }
+        document.querySelectorAll('.driver-popover, .driver-overlay, .driver-stage').forEach(el => el.remove());
+
+        const hamburgerBtn = document.querySelector('#hamburger-menu-btn');
+        if (!hamburgerBtn) {
+          triggerLogoSpin();
           return;
         }
 
-        const timer = setTimeout(() => {
-          const isMobile = window.innerWidth < 768;
-          const steps: any[] = [];
-
-          if (isMobile) {
-            // ==========================================
-            // TOUR PARA CELULAR
-            // ==========================================
-
-            // 1. Menú hamburguesa abierto automáticamente
-            if (document.querySelector('#mobile-drawer-box')) {
-              steps.push({
-                element: '#mobile-drawer-box',
-                popover: {
-                  title: '📱 Menú Principal',
-                  description: '¡Acá tenés todas las opciones! Podés consultar la carta, ver tus pedidos anteriores, reservar mesa y ver opiniones.',
-                  side: 'left',
-                  align: 'center',
-                },
-                onDeselected: () => {
-                  window.dispatchEvent(new CustomEvent('close-mobile-menu'));
-                }
-              });
-            }
-
-            // 2. Botón de Pedido en la carta
-            if (document.querySelector('#tour-order-btn')) {
-              steps.push({
-                element: '#tour-order-btn',
-                popover: {
-                  title: '🛍️ ¡Hacé tu pedido desde acá!',
-                  description: 'Podés hacer tu pedido directamente desde aquí haciendo clic en el botón "Pedir" en cualquier plato o bebida de la carta.',
-                  side: 'top',
-                  align: 'center',
-                },
-                onHighlightStarted: (element?: Element) => {
-                  window.dispatchEvent(new CustomEvent('close-mobile-menu'));
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }
-                }
-              });
-            }
-
-            // 3. Sellos de Fidelización (si está activo)
-            if (loyaltyEnabled && document.querySelector('#mobile-loyalty-btn')) {
-              steps.push({
-                element: '#mobile-loyalty-btn',
-                popover: {
-                  title: '🎟️ ¡Sumá sellos y ganá premios!',
-                  description: `¡Unite gratis a nuestro Club de Clientes! Cada vez que venís acumulás sellos y desbloqueás: ${rewardTitle || 'premios exclusivos'}.`,
-                  side: 'bottom',
-                  align: 'end',
-                },
-                onHighlightStarted: () => {
-                  window.dispatchEvent(new CustomEvent('close-mobile-menu'));
-                }
-              });
-            }
-
-            // 4. Reseñas
-            if (document.querySelector('#hamburger-menu-btn')) {
-              steps.push({
-                element: '#hamburger-menu-btn',
-                popover: {
-                  title: '⭐ ¡Déjanos tu reseña!',
-                  description: 'En el menú podés ingresar a Reseñas para dejarnos tu opinión sobre los platos. ¡Nos ayuda un montón!',
-                  side: 'left',
-                  align: 'start',
-                },
-                onHighlightStarted: () => {
-                  window.dispatchEvent(new CustomEvent('close-mobile-menu'));
-                }
-              });
-            }
-
-          } else {
-            // ==========================================
-            // TOUR PARA COMPUTADORA / TABLET
-            // ==========================================
-
-            // 1. Botón de Pedido
-            if (document.querySelector('#tour-order-btn')) {
-              steps.push({
-                element: '#tour-order-btn',
-                popover: {
-                  title: '🛍️ ¡Hacé tu pedido desde acá!',
-                  description: 'Podés hacer tu pedido directamente desde aquí haciendo clic en el botón "Pedir" en cualquier plato o bebida de la carta.',
-                  side: 'top',
-                  align: 'center',
-                }
-              });
-            }
-
-            // 2. Sellos de Fidelización
-            if (loyaltyEnabled && document.querySelector('#nav-loyalty')) {
-              steps.push({
-                element: '#nav-loyalty',
-                popover: {
-                  title: '🎟️ ¡Sumá sellos y ganá premios!',
-                  description: `¡Unite gratis a nuestro Club de Clientes! Cada vez que venís acumulás sellos y desbloqueás: ${rewardTitle || 'premios y beneficios exclusivos'}.`,
-                  side: 'bottom',
-                  align: 'center',
-                }
-              });
-            }
-
-            // 3. Reseñas
-            if (document.querySelector('#nav-reviews')) {
-              steps.push({
-                element: '#nav-reviews',
-                popover: {
-                  title: '⭐ ¡Déjanos tu reseña!',
-                  description: 'Haz clic aquí para ir a la sección de Reseñas y dejarnos tu opinión sobre los platos. ¡Nos ayuda un montón!',
-                  side: 'bottom',
-                  align: 'center',
-                }
-              });
-            }
-          }
-
-          if (steps.length > 0) {
-            const tourDriver = driver({
-              showProgress: steps.length > 1,
-              allowClose: true,
-              nextBtnText: 'Siguiente →',
-              prevBtnText: '← Anterior',
-              doneBtnText: '¡Entendido!',
-              popoverClass: 'driverjs-theme',
-              onDestroyStarted: () => {
-                tourDriver.destroy();
-                localStorage.setItem('hasSeenOrderTour_v4', 'true');
-                window.dispatchEvent(new CustomEvent('close-mobile-menu'));
-                triggerLogoSpin();
-              }
-            });
-
-            if (steps.length === 1) {
-              tourDriver.highlight(steps[0]);
-            } else {
-              tourDriver.setSteps(steps);
-              tourDriver.drive();
-            }
-          } else {
+        const tourDriver = driver({
+          showProgress: false,
+          allowClose: true,
+          stagePadding: 6,
+          stageRadius: 12,
+          doneBtnText: '¡Entendido!',
+          popoverClass: 'driverjs-theme',
+          onDestroyed: () => {
+            activeDriverRef.current = null;
             triggerLogoSpin();
-          }
-        }, 800);
+          },
+          steps: [
+            {
+              element: '#hamburger-menu-btn',
+              popover: {
+                title: '📱 Menú y Opciones',
+                description: 'Tocá acá para abrir el menú: podés consultar la carta, ver tus pedidos, reservar mesa, sumar sellos y dejar tu reseña.',
+                side: 'bottom',
+                align: 'end',
+                showButtons: ['next'],
+              }
+            }
+          ]
+        });
 
-        return () => clearTimeout(timer);
-      } else {
-        triggerLogoSpin();
-      }
+        activeDriverRef.current = tourDriver;
+        tourDriver.drive();
+      }, 500);
     };
 
     window.addEventListener('start-tour', handleStartTour);
-    
-    // Auto-trigger tras 1.2s
+
+    // Auto-trigger al montar la página tras 1 segundo
     const autoFallback = setTimeout(() => {
       handleStartTour();
-    }, 1200);
+    }, 1000);
 
     return () => {
       window.removeEventListener('start-tour', handleStartTour);
       clearTimeout(autoFallback);
+      if (scheduledTimerRef.current) {
+        clearTimeout(scheduledTimerRef.current);
+      }
+      if (activeDriverRef.current) {
+        try {
+          activeDriverRef.current.destroy();
+        } catch {}
+        activeDriverRef.current = null;
+      }
     };
-  }, [loyaltyEnabled, rewardTitle, onOpenLoyalty]);
+  }, []);
 
   return null;
 }

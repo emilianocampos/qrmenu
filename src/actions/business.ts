@@ -54,7 +54,8 @@ export async function updateBusiness(businessId: string, updates: Record<string,
   const businessKeys = [
     'name', 'slug', 'logo_url', 'color_primary', 'color_secondary', 'typography', 'theme', 'layout_style',
     'description', 'about_title', 'about_description', 'cover_image', 'banner_image', 'slogan', 'background_color',
-    'promo_active', 'promo_title', 'promo_description', 'promo_image', 'show_about_us', 'google_reviews_enabled', 'google_reviews_url', 'mp_access_token', 'mp_public_key'
+    'promo_active', 'promo_title', 'promo_description', 'promo_image', 'show_about_us', 'google_reviews_enabled', 'google_reviews_url', 'mp_access_token', 'mp_public_key',
+    'table_orders_enabled', 'order_status_enabled', 'notification_sound_enabled', 'notification_vibrate_enabled', 'notification_sound_tone', 'notification_sound_duration'
   ];
   const settingsKeys = ['email', 'whatsapp', 'phone', 'instagram', 'facebook', 'address', 'schedule', 'language', 'currency', 'plan', 'vintage_color', 'vintage_color_mode'];
 
@@ -91,11 +92,30 @@ export async function updateBusiness(businessId: string, updates: Record<string,
       if (existing) return { error: 'El slug o dirección web ya está en uso' };
     }
 
-    const { error: busError } = await supabase
+    let { error: busError } = await supabase
       .from('businesses')
       .update(businessUpdates)
       .eq('id', businessId)
       .eq('owner_id', user.id);
+
+    // Si las columnas nuevas aún no existen en la BD, reintentar sin ellas de forma segura
+    if (busError && (busError.message.includes('table_orders_enabled') || busError.message.includes('order_status_enabled') || busError.message.includes('notification_'))) {
+      const safeUpdates = { ...businessUpdates };
+      delete safeUpdates.table_orders_enabled;
+      delete safeUpdates.order_status_enabled;
+      delete safeUpdates.notification_sound_enabled;
+      delete safeUpdates.notification_vibrate_enabled;
+      delete safeUpdates.notification_sound_tone;
+      delete safeUpdates.notification_sound_duration;
+
+      const retryRes = await supabase
+        .from('businesses')
+        .update(safeUpdates)
+        .eq('id', businessId)
+        .eq('owner_id', user.id);
+
+      busError = retryRes.error;
+    }
 
     if (busError) return { error: busError.message };
   }
@@ -112,7 +132,9 @@ export async function updateBusiness(businessId: string, updates: Record<string,
     if (setErr) return { error: setErr.message };
   }
 
-  revalidatePath('/', 'layout');
+  revalidatePath('/dashboard');
+  revalidatePath('/configuracion');
+  revalidatePath('/personalizacion');
 
   return { success: true };
 }
@@ -130,7 +152,7 @@ export async function deleteBusiness(businessId: string) {
 
   if (error) return { error: error.message };
 
-  revalidatePath('/', 'layout');
+  revalidatePath('/dashboard');
   return { success: true };
 }
 

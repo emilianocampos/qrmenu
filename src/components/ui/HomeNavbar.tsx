@@ -14,7 +14,7 @@ export function HomeNavbar() {
           MambaQR
         </Link>
         <div className="flex items-center gap-4 text-sm font-medium">
-          <Link href="/login" className="bg-white text-black px-4 py-2 md:px-6 md:py-2.5 rounded-full hover:bg-gray-200 transition-colors">
+          <Link href="/login" prefetch={false} className="bg-white text-black px-4 py-2 md:px-6 md:py-2.5 rounded-full hover:bg-gray-200 transition-colors">
             Iniciar sesión
           </Link>
         </div>

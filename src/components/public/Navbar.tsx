@@ -27,6 +27,7 @@ interface NavbarProps {
   loyaltyEnabled?: boolean;
   loyaltySettings?: LoyaltySettings;
   primaryColor?: string;
+  orderStatusEnabled?: boolean;
 }
 
 export function Navbar({
@@ -41,6 +42,7 @@ export function Navbar({
   loyaltyEnabled = false,
   loyaltySettings,
   primaryColor,
+  orderStatusEnabled = false,
 }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
@@ -51,36 +53,23 @@ export function Navbar({
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
 
   React.useEffect(() => {
-    // Buscar en el localStorage el last_order_id.
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('last_order_')) {
-        setLastOrderId(localStorage.getItem(key));
-        break;
+    if (typeof window !== 'undefined') {
+      const id = localStorage.getItem(`last_order_${slug}`) ||
+        (businessId ? localStorage.getItem(`last_order_${businessId}`) : null) ||
+        localStorage.getItem('last_order_active');
+      if (id && id.trim()) {
+        setLastOrderId(id.trim());
       }
     }
-  }, []);
+  }, [slug, businessId]);
 
-  // En celular se abre automáticamente el menú hamburguesa
-  React.useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      const timer = setTimeout(() => {
-        setMobileOpen(true);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, []);
 
-  // Eventos globales para controlar el drawer desde el Tour
+  // Evento global para cerrar el drawer si es necesario
   React.useEffect(() => {
-    const handleOpen = () => setMobileOpen(true);
     const handleClose = () => setMobileOpen(false);
-
-    window.addEventListener('open-mobile-menu', handleOpen);
     window.addEventListener('close-mobile-menu', handleClose);
 
     return () => {
-      window.removeEventListener('open-mobile-menu', handleOpen);
       window.removeEventListener('close-mobile-menu', handleClose);
     };
   }, []);
@@ -94,7 +83,7 @@ export function Navbar({
       try {
         await navigator.share({ title, text, url });
         return;
-      } catch {}
+      } catch { }
     }
 
     try {
@@ -113,8 +102,15 @@ export function Navbar({
     navItems.push({ label: 'Sobre Nosotros', id: 'about', href: `/c/${slug}/sobre-nosotros` });
   }
 
+  if (orderStatusEnabled) {
+    navItems.push({
+      label: 'Mis Pedidos',
+      id: 'mis-pedidos',
+      href: lastOrderId ? `/c/${slug}/mis-pedidos?id=${lastOrderId}` : `/c/${slug}/mis-pedidos`
+    });
+  }
+
   navItems.push(
-    { label: 'Mis Pedidos', id: 'mis-pedidos', href: lastOrderId ? `/c/${slug}/mis-pedidos?id=${lastOrderId}` : `/c/${slug}/mis-pedidos` },
     { label: 'Reservar Mesa', id: 'reservar-mesa', href: `/c/${slug}/reservar-mesa` },
     { label: 'Reseñas', id: 'reviews', href: `/c/${slug}#reviews` }
   );
@@ -132,15 +128,26 @@ export function Navbar({
     }
 
     if (item.id === 'mis-pedidos') {
-      let targetId = lastOrderId;
-      if (!targetId && typeof window !== 'undefined') {
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('last_order_')) {
-            targetId = localStorage.getItem(key);
-            break;
+      let targetId: string | null = null;
+      if (typeof window !== 'undefined') {
+        targetId = localStorage.getItem(`last_order_${slug}`) ||
+          (businessId ? localStorage.getItem(`last_order_${businessId}`) : null) ||
+          localStorage.getItem('last_order_active');
+        if (!targetId) {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('last_order_') && !key.includes('time')) {
+              const val = localStorage.getItem(key);
+              if (val && val.trim()) {
+                targetId = val.trim();
+                break;
+              }
+            }
           }
         }
+      }
+      if (!targetId && lastOrderId) {
+        targetId = lastOrderId;
       }
       router.push(targetId ? `/c/${slug}/mis-pedidos?id=${targetId}` : `/c/${slug}/mis-pedidos`);
       return;
@@ -148,7 +155,8 @@ export function Navbar({
 
     // Cross-page navigation
     if (item.id === 'about' || item.id === 'reservar-mesa' || (item.id === 'menu' && !isHome) || (item.id === 'reviews' && !isHome)) {
-      router.push(item.href);
+      const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+      router.push(`${item.href}${currentSearch}`);
       return;
     }
 
@@ -170,7 +178,7 @@ export function Navbar({
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 50,
+    zIndex: 40,
     borderBottom: 'none',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
     backgroundColor: 'var(--bg-navbar)',
@@ -180,21 +188,11 @@ export function Navbar({
 
   return (
     <>
-      <TourGuide 
+      <TourGuide
         loyaltyEnabled={loyaltyEnabled}
         rewardTitle={loyaltySettings?.loyalty_reward_title}
         onOpenLoyalty={() => setIsLoyaltyModalOpen(true)}
       />
-      {businessId && loyaltySettings && (
-        <LoyaltyCardModal
-          businessId={businessId}
-          businessName={name}
-          isOpen={isLoyaltyModalOpen}
-          onClose={() => setIsLoyaltyModalOpen(false)}
-          settings={loyaltySettings}
-          primaryColor={primaryColor}
-        />
-      )}
       <nav style={navStyle}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Logo + Name */}
@@ -275,32 +273,23 @@ export function Navbar({
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center gap-1.5">
-            {loyaltyEnabled && (
-              <button
-                id="mobile-loyalty-btn"
-                onClick={() => setIsLoyaltyModalOpen(true)}
-                className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-xl border transition-all cursor-pointer shadow-sm active:scale-95 mr-0.5"
-                style={{
-                  backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                  borderColor: 'rgba(168, 85, 247, 0.35)',
-                  color: '#c084fc',
-                }}
-                title="Club de Sellos"
-              >
-                <span>🎟️</span>
-                <span>Sellos</span>
-              </button>
-            )}
+          {/* Menu button */}
+          <div className="flex items-center gap-1.5">
             <button
               onClick={handleShareMenu}
-              className="p-2 text-gray-400 hover:text-white rounded-full transition-colors cursor-pointer"
+              className="p-2 text-gray-400 hover:text-white rounded-full transition-colors cursor-pointer md:hidden"
               title="Compartir Carta"
             >
               <Share2 className="w-5 h-5" />
             </button>
-            <IconButton id="hamburger-menu-btn" onClick={() => setMobileOpen(true)} style={{ color: 'var(--text-muted)' }} className="transition-transform duration-300 hover:rotate-90 active:scale-90">
+            <IconButton 
+              id="hamburger-menu-btn" 
+              onClick={() => setMobileOpen(true)} 
+              style={{ color: 'var(--text-muted)' }} 
+              className="transition-transform duration-300 hover:rotate-90 active:scale-90"
+              title="Abrir menú"
+              aria-label="Abrir menú"
+            >
               <Menu className="w-5 h-5" />
             </IconButton>
           </div>
@@ -365,6 +354,18 @@ export function Navbar({
           </div>
         </Box>
       </Drawer>
+
+      {/* Modal Tarjeta de Fidelidad / Sellos */}
+      {businessId && loyaltySettings && (
+        <LoyaltyCardModal
+          businessId={businessId}
+          businessName={name}
+          isOpen={isLoyaltyModalOpen}
+          onClose={() => setIsLoyaltyModalOpen(false)}
+          settings={loyaltySettings}
+          primaryColor={primaryColor}
+        />
+      )}
     </>
   );
 }

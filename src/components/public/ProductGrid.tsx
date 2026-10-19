@@ -9,10 +9,18 @@ interface ProductGridProps {
   currencySymbol?: string;
   layoutStyle?: string;
   orderMode?: string;
+  tableOrdersEnabled?: boolean;
   onResetSearch?: () => void;
 }
 
-export function ProductGrid({ products, currencySymbol = '$', layoutStyle = 'grid', orderMode = 'menu_only', onResetSearch }: ProductGridProps) {
+export function ProductGrid({ 
+  products, 
+  currencySymbol = '$', 
+  layoutStyle = 'grid', 
+  orderMode = 'menu_only', 
+  tableOrdersEnabled = false,
+  onResetSearch 
+}: ProductGridProps) {
   if (products.length === 0) {
     return (
       <div style={{
@@ -73,6 +81,7 @@ export function ProductGrid({ products, currencySymbol = '$', layoutStyle = 'gri
           currencySymbol={currencySymbol} 
           layoutStyle={layoutStyle} 
           orderMode={orderMode}
+          tableOrdersEnabled={tableOrdersEnabled}
           isFirst={index === 0}
         />
       ))}

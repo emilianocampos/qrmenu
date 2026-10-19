@@ -13,7 +13,10 @@ import { PublicMenuClient } from './PublicMenuClient';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ table?: string; mesa?: string }>;
 }
+
+export const dynamic = 'force-dynamic';
 
 function hexToRgb(hex: string): string {
   const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
@@ -24,8 +27,10 @@ function hexToRgb(hex: string): string {
     : '249, 115, 22';
 }
 
-export default async function PublicMenuPage({ params }: PageProps) {
+export default async function PublicMenuPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const urlTable = resolvedSearchParams?.table || resolvedSearchParams?.mesa || undefined;
 
   const { data: business, error } = await getBusinessBySlug(slug);
   if (error || !business) notFound();
@@ -51,11 +56,13 @@ export default async function PublicMenuPage({ params }: PageProps) {
     );
   }
 
-  const [{ data: products = [] }, { data: reviews = [] }, loyaltySettings] = await Promise.all([
+  const [{ data: rawProducts = [] }, { data: reviews = [] }, loyaltySettings] = await Promise.all([
     getProducts(business.id),
     getReviews(business.id),
     getLoyaltySettings(business.id),
   ]);
+
+  const products = (rawProducts || []).filter(p => Number(p.price) > 0);
 
   const reviewCount = reviews.length;
   const rating = reviewCount > 0 ? reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviewCount : 5.0;
@@ -105,8 +112,10 @@ export default async function PublicMenuPage({ params }: PageProps) {
     <PublicMenuClient
       businessId={business.id}
       orderMode={business.order_mode || 'menu_only'}
+      tableOrdersEnabled={business.table_orders_enabled ?? false}
       businessSlug={business.slug}
       layoutStyle={business.layout_style || 'grid'}
+      initialTableFromUrl={urlTable}
     >
       <link
         rel="stylesheet"
@@ -171,6 +180,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
           loyaltyEnabled={loyaltySettings.loyalty_enabled}
           loyaltySettings={loyaltySettings}
           primaryColor={primaryColor}
+          orderStatusEnabled={business.order_status_enabled ?? false}
         />
 
         {/* Header / Banner */}
@@ -231,7 +241,17 @@ export default async function PublicMenuPage({ params }: PageProps) {
         )}
 
         <main>
-          <MenuSection businessId={business.id} products={products} currencySymbol="$" layoutStyle={business.layout_style || 'grid'} vintageColorMode={business.vintage_color_mode || 'multicolor'} vintageColor={business.vintage_color || '#ff4500'} orderMode={business.order_mode || 'menu_only'} />
+          <MenuSection 
+            businessId={business.id} 
+            products={products} 
+            currencySymbol="$" 
+            layoutStyle={business.layout_style || 'grid'} 
+            vintageColorMode={business.vintage_color_mode || 'multicolor'} 
+            vintageColor={business.vintage_color || '#ff4500'} 
+            orderMode={business.order_mode || 'menu_only'} 
+            tableOrdersEnabled={business.table_orders_enabled ?? false}
+            primaryColor={primaryColor}
+          />
           {/* {hasAbout && (
             <AboutSection
               title={business.about_title}

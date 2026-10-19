@@ -1,24 +1,24 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  subscribeOrGetLoyaltyCard, 
-  loginLoyaltyCustomer, 
-  CustomerLoyaltyData, 
-  LoyaltySettings 
+import {
+  subscribeOrGetLoyaltyCard,
+  loginLoyaltyCustomer,
+  CustomerLoyaltyData,
+  LoyaltySettings
 } from '@/actions/loyalty';
-import { 
-  Award, 
-  CheckCircle2, 
-  Gift, 
-  Mail, 
-  Sparkles, 
-  Star, 
-  User, 
-  Phone, 
-  X, 
-  Lock, 
-  LogOut, 
+import {
+  Award,
+  CheckCircle2,
+  Gift,
+  Mail,
+  Sparkles,
+  Star,
+  User,
+  Phone,
+  X,
+  Lock,
+  LogOut,
   Info,
   ShieldCheck,
   UserCheck
@@ -164,16 +164,16 @@ export function LoyaltyCardModal({
   const isRewardUnlocked = currentStamps >= stampsRequired;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+      <div
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal Container */}
-      <div 
-        className="relative w-full max-w-md rounded-3xl p-6 sm:p-8 z-10 animate-in zoom-in-95 border max-h-[92vh] overflow-y-auto"
+      <div
+        className="relative w-full max-w-md rounded-3xl p-6 sm:p-8 z-10 animate-in zoom-in-95 border max-h-[90dvh] overflow-y-auto"
         style={{
           backgroundColor: 'var(--bg-card)',
           borderColor: 'var(--border-color)',
@@ -198,7 +198,7 @@ export function LoyaltyCardModal({
           <div className="space-y-6">
             {/* Cabecera */}
             <div className="text-center space-y-2">
-              <div 
+              <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-inner"
                 style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
               >
@@ -213,7 +213,7 @@ export function LoyaltyCardModal({
             </div>
 
             {/* Selector de Pestañas con los dos botones solicitados */}
-            <div 
+            <div
               className="grid grid-cols-2 p-1 rounded-2xl border"
               style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)' }}
             >
@@ -421,12 +421,12 @@ export function LoyaltyCardModal({
           <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
             {/* Header del Gestor */}
             <div className="text-center space-y-1">
-              <span 
+              <span
                 className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border inline-flex items-center gap-1.5"
-                style={{ 
-                  backgroundColor: 'var(--bg-page)', 
-                  borderColor: 'var(--border-color)', 
-                  color: primaryColor 
+                style={{
+                  backgroundColor: 'var(--bg-page)',
+                  borderColor: 'var(--border-color)',
+                  color: primaryColor
                 }}
               >
                 <Award className="w-3 h-3" />
@@ -462,8 +462,8 @@ export function LoyaltyCardModal({
             )}
 
             {/* Tarjeta Visual de Sellos */}
-            <div 
-              className="p-5 rounded-2xl border relative overflow-hidden" 
+            <div
+              className="p-5 rounded-2xl border relative overflow-hidden"
               style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)' }}
             >
               <div className="flex justify-between items-center mb-3">
@@ -477,9 +477,9 @@ export function LoyaltyCardModal({
 
               {/* Barra de progreso */}
               <div className="w-full bg-white/5 rounded-full h-2 mb-4 overflow-hidden border border-white/5">
-                <div 
+                <div
                   className="h-full rounded-full transition-all duration-500"
-                  style={{ 
+                  style={{
                     width: `${Math.min(100, (currentStamps / stampsRequired) * 100)}%`,
                     backgroundColor: primaryColor,
                   }}
@@ -493,11 +493,10 @@ export function LoyaltyCardModal({
                   return (
                     <div
                       key={index}
-                      className={`aspect-square rounded-2xl flex flex-col items-center justify-center relative transition-all duration-300 border ${
-                        isStamped 
-                          ? 'scale-105 shadow-md' 
+                      className={`aspect-square rounded-2xl flex flex-col items-center justify-center relative transition-all duration-300 border ${isStamped
+                          ? 'scale-105 shadow-md'
                           : 'border-dashed opacity-40'
-                      }`}
+                        }`}
                       style={{
                         backgroundColor: isStamped ? primaryColor : 'var(--bg-card)',
                         borderColor: isStamped ? primaryColor : 'var(--border-color)',
@@ -519,8 +518,8 @@ export function LoyaltyCardModal({
               </div>
 
               {/* Información sobre cómo se generan los sellos */}
-              <div 
-                className="mt-4 pt-3 border-t text-[11px] space-y-1.5" 
+              <div
+                className="mt-4 pt-3 border-t text-[11px] space-y-1.5"
                 style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
               >
                 <div className="flex items-start gap-1.5">

@@ -27,6 +27,7 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
       case 'order_ready': return '✅';
       case 'order_cancelled': return '❌';
       case 'waiter_call': return '🔔';
+      case 'bill_request': return '💳';
       case 'new_review': return '⭐';
       case 'low_stock': return '⚠️';
       default: return '🔔';
@@ -35,7 +36,7 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
 
   const getLinkForNotification = (n: any) => {
     if (n.type.startsWith('order')) return `/orders`;
-    if (n.type === 'waiter_call') return `/mesas`;
+    if (n.type === 'waiter_call' || n.type === 'bill_request') return `/mesas`;
     if (n.type === 'new_review') return `/reviews`;
     return null;
   };
@@ -102,7 +103,7 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
                         {!notif.read && (
                           <button
                             onClick={() => {
-                              if (notif.type === 'waiter_call') {
+                              if (notif.type === 'waiter_call' || notif.type === 'bill_request') {
                                 setIsWaiterModalOpen(true);
                                 onClose();
                               } else {
@@ -111,7 +112,11 @@ export function NotificationDropdown({ businessId, onClose }: { businessId: stri
                             }}
                             className="text-[11px] font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded transition-colors"
                           >
-                            {notif.type === 'waiter_call' ? 'Ver Llamado / Atender' : 'Marcar leído'}
+                            {notif.type === 'bill_request'
+                              ? 'Ver Pedido / Cobrar'
+                              : notif.type === 'waiter_call'
+                              ? 'Ver Llamado / Atender'
+                              : 'Marcar leído'}
                           </button>
                         )}
                       </div>

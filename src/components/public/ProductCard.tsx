@@ -11,18 +11,22 @@ interface ProductCardProps {
   currencySymbol?: string;
   layoutStyle?: string;
   orderMode?: string;
+  tableOrdersEnabled?: boolean;
   isFirst?: boolean;
 }
 
-export function ProductCard({ 
-  product, 
-  currencySymbol = '$', 
-  layoutStyle = 'grid', 
+export function ProductCard({
+  product,
+  currencySymbol = '$',
+  layoutStyle = 'grid',
   orderMode = 'menu_only',
-  isFirst = false 
+  tableOrdersEnabled = false,
+  isFirst = false
 }: ProductCardProps) {
   const [is3DModalOpen, setIs3DModalOpen] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+
+  if (Number(product.price) <= 0) return null;
 
   const formattedPrice = new Intl.NumberFormat('es-AR', {
     minimumFractionDigits: 0,
@@ -33,152 +37,151 @@ export function ProductCard({
 
   return (
     <>
-    <div
-      className="break-inside-avoid transition-all duration-300"
-      style={{
-        backgroundColor: 'var(--bg-card)',
-        borderRadius: 16,
-        overflow: 'hidden',
-        border: '1px solid var(--border-color)',
-        boxShadow: 'var(--shadow-card)',
-        display: 'flex',
-        flexDirection: layoutStyle === 'list' ? 'row' : 'column',
-        height: '100%',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
-      }}
-    >
-      {/* Product Image */}
-      {layoutStyle !== 'list' && (
-        product.image_url ? (
+      <div
+        className="break-inside-avoid transition-all duration-300"
+        style={{
+          backgroundColor: 'var(--bg-card)',
+          borderRadius: 16,
+          overflow: 'hidden',
+          border: '1px solid var(--border-color)',
+          boxShadow: 'var(--shadow-card)',
+          display: 'flex',
+          flexDirection: layoutStyle === 'list' ? 'row' : 'column',
+          height: '100%',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
+        }}
+      >
+        {/* Product Image */}
+        {layoutStyle !== 'list' && product.image_url && product.image_url !== '/placeholder.png' && product.image_url.trim() !== '' && (
           <div style={{ position: 'relative', overflow: 'hidden', height: 180, width: '100%', flexShrink: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={product.image_url}
               alt={product.name}
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              onError={(e) => {
+                (e.currentTarget.parentElement as HTMLElement)?.style.setProperty('display', 'none');
+              }}
             />
           </div>
-        ) : (
-          <div style={{ position: 'relative', overflow: 'hidden', height: 180, width: '100%', backgroundColor: '#f3f4f6', flexShrink: 0 }} />
-        )
-      )}
-
-      {/* Content */}
-      <div style={{ padding: layoutStyle === 'list' ? '16px 20px' : '20px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
-        {/* Name & Price */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 8 }}>
-          <h3 style={{
-            color: 'var(--primary-color)',
-            fontWeight: 600,
-            fontSize: '1.1rem',
-            margin: 0,
-            lineHeight: 1.3,
-          }}>
-            {product.name}
-          </h3>
-          <span style={{
-            fontSize: '0.95rem',
-            fontWeight: 500,
-            color: 'var(--text-primary)',
-            whiteSpace: 'nowrap',
-          }}>
-            {currencySymbol}{formattedPrice}
-          </span>
-        </div>
-
-        {/* Description */}
-        {product.description && (
-          <p style={{
-            color: 'var(--text-muted)',
-            fontSize: '0.9rem',
-            lineHeight: 1.5,
-            margin: '0 0 24px',
-            flex: 1,
-          }}>
-            {product.description}
-          </p>
         )}
 
-        {/* Footer: Category & 3D Buttons */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginTop: product.description ? 'auto' : '24px' }}>
-          
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {/* Category Pill */}
-            {product.category?.name && (
-              <span style={{
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                padding: '6px 14px',
-                borderRadius: 9999,
-                backgroundColor: 'var(--bg-page)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-primary)',
-              }}>
-                {product.category.name}
-              </span>
-            )}
-
-            {/* Botón de Modelo 3D & Realidad Aumentada */}
-            {has3DModel && (
-              <button
-                onClick={() => setIs3DModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full transition-all cursor-pointer shadow-sm hover:scale-105"
-                style={{
-                  backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                  color: 'var(--primary-color)',
-                  border: '1.5px solid var(--primary-color)',
-                }}
-                title="Ver plato en Realidad Aumentada (Cámara)"
-              >
-                <Box size={14} className="animate-pulse" />
-                <span>📱 Ver en Realidad Aumentada</span>
-              </button>
-            )}
+        {/* Content */}
+        <div style={{ padding: layoutStyle === 'list' ? '16px 20px' : '20px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
+          {/* Name & Price */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 8 }}>
+            <h3 style={{
+              color: 'var(--primary-color)',
+              fontWeight: 600,
+              fontSize: '1.1rem',
+              margin: 0,
+              lineHeight: 1.3,
+            }}>
+              {product.name}
+            </h3>
+            <span style={{
+              fontSize: '0.95rem',
+              fontWeight: 500,
+              color: 'var(--text-primary)',
+              whiteSpace: 'nowrap',
+            }}>
+              {currencySymbol}{formattedPrice}
+            </span>
           </div>
 
-          {orderMode !== 'menu_only' && (
-            <button
-              id={isFirst ? "tour-order-btn" : undefined}
-              onClick={() => setIsOrderModalOpen(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                padding: '8px 16px',
-                borderRadius: 9999,
-                backgroundColor: 'var(--primary-color)',
-                color: '#fff',
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-              }}
-            >
-              <ShoppingBag size={14} />
-              Pedir
-            </button>
+          {/* Description */}
+          {product.description && (
+            <p style={{
+              color: 'var(--text-muted)',
+              fontSize: '0.9rem',
+              lineHeight: 1.5,
+              margin: '0 0 24px',
+              flex: 1,
+            }}>
+              {product.description}
+            </p>
           )}
 
+          {/* Footer: Category & 3D Buttons */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginTop: product.description ? 'auto' : '24px' }}>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {/* Category Pill */}
+              {product.category?.name && (
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  padding: '6px 14px',
+                  borderRadius: 9999,
+                  backgroundColor: 'var(--bg-page)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                }}>
+                  {product.category.name}
+                </span>
+              )}
+
+              {/* Botón de Modelo 3D & Realidad Aumentada */}
+              {has3DModel && (
+                <button
+                  onClick={() => setIs3DModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full transition-all cursor-pointer shadow-sm hover:scale-105"
+                  style={{
+                    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                    color: 'var(--primary-color)',
+                    border: '1.5px solid var(--primary-color)',
+                  }}
+                  title="Ver plato en Realidad Aumentada (Cámara)"
+                >
+                  <Box size={14} className="animate-pulse" />
+                  <span>📱 Ver en Realidad Aumentada</span>
+                </button>
+              )}
+            </div>
+
+            {orderMode !== 'menu_only' && tableOrdersEnabled && (
+              <button
+                id={isFirst ? "tour-order-btn" : undefined}
+                onClick={() => setIsOrderModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  padding: '8px 16px',
+                  borderRadius: 9999,
+                  backgroundColor: 'var(--primary-color)',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                }}
+              >
+                <ShoppingBag size={14} />
+                Pedir
+              </button>
+            )}
+
+          </div>
         </div>
       </div>
-    </div>
-    
-    <ModelViewerModal 
-      product={product}
-      isOpen={is3DModalOpen}
-      onClose={() => setIs3DModalOpen(false)}
-    />
 
-    {orderMode !== 'menu_only' && (
-      <ProductOrderModal
+      <ModelViewerModal
         product={product}
-        isOpen={isOrderModalOpen}
-        onClose={() => setIsOrderModalOpen(false)}
-        currencySymbol={currencySymbol}
-        layoutStyle={layoutStyle}
+        isOpen={is3DModalOpen}
+        onClose={() => setIs3DModalOpen(false)}
       />
-    )}
+
+      {orderMode !== 'menu_only' && tableOrdersEnabled && (
+        <ProductOrderModal
+          product={product}
+          isOpen={isOrderModalOpen}
+          onClose={() => setIsOrderModalOpen(false)}
+          currencySymbol={currencySymbol}
+          layoutStyle={layoutStyle}
+        />
+      )}
     </>
   );
 }

@@ -1,0 +1,22 @@
+{
+  "supabaseUrl": "https://vyzgnapikhpbeqcwxzsb.supabase.co",
+  "supabaseServiceKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5emduYXBpa2hwYmVxY3d4enNiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDA1MTMzOCwiZXhwIjoyMDk5NjI3MzM4fQ.adEANuYvSzS_BxOQC61pj58f2gkIRuGY8IjEkUtexz4",
+  "businessId": "d187475b-d5f4-481c-88aa-2a12746a5716",
+  "businessSlug": "muud",
+  "maxirest": {
+    "syncMode": "spooler_files",
+    "spoolerPath": "C:\\MaxiRest\\ComandasIn",
+    "archivePath": "C:\\MaxiRest\\ComandasProcesadas",
+    "menuExportPath": "C:\\MaxiRest\\Export",
+    "autoSyncMenuOnStart": true,
+    "autoSyncIntervalHours": 4,
+    "db": {
+      "enabled": false,
+      "host": "localhost",
+      "port": 3306,
+      "user": "root",
+      "password": "",
+      "database": "maxirest"
+    }
+  }
+}

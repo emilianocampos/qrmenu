@@ -9,23 +9,35 @@ import { CartButton } from '@/components/orders/CartButton';
 interface PublicMenuClientProps {
   businessId: string;
   orderMode: string;
+  tableOrdersEnabled?: boolean;
   businessSlug: string;
   layoutStyle?: string;
+  initialTableFromUrl?: string;
   children: React.ReactNode;
 }
 
-export function PublicMenuClient({ businessId, orderMode, businessSlug, layoutStyle = 'grid', children }: PublicMenuClientProps) {
-  // Si el modo es solo carta, no inyectamos lógica de carrito ni modal
-  if (orderMode === 'menu_only') {
-    return <>{children}</>;
-  }
+export function PublicMenuClient({ 
+  businessId, 
+  orderMode, 
+  tableOrdersEnabled = false,
+  businessSlug, 
+  layoutStyle = 'grid', 
+  initialTableFromUrl,
+  children 
+}: PublicMenuClientProps) {
+  const isOrderingAllowed = orderMode !== 'menu_only' && tableOrdersEnabled;
 
   return (
-    <CartProvider businessId={businessId}>
+    <CartProvider businessId={businessId} initialTableFromUrl={initialTableFromUrl}>
       {children}
-      <CartButton />
-      <Cart businessId={businessId} orderMode={orderMode} businessSlug={businessSlug} layoutStyle={layoutStyle} />
-      <CustomerInfoModal orderMode={orderMode} businessId={businessId} />
+      {isOrderingAllowed && (
+        <>
+          <CartButton />
+          <Cart businessId={businessId} orderMode={orderMode} businessSlug={businessSlug} layoutStyle={layoutStyle} />
+          <CustomerInfoModal orderMode={orderMode} businessId={businessId} />
+        </>
+      )}
     </CartProvider>
   );
 }
+

@@ -15,9 +15,21 @@ interface MenuSectionProps {
   vintageColorMode?: string;
   vintageColor?: string;
   orderMode?: string;
+  tableOrdersEnabled?: boolean;
+  primaryColor?: string;
 }
 
-export function MenuSection({ businessId, products, currencySymbol = '$', layoutStyle = 'grid', vintageColorMode = 'multicolor', vintageColor = '#ff4500', orderMode = 'menu_only' }: MenuSectionProps) {
+export function MenuSection({
+  businessId,
+  products,
+  currencySymbol = '$',
+  layoutStyle = 'grid',
+  vintageColorMode = 'multicolor',
+  vintageColor = '#ff4500',
+  orderMode = 'menu_only',
+  tableOrdersEnabled = false,
+  primaryColor,
+}: MenuSectionProps) {
   if (layoutStyle === 'vintage') {
     return <VintageMenuSection products={products} currencySymbol={currencySymbol} vintageColorMode={vintageColorMode} vintageColor={vintageColor} orderMode={orderMode} />;
   }
@@ -25,9 +37,14 @@ export function MenuSection({ businessId, products, currencySymbol = '$', layout
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
+  // Safeguard: only show products with price > 0 on public menu
+  const validProducts = useMemo(() => {
+    return products.filter(p => Number(p.price) > 0);
+  }, [products]);
+
   const categories = useMemo(() => {
     const map = new Map<string, { id: string, name: string, icon?: string | null, count: number }>();
-    products.forEach(p => {
+    validProducts.forEach(p => {
       if (p.category) {
         if (!map.has(p.category.id)) {
           map.set(p.category.id, { id: p.category.id, name: p.category.name, icon: (p.category as any).icon, count: 0 });
@@ -36,9 +53,9 @@ export function MenuSection({ businessId, products, currencySymbol = '$', layout
       }
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [products]);
+  }, [validProducts]);
 
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = validProducts.filter(product => {
     const query = searchQuery.toLowerCase().trim();
     let matchSearch = true;
     if (query) {
@@ -67,7 +84,11 @@ export function MenuSection({ businessId, products, currencySymbol = '$', layout
               Nuestro Menú
             </h2>
             {businessId && (
-              <TableInfoAndWaiterBar businessId={businessId} orderMode={orderMode} />
+              <TableInfoAndWaiterBar
+                businessId={businessId}
+                orderMode={orderMode}
+                primaryColor={primaryColor}
+              />
             )}
           </div>
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
@@ -160,6 +181,7 @@ export function MenuSection({ businessId, products, currencySymbol = '$', layout
           currencySymbol={currencySymbol}
           layoutStyle={layoutStyle}
           orderMode={orderMode}
+          tableOrdersEnabled={tableOrdersEnabled}
           onResetSearch={() => {
             setSearchQuery('');
             setSelectedCategoryId(null);

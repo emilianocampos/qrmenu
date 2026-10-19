@@ -35,19 +35,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Fallback para las rutas normales del negocio (Supabase Auth)
+  // Rutas públicas de clientes (menú QR, seguimiento, pedidos, landing) y webhooks:
+  // No requieren verificación de sesión de Supabase Auth en middleware
+  if (
+    path === '/' ||
+    path.startsWith('/c/') ||
+    path.startsWith('/api/mercadopago')
+  ) {
+    return NextResponse.next();
+  }
+
+  // Fallback para las rutas privadas del panel y autenticación (Supabase Auth)
   return await updateSession(request);
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * Match all request paths except for static files and assets
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|icon.png|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3|woff2)$).*)',
   ],
 }

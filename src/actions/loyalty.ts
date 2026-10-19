@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { DEFAULT_LOYALTY_WA_MESSAGE, arePhonesMatching } from '@/lib/loyalty-utils';
 
@@ -195,8 +196,8 @@ export async function loginLoyaltyCustomer(businessId: string, email: string, ph
 
     if (error) throw error;
     if (!loyalty) {
-      return { 
-        error: 'No se encontró ninguna tarjeta registrada con este email. Por favor regístrate en "Guardar mis datos".' 
+      return {
+        error: 'No se encontró ninguna tarjeta registrada con este email. Por favor regístrate en "Guardar mis datos".'
       };
     }
 
@@ -204,8 +205,8 @@ export async function loginLoyaltyCustomer(businessId: string, email: string, ph
     if (loyalty.customer_phone) {
       const match = arePhonesMatching(cleanPhone, loyalty.customer_phone);
       if (!match) {
-        return { 
-          error: 'El número de teléfono no coincide con el registrado para esta cuenta.' 
+        return {
+          error: 'El número de teléfono no coincide con el registrado para esta cuenta.'
         };
       }
     } else {
@@ -244,7 +245,12 @@ export async function loginLoyaltyCustomer(businessId: string, email: string, ph
  */
 export async function awardStampFromOrder(businessId: string, phone?: string, email?: string) {
   try {
-    const supabase = await createClient();
+    let supabase: any;
+    try {
+      supabase = createAdminClient();
+    } catch {
+      supabase = await createClient();
+    }
 
     // 1. Verificar si el negocio tiene habilitado el programa de sellos
     const { data: biz } = await supabase
@@ -281,7 +287,7 @@ export async function awardStampFromOrder(businessId: string, phone?: string, em
         .not('customer_phone', 'is', null);
 
       if (candidates && candidates.length > 0) {
-        customerLoyalty = candidates.find(c => arePhonesMatching(cleanPhone, c.customer_phone || ''));
+        customerLoyalty = candidates.find((c: any) => arePhonesMatching(cleanPhone, c.customer_phone || ''));
       }
     }
 

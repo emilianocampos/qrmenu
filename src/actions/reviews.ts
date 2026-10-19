@@ -39,13 +39,15 @@ export async function getProducts(businessId: string) {
     .select('*, category:categories(id, name)')
     .eq('business_id', businessId)
     .eq('is_available', true)
+    .gt('price', 0)
     .order('item_order', { ascending: true });
 
   if (error) {
     console.error('Error fetching products:', error);
     return { error: error.message };
   }
-  return { data: data as Product[] };
+  const validProducts = ((data || []) as Product[]).filter(p => Number(p.price) > 0);
+  return { data: validProducts };
 }
 
 // Search products by name, description, or category name
@@ -68,7 +70,8 @@ export async function searchProducts(businessId: string, query: string) {
     .from('products')
     .select('*, category:categories(id, name)')
     .eq('business_id', businessId)
-    .eq('is_available', true);
+    .eq('is_available', true)
+    .gt('price', 0);
 
   if (query.trim()) {
     if (matchedCategoryIds.length > 0) {
@@ -84,7 +87,8 @@ export async function searchProducts(businessId: string, query: string) {
     console.error('Error searching products:', error);
     return { error: error.message };
   }
-  return { data: data as Product[] };
+  const validProducts = ((data || []) as Product[]).filter(p => Number(p.price) > 0);
+  return { data: validProducts };
 }
 
 // Get reviews for a business ordered by most recent first

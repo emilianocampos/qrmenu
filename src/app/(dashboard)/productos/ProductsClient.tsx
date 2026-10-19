@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useMemo } from 'react';
 import { Plus, ChevronLeft, ChevronRight, Trash2, Tags, X, Sparkles, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -128,6 +128,10 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  const unpricedCount = useMemo(() => {
+    return products.filter(p => Number(p.price) <= 0).length;
+  }, [products]);
+
   const filtered = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
     const matchCat = filterCategory ? p.category_id === filterCategory : true;
@@ -137,7 +141,9 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
         ? !p.is_available
         : filterStatus === 'featured'
           ? p.is_featured
-          : true;
+          : filterStatus === 'no_price'
+            ? Number(p.price) <= 0
+            : true;
     return matchSearch && matchCat && matchStatus;
   });
 
@@ -389,11 +395,35 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
               { value: 'available', label: 'Disponibles' },
               { value: 'unavailable', label: 'No disponibles' },
               { value: 'featured', label: 'Destacados' },
+              ...(unpricedCount > 0
+                ? [{ value: 'no_price', label: `⚠️ Sin precio (${unpricedCount})` }]
+                : []),
             ],
             defaultLabel: 'Todos los estados',
           },
         ]}
       />
+
+      {/* Alert banner if there are products with price <= 0 */}
+      {unpricedCount > 0 && filterStatus !== 'no_price' && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-200 shadow-sm animate-in fade-in duration-300">
+          <div className="flex items-start sm:items-center gap-3">
+            <span className="text-xl shrink-0">⚠️</span>
+            <div className="text-xs sm:text-sm">
+              <span className="font-semibold text-amber-300">
+                Tenés {unpricedCount} {unpricedCount === 1 ? 'plato sin precio ($0)' : 'platos sin precio ($0)'}.
+              </span>{' '}
+              Por seguridad, se mantienen <strong className="text-white">ocultos en la carta de los clientes</strong> para que nadie los vea sin valor. Podés editarlos aquí para asignarles su precio cuando gustes.
+            </div>
+          </div>
+          <button
+            onClick={() => handleStatusChange('no_price')}
+            className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
+          >
+            Ver sin precio ({unpricedCount})
+          </button>
+        </div>
+      )}
 
       {/* Products Table */}
       {filtered.length === 0 ? (

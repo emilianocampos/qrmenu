@@ -38,7 +38,8 @@ export async function createCategory(formData: FormData) {
 
   if (error) return { error: error.message };
 
-  revalidatePath('/dashboard/categorias');
+  revalidatePath('/categorias');
+  revalidatePath('/productos');
   return { data };
 }
 
@@ -56,7 +57,8 @@ export async function updateCategory(categoryId: string, updates: Record<string,
 
   if (error) return { error: error.message };
 
-  revalidatePath('/dashboard/categorias');
+  revalidatePath('/categorias');
+  revalidatePath('/productos');
   return { data };
 }
 
@@ -69,7 +71,8 @@ export async function deleteCategory(categoryId: string) {
 
   if (error) return { error: error.message };
 
-  revalidatePath('/dashboard/categorias');
+  revalidatePath('/categorias');
+  revalidatePath('/productos');
   return { success: true };
 }
 
@@ -84,6 +87,7 @@ export async function reorderCategories(categories: { id: string; item_order: nu
 
   await Promise.all(updates);
 
-  revalidatePath('/dashboard/categorias');
+  revalidatePath('/categorias');
+  revalidatePath('/productos');
   return { success: true };
 }

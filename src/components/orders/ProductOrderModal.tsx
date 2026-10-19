@@ -19,8 +19,11 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol, la
   const [quantity, setQuantity] = useState(1);
   const [detail, setDetail] = useState('');
   const [addition, setAddition] = useState('');
+  const [imageError, setImageError] = useState(false);
 
-  if (!isOpen) return null;
+  const hasImage = Boolean(product.image_url && product.image_url !== '/placeholder.png' && product.image_url.trim() !== '' && !imageError);
+
+  if (!isOpen || Number(product.price) <= 0) return null;
 
   const handleAddToCart = () => {
     const parts: string[] = [];
@@ -36,7 +39,7 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol, la
       detail: detail.trim(),
       addition: addition.trim(),
       observations,
-      image_url: product.image_url || ''
+      image_url: hasImage && product.image_url ? product.image_url : ''
     });
     
     toast.success('Producto agregado al pedido', {
@@ -74,10 +77,15 @@ export function ProductOrderModal({ product, isOpen, onClose, currencySymbol, la
       >
         
         {/* Header / Image (Omitida en modo lista sin imagen) */}
-        {layoutStyle !== 'list' && product.image_url ? (
+        {layoutStyle !== 'list' && hasImage && product.image_url ? (
           <div className="relative h-44 shrink-0" style={{ backgroundColor: 'var(--bg-page)' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+            <img 
+              src={product.image_url} 
+              alt={product.name} 
+              className="w-full h-full object-cover" 
+              onError={() => setImageError(true)}
+            />
             <button 
               onClick={onClose}
               className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-colors cursor-pointer"

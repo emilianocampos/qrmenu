@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { logout } from '@/actions/auth';
 import { Business } from '@/types';
+import { ModulesInfoModal } from '@/components/dashboard/ModulesInfoModal';
 
 interface SidebarProps {
   business: Business | null;
@@ -62,6 +63,7 @@ function NavItem({ id, href, icon: Icon, label, color, active, onClick }: NavIte
     <Link
       id={id}
       href={href}
+      prefetch={false}
       onClick={onClick}
       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
         ${active
@@ -79,6 +81,7 @@ function NavItem({ id, href, icon: Icon, label, color, active, onClick }: NavIte
 export function Sidebar({ business }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
 
   useEffect(() => {
     const hasSeenTour = localStorage.getItem('hasSeenDashboardTour');
@@ -170,14 +173,34 @@ export function Sidebar({ business }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="p-3 border-t border-white/8">
+      <div className="p-3 border-t border-white/8 space-y-1">
+        {business && (
+          <button
+            type="button"
+            onClick={() => {
+              setInfoModalOpen(true);
+              setMobileOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-indigo-300
+                       bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 transition-all cursor-pointer group mb-1 shadow-sm"
+          >
+            <div className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center font-black text-xs shrink-0 group-hover:scale-110 transition-transform">
+              ?
+            </div>
+            <span className="flex-1 text-left">(Info) Guía de Módulos</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-extrabold border border-indigo-500/30">
+              Ayuda
+            </span>
+          </button>
+        )}
+
         {business && (
           <a
             href={`/c/${business.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400
-                       hover:text-white hover:bg-white/5 transition-all mb-1 group"
+            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-gray-400
+                       hover:text-white hover:bg-white/5 transition-all group"
           >
             <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 block" />
@@ -186,8 +209,8 @@ export function Sidebar({ business }: SidebarProps) {
           </a>
         )}
         <form action={logout}>
-          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400
-                              hover:text-white hover:bg-white/5 transition-all">
+          <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-gray-400
+                              hover:text-white hover:bg-white/5 transition-all cursor-pointer">
             <LogOut className="w-4 h-4 flex-shrink-0" />
             Cerrar sesión
           </button>
@@ -226,6 +249,13 @@ export function Sidebar({ business }: SidebarProps) {
       <aside className="hidden md:flex w-64 flex-shrink-0 border-r border-white/8 bg-[#0d0d0d] sticky top-0 h-screen flex-col">
         {sidebarContent}
       </aside>
+
+      {/* Modal de Información y Guía de Módulos */}
+      <ModulesInfoModal
+        isOpen={infoModalOpen}
+        onClose={() => setInfoModalOpen(false)}
+        businessSlug={business?.slug}
+      />
     </>
   );
 }

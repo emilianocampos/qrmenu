@@ -86,7 +86,7 @@ export function ProductDialog({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Precio</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Precio ($)</label>
               <input
                 type="number"
                 step="0.01"
@@ -97,6 +97,9 @@ export function ProductDialog({
                 className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-600 rounded-xl px-4 py-3 text-sm
                            focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
               />
+              <p className="text-[11px] text-gray-500 mt-1">
+                Si queda en 0, se mantiene oculto en la carta de los clientes.
+              </p>
             </div>
 
             <div>

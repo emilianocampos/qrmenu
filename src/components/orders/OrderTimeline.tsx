@@ -48,6 +48,37 @@ export function OrderTimeline({ initialOrder, primaryColor }: OrderTimelineProps
   };
 
   useEffect(() => {
+    // Guardar el pedido actual en localStorage para que 'Mis Pedidos' siempre lo encuentre
+    if (typeof window !== 'undefined' && order?.id) {
+      const slug = order?.businesses?.slug;
+      if (slug) {
+        localStorage.setItem(`last_order_${slug}`, order.id);
+        localStorage.setItem(`last_order_time_${slug}`, Date.now().toString());
+      }
+      if (order.business_id) {
+        localStorage.setItem(`last_order_${order.business_id}`, order.id);
+      }
+      localStorage.setItem('last_order_active', order.id);
+    }
+  }, [order?.id, order?.business_id, order?.businesses?.slug]);
+
+  const handleStartNewOrder = () => {
+    if (typeof window !== 'undefined') {
+      const slug = order?.businesses?.slug;
+      if (slug) {
+        localStorage.removeItem(`last_order_${slug}`);
+        localStorage.removeItem(`last_order_time_${slug}`);
+      }
+      if (order?.business_id) {
+        localStorage.removeItem(`last_order_${order.business_id}`);
+      }
+      localStorage.removeItem('last_order_active');
+    }
+    const tableParam = order?.customer_identifier ? `?table=${order.customer_identifier.replace(/\D/g, '')}` : '';
+    window.location.href = `/c/${order?.businesses?.slug || ''}${tableParam}`;
+  };
+
+  useEffect(() => {
     // Solo suscribirse a este pedido específico
     subscribeToCustomerOrder(order.id, (payload) => {
       // Actualizamos solo el estado y timestamp para que la UI reaccione rápidamente
@@ -253,14 +284,25 @@ export function OrderTimeline({ initialOrder, primaryColor }: OrderTimelineProps
 
       {/* Cartel de Confirmación de Pago */}
       {isPaid && (
-        <div className="mb-8 p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-center space-y-2 animate-in fade-in duration-300">
-          <div className="w-12 h-12 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-6 h-6" />
+        <div className="mb-8 p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl text-center space-y-3 animate-in fade-in duration-300 shadow-xl shadow-emerald-500/5">
+          <div className="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto ring-4 ring-emerald-500/10">
+            <CheckCircle2 className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold text-emerald-500">¡Pedido Pagado Correctamente!</h3>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Hemos registrado tu pago. Gracias por tu visita.
-          </p>
+          <div className="space-y-1">
+            <h3 className="text-xl font-black text-emerald-400">¡Pedido Pagado y Completado!</h3>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Hemos registrado tu pago. Si participas del programa de fidelidad, tu sello ya fue registrado 🎟️
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              onClick={handleStartNewOrder}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-bold text-white transition-all transform active:scale-95 shadow-lg shadow-emerald-600/25 cursor-pointer"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <span>➕ Iniciar un Nuevo Pedido en la Mesa</span>
+            </button>
+          </div>
         </div>
       )}
       
@@ -377,18 +419,33 @@ export function OrderTimeline({ initialOrder, primaryColor }: OrderTimelineProps
 
       {/* Botón para volver al menú y realizar otro pedido */}
       <div className="mt-8 pt-6 text-center" style={{ borderTop: '1px solid var(--border-color)' }}>
-        <a
-          href={`/c/${order.businesses?.slug || ''}${order.customer_identifier ? `?table=${order.customer_identifier.replace(/\D/g, '')}` : ''}`}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 font-bold rounded-2xl transition-all border text-sm cursor-pointer"
-          style={{
-            backgroundColor: 'var(--bg-card-hover)',
-            borderColor: 'var(--border-color)',
-            color: 'var(--text-primary)',
-            boxShadow: 'var(--shadow-card)',
-          }}
-        >
-          📖 Volver al Menú / Pedir algo más
-        </a>
+        {isPaid ? (
+          <button
+            onClick={handleStartNewOrder}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 font-bold rounded-2xl transition-all border text-sm cursor-pointer hover:opacity-90"
+            style={{
+              backgroundColor: 'var(--bg-card-hover)',
+              borderColor: 'var(--border-color)',
+              color: 'var(--text-primary)',
+              boxShadow: 'var(--shadow-card)',
+            }}
+          >
+            ➕ Iniciar un Nuevo Pedido / Liberar Mesa
+          </button>
+        ) : (
+          <a
+            href={`/c/${order.businesses?.slug || ''}${order.customer_identifier ? `?table=${order.customer_identifier.replace(/\D/g, '')}` : ''}`}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 font-bold rounded-2xl transition-all border text-sm cursor-pointer hover:opacity-90"
+            style={{
+              backgroundColor: 'var(--bg-card-hover)',
+              borderColor: 'var(--border-color)',
+              color: 'var(--text-primary)',
+              boxShadow: 'var(--shadow-card)',
+            }}
+          >
+            📖 Volver al Menú / Pedir algo más
+          </a>
+        )}
       </div>
     </div>
     </>

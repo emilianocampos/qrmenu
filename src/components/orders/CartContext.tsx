@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 export interface CartItem {
   productId: string;
@@ -29,6 +29,7 @@ interface CartContextProps {
   setIsCustomerModalOpen: (isOpen: boolean) => void;
   lastOrderId: string | null;
   setLastOrderId: (id: string | null) => void;
+  isTableFromUrl: boolean;
 }
 
 const CartContext = createContext<CartContextProps>({
@@ -47,15 +48,35 @@ const CartContext = createContext<CartContextProps>({
   setIsCustomerModalOpen: () => {},
   lastOrderId: null,
   setLastOrderId: () => {},
+  isTableFromUrl: false,
 });
 
 export const useCart = () => useContext(CartContext);
 
-export function CartProvider({ children, businessId }: { children: React.ReactNode, businessId: string }) {
+export function CartProvider({ 
+  children, 
+  businessId, 
+  initialTableFromUrl 
+}: { 
+  children: React.ReactNode; 
+  businessId: string; 
+  initialTableFromUrl?: string;
+}) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-  const [customerInfo, setCustomerInfo] = useState<any>({});
+  const [customerInfo, setCustomerInfoState] = useState<any>(() => {
+    if (initialTableFromUrl) {
+      return { tableNumber: initialTableFromUrl, isTableFromUrl: true };
+    }
+    return {};
+  });
+  const [isTableFromUrl, setIsTableFromUrl] = useState<boolean>(Boolean(initialTableFromUrl));
+  const isTableFromUrlRef = useRef(isTableFromUrl);
+  isTableFromUrlRef.current = isTableFromUrl;
+  const initialTableFromUrlRef = useRef(initialTableFromUrl);
+  initialTableFromUrlRef.current = initialTableFromUrl;
+
   const [isHydrated, setIsHydrated] = useState(false);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   
@@ -71,20 +92,50 @@ export function CartProvider({ children, businessId }: { children: React.ReactNo
     }
 
     // Auto-detectar número de mesa desde el QR (ej: ?table=1 o ?mesa=1)
-    if (typeof window !== 'undefined') {
+    let urlTable: string | null = initialTableFromUrl || null;
+    if (!urlTable && typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      const tableFromUrl = urlParams.get('table') || urlParams.get('mesa');
-      if (tableFromUrl) {
-        parsedCustomer.tableNumber = tableFromUrl;
-      }
+      urlTable = urlParams.get('table') || urlParams.get('mesa');
+    }
+
+    if (urlTable) {
+      parsedCustomer.tableNumber = urlTable;
+      parsedCustomer.isTableFromUrl = true;
+      setIsTableFromUrl(true);
+    } else {
+      parsedCustomer.isTableFromUrl = false;
+      setIsTableFromUrl(false);
     }
 
     if (savedCart) setItems(JSON.parse(savedCart));
-    setCustomerInfo(parsedCustomer);
+    setCustomerInfoState(parsedCustomer);
     if (savedOrderId) setLastOrderId(savedOrderId);
     
     setIsHydrated(true);
-  }, [businessId]);
+  }, [businessId, initialTableFromUrl]);
+
+  // Si la mesa fue asignada por URL, evitar que se pueda sobreescribir
+  const setCustomerInfo = useCallback((infoOrUpdater: any) => {
+    setCustomerInfoState((prev: any) => {
+      const next = typeof infoOrUpdater === 'function' ? infoOrUpdater(prev) : infoOrUpdater;
+      if (isTableFromUrlRef.current) {
+        let tableToKeep = prev?.tableNumber;
+        if (typeof window !== 'undefined') {
+          const urlParams = new URLSearchParams(window.location.search);
+          const currentUrlTable = urlParams.get('table') || urlParams.get('mesa');
+          if (currentUrlTable) tableToKeep = currentUrlTable;
+        }
+        if (!tableToKeep && initialTableFromUrlRef.current) tableToKeep = initialTableFromUrlRef.current;
+
+        return {
+          ...next,
+          tableNumber: tableToKeep,
+          isTableFromUrl: true,
+        };
+      }
+      return next;
+    });
+  }, []);
 
   // Save to local storage on change
   useEffect(() => {
@@ -135,7 +186,7 @@ export function CartProvider({ children, businessId }: { children: React.ReactNo
 
   return (
     <CartContext.Provider value={{
-      items, addItem, removeItem, updateQuantity, clearCart, total, isOpen, setIsOpen, customerInfo, setCustomerInfo, isHydrated, isCustomerModalOpen, setIsCustomerModalOpen, lastOrderId, setLastOrderId
+      items, addItem, removeItem, updateQuantity, clearCart, total, isOpen, setIsOpen, customerInfo, setCustomerInfo, isHydrated, isCustomerModalOpen, setIsCustomerModalOpen, lastOrderId, setLastOrderId, isTableFromUrl
     }}>
       {children}
     </CartContext.Provider>

@@ -54,6 +54,12 @@ export type Business = {
   promo_description?: string | null;
   promo_image?: string | null;
   order_mode?: string | null;
+  table_orders_enabled?: boolean;
+  order_status_enabled?: boolean;
+  notification_sound_enabled?: boolean;
+  notification_vibrate_enabled?: boolean;
+  notification_sound_tone?: string | null;
+  notification_sound_duration?: number | null;
   mp_access_token?: string | null;
   mp_public_key?: string | null;
   created_at: string;

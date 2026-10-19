@@ -12,6 +12,8 @@ interface PageProps {
   searchParams: Promise<{ id?: string; payment?: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+
 function hexToRgb(hex: string): string {
   const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
   const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
@@ -25,13 +27,17 @@ export default async function CustomerOrderPage({ params, searchParams }: PagePr
   const { slug } = await params;
   const { id: orderId, payment } = await searchParams;
 
+  const { data: currentBusiness } = await getBusinessBySlug(slug);
+  if (currentBusiness && currentBusiness.order_status_enabled === false) {
+    redirect(`/c/${slug}`);
+  }
+
   if (!orderId) {
-    const { data: business } = await getBusinessBySlug(slug);
     return (
       <OrderCheckOrEmpty
         slug={slug}
-        primaryColor={business?.color_primary || '#6366f1'}
-        businessName={business?.name || 'el local'}
+        primaryColor={currentBusiness?.color_primary || '#6366f1'}
+        businessName={currentBusiness?.name || 'el local'}
       />
     );
   }
@@ -49,16 +55,30 @@ export default async function CustomerOrderPage({ params, searchParams }: PagePr
   const orderBusinessSlug = decodeURIComponent(order?.businesses?.slug || '').toLowerCase().trim();
 
   if (!order || !order.businesses || orderBusinessSlug !== decodedSlug) {
-    const { data: business } = await getBusinessBySlug(slug);
-
-    if (!business) {
+    if (!currentBusiness) {
       notFound();
     }
 
-    const primaryColor = business.color_primary || '#6366f1';
+    const primaryColor = currentBusiness.color_primary || '#6366f1';
 
     return (
       <div className="min-h-screen bg-[#0a0e1a] text-white flex flex-col items-center justify-center p-6 text-center">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (typeof localStorage !== 'undefined') {
+                  localStorage.removeItem('last_order_${slug}');
+                  localStorage.removeItem('last_order_time_${slug}');
+                  var active = localStorage.getItem('last_order_active');
+                  if (active === ${JSON.stringify(orderId || '')}) {
+                    localStorage.removeItem('last_order_active');
+                  }
+                }
+              } catch(e) {}
+            `,
+          }}
+        />
         <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4">
           <ShoppingBag className="w-8 h-8 text-gray-400" />
         </div>

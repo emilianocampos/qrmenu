@@ -14,7 +14,8 @@ export async function updateOrderMode(businessId: string, orderMode: string) {
 
     if (error) throw error;
     
-    revalidatePath('/dashboard/settings/order-mode');
+    revalidatePath('/settings/order-mode');
+    revalidatePath('/configuracion');
     return { success: true };
   } catch (error: any) {
     console.error('Error updating order mode:', error);

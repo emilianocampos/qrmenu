@@ -130,3 +130,34 @@ export async function callWaiterAction(businessId: string, tableDisplay: string)
     return { error: error.message || 'Error al llamar al mozo' };
   }
 }
+
+export async function requestBillAction(
+  businessId: string, 
+  tableDisplay: string, 
+  paymentMethod: string = 'No especificado',
+  paymentDetails?: string
+) {
+  try {
+    const supabase = await createClient();
+
+    const detailText = paymentDetails ? ` (${paymentDetails})` : '';
+    const fullDesc = `${tableDisplay} • Pago: ${paymentMethod}${detailText}`;
+
+    const { error } = await supabase
+      .from('notifications')
+      .insert({
+        business_id: businessId,
+        type: 'bill_request',
+        title: `¡${tableDisplay} pide la cuenta! 💳`,
+        description: `Medio de pago: ${paymentMethod}${detailText}`,
+        reference_type: 'table',
+      });
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error requesting bill:', error);
+    return { error: error.message || 'Error al pedir la cuenta' };
+  }
+}
+

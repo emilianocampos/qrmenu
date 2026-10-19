@@ -34,7 +34,8 @@ export function Cart({ businessId, orderMode, businessSlug, layoutStyle = 'grid'
 
       // Formatear el identificador de mesa o cliente
       let identifier = '';
-      const tableVal = customerInfo?.tableNumber || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('table') || new URLSearchParams(window.location.search).get('mesa')) : null);
+      const urlTable = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('table') || new URLSearchParams(window.location.search).get('mesa')) : null;
+      const tableVal = urlTable || customerInfo?.tableNumber;
 
       if (tableVal) {
         identifier = tableVal.toString().toLowerCase().startsWith('mesa') ? tableVal : `Mesa ${tableVal}`;
@@ -60,8 +61,15 @@ export function Cart({ businessId, orderMode, businessSlug, layoutStyle = 'grid'
 
       if (res.error) throw new Error(res.error);
 
-      if (res.stampAwarded) {
-        toast.success('🎉 ¡Sumaste 1 sello de fidelidad con tu pedido!', { icon: '🎟️', duration: 4000 });
+      if (typeof window !== 'undefined' && res.orderId) {
+        try {
+          localStorage.setItem(`last_order_${businessSlug}`, res.orderId);
+          localStorage.setItem(`last_order_${businessId}`, res.orderId);
+          localStorage.setItem('last_order_active', res.orderId);
+          localStorage.setItem(`last_order_time_${businessSlug}`, Date.now().toString());
+        } catch (e) {
+          console.error('Error saving order to localStorage:', e);
+        }
       }
 
       toast.success('¡Pedido enviado con éxito!');
@@ -156,10 +164,17 @@ export function Cart({ businessId, orderMode, businessSlug, layoutStyle = 'grid'
                         boxShadow: 'var(--shadow-card)'
                       }}
                     >
-                      {layoutStyle !== 'list' && (
+                      {layoutStyle !== 'list' && item.image_url && item.image_url !== '/placeholder.png' && item.image_url.trim() !== '' && (
                         <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0" style={{ backgroundColor: 'var(--bg-card)' }}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={item.image_url || '/placeholder.png'} alt={item.name} className="w-full h-full object-cover" />
+                          <img 
+                            src={item.image_url} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget.parentElement as HTMLElement)?.style.setProperty('display', 'none');
+                            }}
+                          />
                         </div>
                       )}
                       <div className="flex-1 flex flex-col">

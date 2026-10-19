@@ -79,6 +79,10 @@ export async function updateOrderStatus(
       updatePayload.comments = updatedComments;
     }
 
+    if (status === 'paid') {
+      updatePayload.payment_status = 'approved';
+    }
+
     const { error } = await supabase
       .from('orders')
       .update(updatePayload)
@@ -87,7 +91,32 @@ export async function updateOrderStatus(
 
     if (error) throw error;
 
-    return { success: true };
+    let stampAwarded = false;
+    if (status === 'paid') {
+      try {
+        const { data: orderData } = await supabase
+          .from('orders')
+          .select('customer_phone, customer_email')
+          .eq('id', orderId)
+          .single();
+
+        if (orderData?.customer_phone || orderData?.customer_email) {
+          const loyaltyRes = await awardStampFromOrder(
+            businessId,
+            orderData.customer_phone,
+            orderData.customer_email
+          );
+          if (loyaltyRes?.awarded) {
+            stampAwarded = true;
+          }
+        }
+      } catch (stampErr) {
+        console.error('Error awarding stamp on updateOrderStatus paid:', stampErr);
+      }
+    }
+
+    revalidatePath('/orders');
+    return { success: true, stampAwarded };
   } catch (error: any) {
     console.error('Error updating order:', error);
     return { error: error.message };
@@ -110,9 +139,31 @@ export async function markOrderAsPaid(orderId: string, businessId: string, payme
 
     if (error) throw error;
 
+    let stampAwarded = false;
+    try {
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('customer_phone, customer_email')
+        .eq('id', orderId)
+        .single();
+
+      if (orderData?.customer_phone || orderData?.customer_email) {
+        const loyaltyRes = await awardStampFromOrder(
+          businessId,
+          orderData.customer_phone,
+          orderData.customer_email
+        );
+        if (loyaltyRes?.awarded) {
+          stampAwarded = true;
+        }
+      }
+    } catch (stampErr) {
+      console.error('Error awarding stamp on markOrderAsPaid:', stampErr);
+    }
+
     revalidatePath('/orders');
     revalidatePath('/dashboard');
-    return { success: true };
+    return { success: true, stampAwarded };
   } catch (error: any) {
     console.error('Error marking order as paid:', error);
     return { error: error.message || 'Error al marcar como pagado' };
@@ -203,18 +254,7 @@ export async function createOrder(params: CreateOrderParams) {
       referenceType: 'order'
     });
 
-    // 4. Acreditar sello de fidelización si el cliente está registrado en el programa
-    let stampAwarded = false;
-    try {
-      const loyaltyRes = await awardStampFromOrder(params.businessId, params.customerPhone, params.customerEmail);
-      if (loyaltyRes?.awarded) {
-        stampAwarded = true;
-      }
-    } catch (loyaltyErr) {
-      console.error('Error awarding stamp on order:', loyaltyErr);
-    }
-
-    return { success: true, orderId: order.id, stampAwarded };
+    return { success: true, orderId: order.id, stampAwarded: false };
   } catch (error: any) {
     console.error('Error creating order:', error);
     return { error: error.message };

@@ -26,7 +26,7 @@ export async function login(formData: FormData) {
     return redirect("/login?message=" + encodeURIComponent(translateAuthError(error.message)));
   }
 
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
   redirect("/dashboard");
 }
 
@@ -78,7 +78,7 @@ export async function signup(formData: FormData) {
     }
   }
 
-  revalidatePath("/", "layout");
+  revalidatePath("/login");
   redirect("/login?message=Verifica+tu+correo+electrónico+(se+te+envió+un+mail+de+confirmación)&success=true");
 }
 

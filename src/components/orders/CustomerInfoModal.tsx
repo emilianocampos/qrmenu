@@ -2,17 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCart } from './CartContext';
-import { UtensilsCrossed, Phone, MapPin, Receipt } from 'lucide-react';
+import { UtensilsCrossed, Phone, MapPin, Receipt, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string, businessId: string }) {
-  const { customerInfo, setCustomerInfo, isHydrated, isCustomerModalOpen, setIsCustomerModalOpen } = useCart();
+  const { customerInfo, setCustomerInfo, isHydrated, isCustomerModalOpen, setIsCustomerModalOpen, isTableFromUrl } = useCart();
 
   const [tableNumber, setTableNumber] = useState('');
   const [tableCode, setTableCode] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [comanda, setComanda] = useState('');
+
+  const isLockedTable = Boolean(isTableFromUrl || customerInfo?.isTableFromUrl);
 
   useEffect(() => {
     // Wait until local storage is loaded
@@ -50,17 +52,20 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (orderMode === 'table_number' && !tableNumber) return toast.error('Ingresa tu número de mesa');
+    const finalTable = isLockedTable ? (customerInfo.tableNumber || tableNumber) : tableNumber;
+
+    if (orderMode === 'table_number' && !finalTable) return toast.error('Ingresa tu número de mesa');
     if (orderMode === 'table_code' && !tableCode) return toast.error('Ingresa el código de la mesa');
     if (orderMode === 'takeaway' && (!name || !phone)) return toast.error('Ingresa nombre y teléfono');
     if (orderMode === 'comanda' && !comanda) return toast.error('Ingresa el número de comanda');
 
     setCustomerInfo({
-      tableNumber,
+      tableNumber: finalTable,
       tableCode,
       name,
       phone,
-      comanda
+      comanda,
+      isTableFromUrl: isLockedTable
     });
 
     setIsCustomerModalOpen(false);
@@ -75,7 +80,7 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
         onClick={() => {
           // Permite cerrar si ya tienen la info completa
           const hasInfo =
-            (orderMode === 'table_number' && customerInfo.tableNumber) ||
+            (orderMode === 'table_number' && (customerInfo.tableNumber || isLockedTable)) ||
             (orderMode === 'table_code' && customerInfo.tableCode) ||
             (orderMode === 'takeaway' && customerInfo.name && customerInfo.phone) ||
             (orderMode === 'comanda' && customerInfo.comanda);
@@ -106,16 +111,36 @@ export function CustomerInfoModal({ orderMode, businessId }: { orderMode: string
         <form onSubmit={handleSubmit} className="space-y-4">
           {orderMode === 'table_number' && (
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Número de Mesa</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                  Número de Mesa
+                </label>
+                {isLockedTable && (
+                  <span className="text-[11px] font-semibold text-emerald-500 flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> Asignada por QR
+                  </span>
+                )}
+              </div>
               <input
-                type="number"
+                type="text"
                 required
+                disabled={isLockedTable}
+                readOnly={isLockedTable}
                 value={tableNumber}
-                onChange={e => setTableNumber(e.target.value)}
+                onChange={e => {
+                  if (!isLockedTable) setTableNumber(e.target.value);
+                }}
                 placeholder="Ej: 8"
-                className="w-full rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all border"
+                className={`w-full rounded-xl px-4 py-3 outline-none transition-all border ${
+                  isLockedTable ? 'opacity-80 cursor-not-allowed bg-white/5' : 'focus:ring-2 focus:ring-indigo-500'
+                }`}
                 style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
               />
+              {isLockedTable && (
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Esta mesa fue asignada automáticamente por el código QR y no se puede modificar.
+                </p>
+              )}
             </div>
           )}
 

@@ -26,7 +26,7 @@ export function ProductTable({
   return (
     <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
       {/* Table header */}
-      <div className="hidden md:grid grid-cols-[auto_1fr_120px_130px_100px_130px] gap-4 px-5 py-3 border-b border-white/8 bg-white/2">
+      <div className="hidden md:grid grid-cols-[auto_1fr_140px_130px_100px_130px] gap-4 px-5 py-3 border-b border-white/8 bg-white/2">
         <div className="w-12" />
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</p>
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Precio</p>
@@ -38,10 +38,11 @@ export function ProductTable({
       <ul className="divide-y divide-white/5">
         {products.map(p => {
           const catName = categories.find(c => c.id === p.category_id)?.name ?? '—';
+          const isUnpriced = Number(p.price) <= 0;
           return (
             <li
               key={p.id}
-              className="grid grid-cols-1 md:grid-cols-[auto_1fr_120px_130px_100px_130px] gap-4 px-5 py-4 items-center hover:bg-white/[0.02] transition-colors"
+              className="grid grid-cols-1 md:grid-cols-[auto_1fr_140px_130px_100px_130px] gap-4 px-5 py-4 items-center hover:bg-white/[0.02] transition-colors"
             >
               {/* Image */}
               <div className="hidden md:block w-12 h-12 rounded-xl overflow-hidden bg-white/5 flex-shrink-0">
@@ -71,7 +72,19 @@ export function ProductTable({
               </div>
 
               {/* Price */}
-              <p className="text-sm font-medium text-white">${Number(p.price).toFixed(2)}</p>
+              <div className="min-w-0">
+                <p className={`text-sm font-medium ${isUnpriced ? 'text-amber-400' : 'text-white'}`}>
+                  ${Number(p.price).toFixed(2)}
+                </p>
+                {isUnpriced && (
+                  <span
+                    className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/25 whitespace-nowrap"
+                    title="Plato sin precio: se mantiene oculto automáticamente en la carta pública de los clientes."
+                  >
+                    ⚠️ Sin precio (Oculto)
+                  </span>
+                )}
+              </div>
 
               {/* Category */}
               <p className="text-sm text-gray-400 truncate">{catName}</p>

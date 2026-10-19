@@ -73,6 +73,12 @@ export function OrderCard({ order, businessId, waiterSettings }: OrderCardProps)
       if (res.error) throw new Error(res.error);
       if (waiterName) {
         toast.success(`Pedido aceptado (Mozo: ${waiterName})`);
+      } else if (newStatus === 'paid') {
+        if (res.stampAwarded) {
+          toast.success('¡Pedido pagado! Sello de fidelidad acreditado al cliente 🎟️');
+        } else {
+          toast.success('Pedido marcado como pagado');
+        }
       } else {
         toast.success('Estado actualizado');
       }

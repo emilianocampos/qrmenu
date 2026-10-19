@@ -22,10 +22,15 @@ const NEON_COLORS = [
 
 
 export function VintageMenuSection({ products, currencySymbol = '$', vintageColorMode = 'multicolor', vintageColor = '#ff4500', orderMode = 'menu_only' }: VintageMenuSectionProps) {
+  // Filter products that have a valid price > 0
+  const validProducts = useMemo(() => {
+    return products.filter(p => Number(p.price) > 0);
+  }, [products]);
+
   // Group products by category
   const categories = useMemo(() => {
     const map = new Map<string, { id: string, name: string, products: Product[] }>();
-    products.forEach(p => {
+    validProducts.forEach(p => {
       if (p.category) {
         if (!map.has(p.category.id)) {
           map.set(p.category.id, { id: p.category.id, name: p.category.name, products: [] });
@@ -33,11 +38,13 @@ export function VintageMenuSection({ products, currencySymbol = '$', vintageColo
         map.get(p.category.id)!.products.push(p);
       }
     });
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [products]);
+    return Array.from(map.values())
+      .filter(c => c.products.length > 0)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [validProducts]);
 
   // If no products, fallback to empty state
-  if (products.length === 0) {
+  if (validProducts.length === 0) {
     return (
       <div className="py-20 text-center" style={{ color: 'var(--text-muted)', backgroundColor: 'transparent' }}>
         <p>No hay productos disponibles.</p>
