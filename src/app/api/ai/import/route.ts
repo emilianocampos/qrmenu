@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from "@google/genai";
 
-interface AICategory {
+export interface AIProduct {
   name: string;
-  icon: string;
-  products: {
-    name: string;
-    description: string;
-    price: number;
-  }[];
+  description: string;
+  price: number;
 }
+
+export interface AISubcategory {
+  name: string;
+  products: AIProduct[];
+}
+
+export interface AICategory {
+  name: string;
+  icon?: string;
+  subcategories?: AISubcategory[];
+  products?: AIProduct[];
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { fileUrl, base64Data, fileName, mimeType } = await req.json();
@@ -43,42 +52,77 @@ export async function POST(req: NextRequest) {
         },
       }] : []),
       {
-        text: `Analizá esta carta de restaurante y extraé toda la información en formato JSON.
+        text: `Analizá esta carta o menú de restaurante y extraé toda la información estructurada en categorías, subcategorías y productos en formato JSON.
         
-Devolvé ÚNICAMENTE un JSON válido con esta estructura (sin markdown, sin explicaciones):
+Devolvé ÚNICAMENTE un JSON válido con esta estructura (sin markdown, sin explicaciones, sin texto antes ni después):
 {
   "categories": [
     {
-      "name": "Nombre de la categoría",
+      "name": "Nombre de la categoría principal (ej: MOSTRADOR, CAFETERÍA, BEBIDAS, POSTRES)",
       "icon": "emoji representativo",
-      "products": [
+      "subcategories": [
         {
-          "name": "Nombre del producto",
-          "description": "Descripción breve",
-          "price": 0.00
+          "name": "Nombre de la subcategoría (ej: COOKIES, PASTRY, LINGOTES, ECLAIRS, PORCIONES CLÁSICAS, LAMINADOS)",
+          "products": [
+            {
+              "name": "Nombre del producto",
+              "description": "Descripción, sabores o ingredientes si hay",
+              "price": 0.00
+            }
+          ]
         }
-      ]
+      ],
+      "products": []
     }
   ]
 }
 
-Reglas:
-- Si hay categorías, agrupá los productos en ellas
-- Si no hay categorías explícitas, creá categorías lógicas
-- Los precios deben ser números (float), sin símbolo de moneda
-- Si no hay precio visible, usá 0
-- Los emojis de íconos deben ser representativos del tipo de comida
-- La descripción debe ser corta (máximo 80 caracteres)
-- Respondé siempre en español`
+Reglas obligatorias:
+- CATEGORÍAS Y SUBCATEGORÍAS:
+  * Identificá la categoría principal (ej: "MOSTRADOR", "CAFETERÍA", "COCINA", etc.).
+  * Si dentro de una categoría hay secciones secundarias, grupos o subtítulos (como "COOKIES", "PASTRY", "LINGOTES", "ECLAIRS", "PORCIONES CLÁSICAS", "LAMINADOS" dentro de "MOSTRADOR"), organizalos dentro de 'subcategories' con sus productos.
+  * Si una categoría NO tiene divisiones secundarias, colocá los productos directamente en 'products' (o con subcategories vacía).
+- PRECIOS:
+  * Los precios deben ser números (float o int), sin símbolos de moneda ($) ni puntos de miles (ej: 4200, 6900, 11900, 10500, 3000).
+  * Si no hay precio visible, usá 0.
+- PRODUCTOS:
+  * La descripción debe ser concisa (máximo 120 caracteres).
+  * No inventes productos no presentes en la carta.
+- FORMATO:
+  * Emojis representativos en 'icon' (ej: 🧁 para pastelería, ☕ para café, 🍷 para vinos).
+  * Respondé siempre en español.`
       },
     ];
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: parts,
-    });
+    let response: any = null;
+    let attempts = 0;
+    const maxAttempts = 3;
 
-    const rawText = response.text || '';
+    while (attempts < maxAttempts) {
+      try {
+        attempts++;
+        response = await ai.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: parts,
+        });
+        break;
+      } catch (genErr: any) {
+        const isUnavailable =
+          genErr?.message?.includes('503') ||
+          genErr?.message?.includes('high demand') ||
+          genErr?.message?.includes('UNAVAILABLE') ||
+          genErr?.status === 503;
+
+        if (isUnavailable && attempts < maxAttempts) {
+          console.log(`Gemini ocupado (intento ${attempts}/${maxAttempts}), reintentando en ${attempts * 1500}ms...`);
+          await new Promise(r => setTimeout(r, attempts * 1500));
+        } else {
+          throw genErr;
+        }
+      }
+    }
+
+    const rawText = response?.text || '';
 
     // Parse JSON from response (may be wrapped in ```json ... ```)
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -92,6 +136,39 @@ Reglas:
 
     const parsed = JSON.parse(jsonMatch[0]);
 
+    // Normalize categories so subcategories and products are arrays
+    if (Array.isArray(parsed.categories)) {
+      parsed.categories = parsed.categories.map((cat: any) => {
+        const subcategories: AISubcategory[] = Array.isArray(cat.subcategories)
+          ? cat.subcategories.map((sub: any) => ({
+              name: String(sub.name || 'General').trim(),
+              products: Array.isArray(sub.products)
+                ? sub.products.map((p: any) => ({
+                    name: String(p.name || 'Producto').trim(),
+                    description: p.description ? String(p.description).trim() : '',
+                    price: Number(p.price) || 0,
+                  }))
+                : [],
+            }))
+          : [];
+
+        const directProducts: AIProduct[] = Array.isArray(cat.products)
+          ? cat.products.map((p: any) => ({
+              name: String(p.name || 'Producto').trim(),
+              description: p.description ? String(p.description).trim() : '',
+              price: Number(p.price) || 0,
+            }))
+          : [];
+
+        return {
+          name: String(cat.name || 'Categoría').trim(),
+          icon: cat.icon || '📋',
+          subcategories,
+          products: directProducts,
+        };
+      });
+    }
+
     return NextResponse.json(parsed);
   } catch (err: unknown) {
     console.error('AI import error:', err);
@@ -99,9 +176,17 @@ Reglas:
       const fs = require('fs');
       fs.writeFileSync('C:\\Users\\Emi\\Desktop\\carta_qr\\gemini_error.txt', 'Catch error:\n' + (err instanceof Error ? err.stack : String(err)));
     } catch (e) { }
+
+    const errMsg = err instanceof Error ? err.message : String(err);
+    const is503 = errMsg.includes('503') || errMsg.includes('high demand') || errMsg.includes('UNAVAILABLE');
+
+    const clientMsg = is503
+      ? 'El servicio de IA de Google está con alta demanda temporal. Por favor, volvé a hacer clic en "Analizar con IA" en unos segundos.'
+      : (err instanceof Error ? err.message : 'Error interno al procesar el archivo');
+
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Error interno del servidor' },
-      { status: 500 }
+      { error: clientMsg },
+      { status: is503 ? 503 : 500 }
     );
   }
 }

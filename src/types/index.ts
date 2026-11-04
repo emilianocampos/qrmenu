@@ -81,6 +81,7 @@ export type Product = {
   id: string;
   business_id: string;
   category_id: string | null;
+  subcategory?: string | null;
   name: string;
   description: string | null;
   price: number;

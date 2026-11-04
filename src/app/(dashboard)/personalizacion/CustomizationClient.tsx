@@ -756,21 +756,21 @@ export function CustomizationClient({ business }: { business: Business }) {
 
                       {/* Vintage Product List */}
                       <div className="space-y-2 px-1">
-                        <div className="flex flex-col">
-                          <div className="flex items-end justify-between gap-1 w-full">
-                            <span className="font-bold text-[9px] uppercase tracking-wide shrink-0">Café Especial</span>
-                            <div className="flex-grow border-b border-dotted mb-[4px] opacity-40 shrink mx-1" style={{ borderColor: 'currentColor' }} />
-                            <span className="font-bold text-[9px] shrink-0">$3.50</span>
+                        <div className="flex flex-col w-full min-w-0">
+                          <div className="flex items-end justify-between gap-1 w-full min-w-0">
+                            <span className="font-bold text-[9px] uppercase tracking-wide min-w-0 break-words leading-tight">Café Especial</span>
+                            <div className="flex-grow border-b border-dotted mb-[3px] opacity-40 shrink min-w-[8px] mx-1" style={{ borderColor: 'currentColor' }} />
+                            <span className="font-bold text-[9px] shrink-0 whitespace-nowrap">$3.50</span>
                           </div>
-                          <p className="text-[7px] mt-0.5 leading-snug" style={{ opacity: 0.7 }}>Doble shot de espresso con leche cremosa.</p>
+                          <p className="text-[7px] mt-0.5 leading-snug break-words" style={{ opacity: 0.7 }}>Doble shot de espresso con leche cremosa.</p>
                         </div>
-                        <div className="flex flex-col">
-                          <div className="flex items-end justify-between gap-1 w-full">
-                            <span className="font-bold text-[9px] uppercase tracking-wide shrink-0">Tostado</span>
-                            <div className="flex-grow border-b border-dotted mb-[4px] opacity-40 shrink mx-1" style={{ borderColor: 'currentColor' }} />
-                            <span className="font-bold text-[9px] shrink-0">$4.00</span>
+                        <div className="flex flex-col w-full min-w-0">
+                          <div className="flex items-end justify-between gap-1 w-full min-w-0">
+                            <span className="font-bold text-[9px] uppercase tracking-wide min-w-0 break-words leading-tight">Tostado</span>
+                            <div className="flex-grow border-b border-dotted mb-[3px] opacity-40 shrink min-w-[8px] mx-1" style={{ borderColor: 'currentColor' }} />
+                            <span className="font-bold text-[9px] shrink-0 whitespace-nowrap">$4.00</span>
                           </div>
-                          <p className="text-[7px] mt-0.5 leading-snug" style={{ opacity: 0.7 }}>Pan de masamadre con jamón y queso.</p>
+                          <p className="text-[7px] mt-0.5 leading-snug break-words" style={{ opacity: 0.7 }}>Pan de masamadre con jamón y queso.</p>
                         </div>
                       </div>
                     </div>

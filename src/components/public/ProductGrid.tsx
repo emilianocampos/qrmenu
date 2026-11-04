@@ -13,14 +13,37 @@ interface ProductGridProps {
   onResetSearch?: () => void;
 }
 
-export function ProductGrid({ 
-  products, 
-  currencySymbol = '$', 
-  layoutStyle = 'grid', 
-  orderMode = 'menu_only', 
+export function ProductGrid({
+  products,
+  currencySymbol = '$',
+  layoutStyle = 'grid',
+  orderMode = 'menu_only',
   tableOrdersEnabled = false,
-  onResetSearch 
+  onResetSearch
 }: ProductGridProps) {
+  // Check if any product has a subcategory
+  const hasSubcategories = React.useMemo(() => {
+    return products.some(p => !!p.subcategory?.trim());
+  }, [products]);
+
+  const groups = React.useMemo(() => {
+    if (!hasSubcategories) return [{ subcategory: null, items: products }];
+    const list: { subcategory: string | null; items: Product[] }[] = [];
+    const map = new Map<string | null, Product[]>();
+
+    products.forEach(p => {
+      const sub = p.subcategory?.trim() || null;
+      if (!map.has(sub)) {
+        const arr: Product[] = [];
+        map.set(sub, arr);
+        list.push({ subcategory: sub, items: arr });
+      }
+      map.get(sub)!.push(p);
+    });
+
+    return list;
+  }, [products, hasSubcategories]);
+
   if (products.length === 0) {
     return (
       <div style={{
@@ -58,13 +81,40 @@ export function ProductGrid({
   }
 
   return (
-    <div 
-      style={{
-        display: 'grid',
-        gap: '1.5rem',
-      }}
-      className="product-grid"
-    >
+    <div className="space-y-10">
+      {groups.map((group, gIdx) => (
+        <div key={group.subcategory || `g-${gIdx}`} className="space-y-4">
+          {group.subcategory && (
+            <div className="flex items-center gap-3 pt-2">
+              <span className="text-xs md:text-sm font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-lg border border-indigo-500/20">
+                {group.subcategory}
+              </span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+          )}
+
+          <div
+            style={{
+              display: 'grid',
+              gap: '1.5rem',
+            }}
+            className="product-grid"
+          >
+            {group.items.map((product, index) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                currencySymbol={currencySymbol}
+                layoutStyle={layoutStyle}
+                orderMode={orderMode}
+                tableOrdersEnabled={tableOrdersEnabled}
+                isFirst={gIdx === 0 && index === 0}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+
       <style>{`
         .product-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
         ${layoutStyle !== 'list' ? `
@@ -74,17 +124,6 @@ export function ProductGrid({
         @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         `}
       `}</style>
-      {products.map((product, index) => (
-        <ProductCard 
-          key={product.id} 
-          product={product} 
-          currencySymbol={currencySymbol} 
-          layoutStyle={layoutStyle} 
-          orderMode={orderMode}
-          tableOrdersEnabled={tableOrdersEnabled}
-          isFirst={index === 0}
-        />
-      ))}
     </div>
   );
 }

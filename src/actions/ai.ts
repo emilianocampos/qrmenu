@@ -4,16 +4,24 @@
 // Aquí traemos la función que nos permite interactuar con la base de datos de Supabase desde un entorno seguro (el servidor).
 import { createClient } from '@/lib/supabase/server';
 
-// 2. Definir la interfaz TypeScript para las categorías.
+// 2. Definir la interfaz TypeScript para las categorías y subcategorías.
 // Esta interfaz asegura que los datos devueltos por la IA tengan siempre la misma estructura.
-interface AICategory {
+export interface AIProduct {
+  name: string;
+  description: string;
+  price: number;
+}
+
+export interface AISubcategory {
+  name: string;
+  products: AIProduct[];
+}
+
+export interface AICategory {
   name: string;
   icon?: string;
-  products: {
-    name: string;
-    description: string;
-    price: number;
-  }[];
+  subcategories?: AISubcategory[];
+  products?: AIProduct[];
 }
 
 // ============================================================================
@@ -80,33 +88,45 @@ export async function importMenuAI(businessId: string, fileUrl: string, mimeType
       parts.push({ inlineData });
     }
     parts.push({
-      text: `Analizá esta carta de restaurante y extraé toda la información en formato JSON.
+      text: `Analizá esta carta o menú de restaurante y extraé toda la información estructurada en categorías, subcategorías y productos en formato JSON.
               
-Devolvé ÚNICAMENTE un JSON válido con esta estructura (sin markdown, sin explicaciones):
+Devolvé ÚNICAMENTE un JSON válido con esta estructura (sin markdown, sin explicaciones, sin texto antes ni después):
 {
   "categories": [
     {
-      "name": "Nombre de la categoría",
+      "name": "Nombre de la categoría principal (ej: MOSTRADOR, CAFETERÍA, BEBIDAS, POSTRES)",
       "icon": "emoji representativo",
-      "products": [
+      "subcategories": [
         {
-          "name": "Nombre del producto",
-          "description": "Descripción breve",
-          "price": 0.00
+          "name": "Nombre de la subcategoría (ej: COOKIES, PASTRY, LINGOTES, ECLAIRS, PORCIONES CLÁSICAS, LAMINADOS)",
+          "products": [
+            {
+              "name": "Nombre del producto",
+              "description": "Descripción, sabores o ingredientes si hay",
+              "price": 0.00
+            }
+          ]
         }
-      ]
+      ],
+      "products": []
     }
   ]
 }
 
-Reglas:
-- Si hay categorías, agrupá los productos en ellas
-- Si no hay categorías explícitas, creá categorías lógicas
-- Los precios deben ser números (float), sin símbolo de moneda
-- Si no hay precio visible, usá 0
-- Los emojis de íconos deben ser representativos del tipo de comida
-- La descripción debe ser corta (máximo 80 caracteres)
-- Respondé siempre en español`
+Reglas obligatorias:
+- CATEGORÍAS Y SUBCATEGORÍAS:
+  * Identificá la categoría principal (ej: "MOSTRADOR", "CAFETERÍA", "COCINA", etc.).
+  * Si dentro de una categoría hay secciones secundarias, grupos o subtítulos (como "COOKIES", "PASTRY", "LINGOTES", "ECLAIRS", "PORCIONES CLÁSICAS", "LAMINADOS" dentro de "MOSTRADOR"), organizalos dentro de 'subcategories' con sus productos.
+  * Si una categoría NO tiene divisiones secundarias, colocá los productos directamente en 'products' (o con subcategories vacía).
+- PRECIOS:
+  * Los precios deben ser números (float o int), sin símbolos de moneda ($) ni puntos de miles (ej: 4200, 6900, 11900, 10500, 3000).
+  * Si no hay precio visible, usá 0.
+- PRODUCTOS:
+  * La descripción debe ser concisa (máximo 120 caracteres).
+  * No inventes productos no presentes en la carta.
+- FORMATO:
+  * Emojis representativos en 'icon' (ej: 🧁 para pastelería, ☕ para café, 🍷 para vinos).
+  * Respondé siempre en español.`
     });
 
     // 8. Llamar a la API de Inteligencia Artificial (Gemini).

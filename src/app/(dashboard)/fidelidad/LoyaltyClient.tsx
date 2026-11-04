@@ -51,6 +51,7 @@ export function LoyaltyClient({
 }: LoyaltyClientProps) {
   const [settings, setSettings] = useState<LoyaltySettings>(initialSettings);
   const [subscribers, setSubscribers] = useState<CustomerLoyaltyData[]>(initialSubscribers);
+  const [activeTab, setActiveTab] = useState<'stamps' | 'raffle'>('stamps');
   const [searchQuery, setSearchQuery] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);

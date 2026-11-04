@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Sparkles, Loader2, Check, Plus, Trash2, X, ChevronDown, ChevronUp, Database } from 'lucide-react';
+import { Sparkles, Loader2, Check, Plus, Trash2, X, ChevronDown, ChevronUp, Database, Layers } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { UploadDropzone } from '@/components/ui/UploadDropzone';
 import { createClient } from '@/lib/supabase/client';
@@ -9,16 +9,22 @@ import { MaxiRestImportTab } from '@/components/import/MaxiRestImportTab';
 import { Business } from '@/types';
 import { toast } from 'sonner';
 
-interface AICategory {
-  name: string;
-  products: AIProduct[];
-  icon?: string;
-}
-
 interface AIProduct {
   name: string;
   description: string;
   price: number;
+}
+
+interface AISubcategory {
+  name: string;
+  products: AIProduct[];
+}
+
+interface AICategory {
+  name: string;
+  icon?: string;
+  subcategories?: AISubcategory[];
+  products?: AIProduct[];
 }
 
 interface ImportClientProps {
@@ -53,49 +59,105 @@ export function ImportClient({ business }: ImportClientProps) {
     }
   };
 
+  const fileToBase64 = async (f: File): Promise<{ base64Data: string; mimeType: string }> => {
+    if (f.type.startsWith('image/')) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 1920;
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              const raw = (e.target?.result as string).split(',')[1];
+              resolve({ base64Data: raw, mimeType: f.type });
+              return;
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            resolve({ base64Data: dataUrl.split(',')[1], mimeType: 'image/jpeg' });
+          };
+          img.onerror = () => {
+            const raw = (e.target?.result as string).split(',')[1];
+            resolve({ base64Data: raw, mimeType: f.type });
+          };
+          img.src = e.target?.result as string;
+        };
+        reader.onerror = () => {
+          resolve({ base64Data: '', mimeType: f.type });
+        };
+        reader.readAsDataURL(f);
+      });
+    }
+
+    // PDF or other documents
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve({ base64Data: result.split(',')[1], mimeType: f.type });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(f);
+    });
+  };
+
   const handleAnalyze = async () => {
     if (!file) return;
     setIsAnalyzing(true);
     setError(null);
 
+    const toastId = toast.loading('Analizando menú con IA...');
+
     try {
-      // Leer el archivo como Base64 directamente en el cliente
-      const base64Data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]); // Remover prefijo "data:image/jpeg;base64,"
-        };
-        reader.onerror = error => reject(error);
-      });
+      const { base64Data, mimeType } = await fileToBase64(file);
 
-      const toastId = toast.loading('Analizando menú con IA...');
-
-      // Call the AI import route directly with base64 instead of uploading to Supabase
       const response = await fetch('/api/ai/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base64Data, fileName: file.name, mimeType: file.type }),
+        body: JSON.stringify({ base64Data, fileName: file.name, mimeType }),
       });
+
+      const responseText = await response.text();
+      let data: any = null;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        toast.dismiss(toastId);
+        if (response.status === 503 || responseText.includes('high demand') || responseText.includes('UNAVAILABLE')) {
+          throw new Error('El servicio de IA está con alta demanda momentánea. Por favor, volvé a intentar en unos segundos.');
+        }
+        if (response.status === 413) {
+          throw new Error('El archivo es demasiado grande. Probá con una imagen más liviana.');
+        }
+        throw new Error(`Error del servidor (${response.status}). Por favor, intentá nuevamente.`);
+      }
 
       if (!response.ok) {
         toast.dismiss(toastId);
-        if (response.status === 503) {
-          throw new Error('El servicio de IA está temporalmente sobrecargado. Por favor, intente nuevamente.');
-        }
-        const err = await response.json();
-        throw new Error(err.error ?? 'Error al analizar el archivo');
+        throw new Error(data?.error || `Error (${response.status}) al analizar el archivo`);
       }
 
-      const data = await response.json();
       setAiResult(data.categories);
       setEditableResult(JSON.parse(JSON.stringify(data.categories)));
-      // Expand all by default
       setExpandedCats(new Set(data.categories.map((_: unknown, i: number) => i)));
       toast.dismiss(toastId);
       toast.success('Análisis completado');
     } catch (err: unknown) {
+      toast.dismiss(toastId);
       const msg = err instanceof Error ? err.message : 'Error desconocido';
       setError(msg);
       toast.error(msg);
@@ -117,9 +179,16 @@ export function ImportClient({ business }: ImportClientProps) {
           body: JSON.stringify({ businessId: business.id, categories: editableResult }),
         });
 
+        const responseText = await response.text();
+        let data: any = null;
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          throw new Error(`Error del servidor (${response.status}) al guardar.`);
+        }
+
         if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error ?? 'Error al guardar');
+          throw new Error(data?.error ?? 'Error al guardar');
         }
 
         toast.dismiss(toastId);
@@ -143,6 +212,12 @@ export function ImportClient({ business }: ImportClientProps) {
     });
   };
 
+  const getCatProductCount = (cat: AICategory) => {
+    const direct = cat.products?.length || 0;
+    const sub = cat.subcategories?.reduce((acc, s) => acc + (s.products?.length || 0), 0) || 0;
+    return direct + sub;
+  };
+
   const updateCatName = (idx: number, name: string) => {
     setEditableResult(prev => {
       if (!prev) return prev;
@@ -152,11 +227,93 @@ export function ImportClient({ business }: ImportClientProps) {
     });
   };
 
+  // Subcategory management
+  const updateSubcatName = (catIdx: number, subIdx: number, name: string) => {
+    setEditableResult(prev => {
+      if (!prev) return prev;
+      const next = [...prev];
+      const subcategories = [...(next[catIdx].subcategories || [])];
+      subcategories[subIdx] = { ...subcategories[subIdx], name };
+      next[catIdx] = { ...next[catIdx], subcategories };
+      return next;
+    });
+  };
+
+  const removeSubcat = (catIdx: number, subIdx: number) => {
+    setEditableResult(prev => {
+      if (!prev) return prev;
+      const next = [...prev];
+      const subcategories = [...(next[catIdx].subcategories || [])];
+      subcategories.splice(subIdx, 1);
+      next[catIdx] = { ...next[catIdx], subcategories };
+      return next;
+    });
+  };
+
+  const addSubcat = (catIdx: number) => {
+    setEditableResult(prev => {
+      if (!prev) return prev;
+      const next = [...prev];
+      const subcategories = [...(next[catIdx].subcategories || [])];
+      subcategories.push({
+        name: 'Nueva subcategoría',
+        products: [{ name: '', description: '', price: 0 }],
+      });
+      next[catIdx] = { ...next[catIdx], subcategories };
+      return next;
+    });
+  };
+
+  const updateSubcatProduct = (
+    catIdx: number,
+    subIdx: number,
+    pIdx: number,
+    field: keyof AIProduct,
+    value: string | number
+  ) => {
+    setEditableResult(prev => {
+      if (!prev) return prev;
+      const next = [...prev];
+      const subcategories = [...(next[catIdx].subcategories || [])];
+      const products = [...subcategories[subIdx].products];
+      products[pIdx] = { ...products[pIdx], [field]: value };
+      subcategories[subIdx] = { ...subcategories[subIdx], products };
+      next[catIdx] = { ...next[catIdx], subcategories };
+      return next;
+    });
+  };
+
+  const removeSubcatProduct = (catIdx: number, subIdx: number, pIdx: number) => {
+    setEditableResult(prev => {
+      if (!prev) return prev;
+      const next = [...prev];
+      const subcategories = [...(next[catIdx].subcategories || [])];
+      const products = [...subcategories[subIdx].products];
+      products.splice(pIdx, 1);
+      subcategories[subIdx] = { ...subcategories[subIdx], products };
+      next[catIdx] = { ...next[catIdx], subcategories };
+      return next;
+    });
+  };
+
+  const addSubcatProduct = (catIdx: number, subIdx: number) => {
+    setEditableResult(prev => {
+      if (!prev) return prev;
+      const next = [...prev];
+      const subcategories = [...(next[catIdx].subcategories || [])];
+      const products = [...subcategories[subIdx].products, { name: '', description: '', price: 0 }];
+      subcategories[subIdx] = { ...subcategories[subIdx], products };
+      next[catIdx] = { ...next[catIdx], subcategories };
+      return next;
+    });
+  };
+
+  // Direct product management
   const updateProduct = (catIdx: number, pIdx: number, field: keyof AIProduct, value: string | number) => {
     setEditableResult(prev => {
       if (!prev) return prev;
       const next = [...prev];
-      const products = [...next[catIdx].products];
+      const products = [...(next[catIdx].products || [])];
       products[pIdx] = { ...products[pIdx], [field]: value };
       next[catIdx] = { ...next[catIdx], products };
       return next;
@@ -167,7 +324,7 @@ export function ImportClient({ business }: ImportClientProps) {
     setEditableResult(prev => {
       if (!prev) return prev;
       const next = [...prev];
-      const products = [...next[catIdx].products];
+      const products = [...(next[catIdx].products || [])];
       products.splice(pIdx, 1);
       next[catIdx] = { ...next[catIdx], products };
       return next;
@@ -178,10 +335,8 @@ export function ImportClient({ business }: ImportClientProps) {
     setEditableResult(prev => {
       if (!prev) return prev;
       const next = [...prev];
-      next[catIdx] = {
-        ...next[catIdx],
-        products: [...next[catIdx].products, { name: '', description: '', price: 0 }],
-      };
+      const products = [...(next[catIdx].products || []), { name: '', description: '', price: 0 }];
+      next[catIdx] = { ...next[catIdx], products };
       return next;
     });
   };
@@ -350,7 +505,7 @@ export function ImportClient({ business }: ImportClientProps) {
                         onClick={e => e.stopPropagation()}
                         className="flex-1 bg-transparent text-sm font-semibold text-white focus:outline-none"
                       />
-                      <span className="text-xs text-gray-500">{cat.products.length} productos</span>
+                      <span className="text-xs text-gray-500">{getCatProductCount(cat)} productos</span>
                       <button
                         onClick={e => { e.stopPropagation(); removeCategory(catIdx); }}
                         className="text-gray-600 hover:text-rose-400 transition-colors"
@@ -361,47 +516,183 @@ export function ImportClient({ business }: ImportClientProps) {
                     </div>
 
                     {expandedCats.has(catIdx) && (
-                      <div className="border-t border-white/8 p-3 space-y-2">
-                        {cat.products.map((p, pIdx) => (
-                          <div key={pIdx} className="grid grid-cols-[1fr_80px_auto] gap-2 items-start bg-white/[0.02] rounded-lg p-3">
-                            <div className="space-y-1.5">
-                              <input
-                                type="text"
-                                value={p.name}
-                                onChange={e => updateProduct(catIdx, pIdx, 'name', e.target.value)}
-                                placeholder="Nombre"
-                                className="w-full bg-transparent text-sm text-white placeholder-gray-600 focus:outline-none border-b border-white/10 pb-1"
-                              />
-                              <input
-                                type="text"
-                                value={p.description}
-                                onChange={e => updateProduct(catIdx, pIdx, 'description', e.target.value)}
-                                placeholder="Descripción"
-                                className="w-full bg-transparent text-xs text-gray-400 placeholder-gray-600 focus:outline-none"
-                              />
-                            </div>
-                            <input
-                              type="number"
-                              value={p.price}
-                              onChange={e => updateProduct(catIdx, pIdx, 'price', parseFloat(e.target.value) || 0)}
-                              className="bg-white/5 border border-white/10 text-white text-sm rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 text-right"
-                            />
+                      <div className="border-t border-white/8 p-3 space-y-4">
+                        {/* Subcategories (if any) */}
+                        {cat.subcategories && cat.subcategories.length > 0 && (
+                          <div className="space-y-3">
+                            {cat.subcategories.map((sub, subIdx) => (
+                              <div
+                                key={subIdx}
+                                className="bg-white/[0.02] border border-white/10 rounded-xl p-3 space-y-2.5"
+                              >
+                                {/* Subcategory Header */}
+                                <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                                  <Layers className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                                  <input
+                                    type="text"
+                                    value={sub.name}
+                                    onChange={e => updateSubcatName(catIdx, subIdx, e.target.value)}
+                                    placeholder="Nombre de subcategoría (ej: PASTRY, COOKIES)"
+                                    className="flex-1 bg-transparent text-xs font-bold uppercase tracking-wider text-indigo-300 focus:outline-none"
+                                  />
+                                  <span className="text-[11px] text-gray-500 shrink-0">
+                                    {sub.products.length} platos
+                                  </span>
+                                  <button
+                                    onClick={() => removeSubcat(catIdx, subIdx)}
+                                    className="text-gray-600 hover:text-rose-400 transition-colors p-1"
+                                    title="Eliminar subcategoría"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                {/* Products inside this subcategory */}
+                                <div className="space-y-2">
+                                  {sub.products.map((p, pIdx) => (
+                                    <div
+                                      key={pIdx}
+                                      className="grid grid-cols-[1fr_80px_auto] gap-2 items-start bg-white/[0.02] rounded-lg p-2.5"
+                                    >
+                                      <div className="space-y-1">
+                                        <input
+                                          type="text"
+                                          value={p.name}
+                                          onChange={e =>
+                                            updateSubcatProduct(catIdx, subIdx, pIdx, 'name', e.target.value)
+                                          }
+                                          placeholder="Nombre del plato"
+                                          className="w-full bg-transparent text-sm text-white placeholder-gray-600 focus:outline-none border-b border-white/10 pb-0.5"
+                                        />
+                                        <input
+                                          type="text"
+                                          value={p.description}
+                                          onChange={e =>
+                                            updateSubcatProduct(catIdx, subIdx, pIdx, 'description', e.target.value)
+                                          }
+                                          placeholder="Descripción o sabores"
+                                          className="w-full bg-transparent text-xs text-gray-400 placeholder-gray-600 focus:outline-none"
+                                        />
+                                      </div>
+                                      <div className="relative">
+                                        <input
+                                          type="number"
+                                          value={p.price}
+                                          onChange={e =>
+                                            updateSubcatProduct(
+                                              catIdx,
+                                              subIdx,
+                                              pIdx,
+                                              'price',
+                                              parseFloat(e.target.value) || 0
+                                            )
+                                          }
+                                          className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 text-right"
+                                        />
+                                      </div>
+                                      <button
+                                        onClick={() => removeSubcatProduct(catIdx, subIdx, pIdx)}
+                                        className="text-gray-600 hover:text-rose-400 transition-colors p-1"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  ))}
+
+                                  <button
+                                    onClick={() => addSubcatProduct(catIdx, subIdx)}
+                                    className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs text-indigo-400/80
+                                               hover:text-indigo-300 hover:bg-indigo-500/10 border border-dashed border-indigo-500/20 transition-all"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    Agregar plato a {sub.name || 'subcategoría'}
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+
                             <button
-                              onClick={() => removeProduct(catIdx, pIdx)}
-                              className="text-gray-600 hover:text-rose-400 transition-colors p-1"
+                              onClick={() => addSubcat(catIdx)}
+                              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium text-indigo-400
+                                         hover:text-indigo-300 hover:bg-indigo-500/10 border border-dashed border-indigo-500/30 transition-all"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Plus className="w-3.5 h-3.5" />
+                              Agregar otra subcategoría
                             </button>
                           </div>
-                        ))}
-                        <button
-                          onClick={() => addProduct(catIdx)}
-                          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs text-gray-500
-                                     hover:text-white hover:bg-white/5 border border-dashed border-white/10 transition-all"
-                        >
-                          <Plus className="w-3 h-3" />
-                          Agregar producto
-                        </button>
+                        )}
+
+                        {/* Direct products (or if no subcategories exist) */}
+                        {(!cat.subcategories || cat.subcategories.length === 0 || (cat.products && cat.products.length > 0)) && (
+                          <div className="space-y-2">
+                            {cat.subcategories && cat.subcategories.length > 0 && (
+                              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                                Platos generales sin subcategoría
+                              </p>
+                            )}
+
+                            {(cat.products || []).map((p, pIdx) => (
+                              <div
+                                key={pIdx}
+                                className="grid grid-cols-[1fr_80px_auto] gap-2 items-start bg-white/[0.02] rounded-lg p-3"
+                              >
+                                <div className="space-y-1.5">
+                                  <input
+                                    type="text"
+                                    value={p.name}
+                                    onChange={e => updateProduct(catIdx, pIdx, 'name', e.target.value)}
+                                    placeholder="Nombre"
+                                    className="w-full bg-transparent text-sm text-white placeholder-gray-600 focus:outline-none border-b border-white/10 pb-1"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={p.description}
+                                    onChange={e => updateProduct(catIdx, pIdx, 'description', e.target.value)}
+                                    placeholder="Descripción"
+                                    className="w-full bg-transparent text-xs text-gray-400 placeholder-gray-600 focus:outline-none"
+                                  />
+                                </div>
+                                <input
+                                  type="number"
+                                  value={p.price}
+                                  onChange={e =>
+                                    updateProduct(catIdx, pIdx, 'price', parseFloat(e.target.value) || 0)
+                                  }
+                                  className="bg-white/5 border border-white/10 text-white text-sm rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 text-right"
+                                />
+                                <button
+                                  onClick={() => removeProduct(catIdx, pIdx)}
+                                  className="text-gray-600 hover:text-rose-400 transition-colors p-1"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => addProduct(catIdx)}
+                                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs text-gray-400
+                                           hover:text-white hover:bg-white/5 border border-dashed border-white/10 transition-all"
+                              >
+                                <Plus className="w-3 h-3" />
+                                Agregar producto
+                              </button>
+
+                              {(!cat.subcategories || cat.subcategories.length === 0) && (
+                                <button
+                                  onClick={() => addSubcat(catIdx)}
+                                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs text-indigo-400
+                                             hover:text-indigo-300 hover:bg-indigo-500/10 border border-dashed border-indigo-500/30 transition-all"
+                                  title="Crear subcategoría dentro de esta categoría"
+                                >
+                                  <Layers className="w-3 h-3" />
+                                  Crear subcategoría
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

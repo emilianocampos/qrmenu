@@ -25,6 +25,7 @@ interface ProductFormData {
   description: string;
   price: string;
   category_id: string;
+  subcategory?: string;
   image_url: string;
   is_available: boolean;
   is_featured: boolean;
@@ -36,6 +37,7 @@ const defaultForm: ProductFormData = {
   description: '',
   price: '',
   category_id: '',
+  subcategory: '',
   image_url: '',
   is_available: true,
   is_featured: false,
@@ -187,6 +189,7 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
       description: p.description ?? '',
       price: String(p.price),
       category_id: p.category_id ?? '',
+      subcategory: p.subcategory ?? '',
       image_url: p.image_url ?? '',
       is_available: p.is_available ?? true,
       is_featured: p.is_featured ?? false,
@@ -238,6 +241,7 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
         description: form.description || null,
         price: parseFloat(form.price) || 0,
         category_id: form.category_id || null,
+        subcategory: form.subcategory?.trim() || null,
         image_url: imageUrl || null,
         is_available: form.is_available,
         is_featured: form.is_featured,

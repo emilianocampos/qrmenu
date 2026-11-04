@@ -25,6 +25,7 @@ export async function createProduct(formData: FormData) {
   const description = formData.get('description') as string | null;
   const price = parseFloat(formData.get('price') as string) || 0;
   const categoryId = formData.get('category_id') as string | null;
+  const subcategory = (formData.get('subcategory') as string | null)?.trim() || null;
   const imageUrl = formData.get('image_url') as string | null;
   const isAvailable = formData.get('is_available') === 'true';
   const isFeatured = formData.get('is_featured') === 'true';
@@ -38,6 +39,7 @@ export async function createProduct(formData: FormData) {
       description: description || null,
       price,
       category_id: categoryId || null,
+      subcategory,
       image_url: imageUrl || null,
       is_available: isAvailable,
       is_featured: isFeatured,

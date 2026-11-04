@@ -10,6 +10,7 @@ interface ProductFormData {
   description: string;
   price: string;
   category_id: string;
+  subcategory?: string;
   image_url: string;
   is_available: boolean;
   is_featured: boolean;
@@ -139,6 +140,20 @@ export function ProductDialog({
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Subcategoría <span className="text-xs text-gray-500 font-normal">(Opcional, ej: Pastry, Cookies, Especiales)</span>
+              </label>
+              <input
+                type="text"
+                value={form.subcategory || ''}
+                onChange={e => setForm(f => ({ ...f, subcategory: e.target.value }))}
+                placeholder="Ej: Pastry, Cookies, Especiales..."
+                className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-600 rounded-xl px-4 py-3 text-sm
+                           focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+              />
             </div>
 
             <div>

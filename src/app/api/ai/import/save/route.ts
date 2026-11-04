@@ -5,12 +5,19 @@ interface AIProduct {
   name: string;
   description: string;
   price: number;
+  subcategory?: string;
+}
+
+interface AISubcategory {
+  name: string;
+  products: AIProduct[];
 }
 
 interface AICategory {
   name: string;
   icon?: string;
-  products: AIProduct[];
+  subcategories?: AISubcategory[];
+  products?: AIProduct[];
 }
 
 export async function POST(req: NextRequest) {
@@ -60,20 +67,66 @@ export async function POST(req: NextRequest) {
 
       totalCats++;
 
-      if (cat.products?.length) {
-        const productsToInsert = cat.products.map((p, pIdx) => ({
-          business_id: businessId,
-          category_id: newCat.id,
-          name: p.name || 'Producto',
-          description: p.description || null,
-          price: p.price || 0,
-          item_order: pIdx,
-          is_available: true,
-          is_featured: false,
-        }));
+      // Collect all products for this category (from subcategories + direct products)
+      const productsToInsert: any[] = [];
+      let itemOrder = 0;
 
+      // 1. Direct products
+      if (Array.isArray(cat.products)) {
+        for (const p of cat.products) {
+          productsToInsert.push({
+            business_id: businessId,
+            category_id: newCat.id,
+            subcategory: p.subcategory || null,
+            name: p.name || 'Producto',
+            description: p.description || null,
+            price: p.price || 0,
+            item_order: itemOrder++,
+            is_available: true,
+            is_featured: false,
+          });
+        }
+      }
+
+      // 2. Products inside subcategories
+      if (Array.isArray(cat.subcategories)) {
+        for (const subcat of cat.subcategories) {
+          const subcatName = subcat.name?.trim() || null;
+          if (Array.isArray(subcat.products)) {
+            for (const p of subcat.products) {
+              productsToInsert.push({
+                business_id: businessId,
+                category_id: newCat.id,
+                subcategory: subcatName,
+                name: p.name || 'Producto',
+                description: p.description || null,
+                price: p.price || 0,
+                item_order: itemOrder++,
+                is_available: true,
+                is_featured: false,
+              });
+            }
+          }
+        }
+      }
+
+      if (productsToInsert.length > 0) {
+        // Try inserting with subcategory
         const { error: prodErr } = await supabase.from('products').insert(productsToInsert);
-        if (!prodErr) totalProducts += productsToInsert.length;
+
+        if (prodErr) {
+          // If subcategory column doesn't exist yet, retry without subcategory
+          console.warn('Error inserting with subcategory, retrying without subcategory column:', prodErr.message);
+          const fallbackProducts = productsToInsert.map(({ subcategory, ...rest }) => rest);
+          const { error: fallbackErr } = await supabase.from('products').insert(fallbackProducts);
+          if (!fallbackErr) {
+            totalProducts += fallbackProducts.length;
+          } else {
+            console.error('Error inserting fallback products:', fallbackErr);
+          }
+        } else {
+          totalProducts += productsToInsert.length;
+        }
       }
     }
 

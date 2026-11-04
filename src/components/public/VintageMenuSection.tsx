@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Product } from '@/types';
+import { TableInfoAndWaiterBar } from './TableInfoAndWaiterBar';
 
 interface VintageMenuSectionProps {
   products: Product[];
@@ -9,6 +10,8 @@ interface VintageMenuSectionProps {
   vintageColorMode?: string;
   vintageColor?: string;
   orderMode?: string;
+  businessId?: string;
+  primaryColor?: string;
 }
 
 const NEON_COLORS = [
@@ -21,7 +24,15 @@ const NEON_COLORS = [
 
 
 
-export function VintageMenuSection({ products, currencySymbol = '$', vintageColorMode = 'multicolor', vintageColor = '#ff4500', orderMode = 'menu_only' }: VintageMenuSectionProps) {
+export function VintageMenuSection({
+  products,
+  currencySymbol = '$',
+  vintageColorMode = 'multicolor',
+  vintageColor = '#ff4500',
+  orderMode = 'menu_only',
+  businessId,
+  primaryColor
+}: VintageMenuSectionProps) {
   // Filter products that have a valid price > 0
   const validProducts = useMemo(() => {
     return products.filter(p => Number(p.price) > 0);
@@ -63,6 +74,13 @@ export function VintageMenuSection({ products, currencySymbol = '$', vintageColo
         }}
       />
 
+      {/* Mesa, Mozo y Pedido de Cuenta */}
+      {businessId && (
+        <div className="max-w-6xl mx-auto mb-8 flex justify-center sm:justify-end relative z-20">
+          <TableInfoAndWaiterBar businessId={businessId} orderMode={orderMode} primaryColor={primaryColor} />
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-16 relative z-10">
         {categories.map((category, index) => {
           const isSingle = vintageColorMode === 'single';
@@ -92,35 +110,82 @@ export function VintageMenuSection({ products, currencySymbol = '$', vintageColo
               </div>
 
               {/* Product List */}
-              <div className="space-y-5 px-2">
-                {category.products.map(product => {
-                  const formattedPrice = new Intl.NumberFormat('es-AR', {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 2,
-                  }).format(product.price);
+              <div className="space-y-6 px-1 sm:px-2">
+                {(() => {
+                  // Group products by subcategory
+                  const groups: { subcategory: string | null; items: Product[] }[] = [];
+                  const map = new Map<string | null, Product[]>();
+                  category.products.forEach(p => {
+                    const sub = p.subcategory?.trim() || null;
+                    if (!map.has(sub)) {
+                      const arr: Product[] = [];
+                      map.set(sub, arr);
+                      groups.push({ subcategory: sub, items: arr });
+                    }
+                    map.get(sub)!.push(p);
+                  });
 
-                  return (
-                    <div key={product.id} className="flex flex-col group">
-                      <div className="flex items-end justify-between gap-3 w-full">
-                        <span className="font-bold text-sm md:text-base uppercase tracking-wide transition-colors shrink-0" style={{ color: 'var(--text-primary)' }}>
-                          {product.name}
-                        </span>
-                        
-                        <div className="flex-grow border-b-2 border-dotted mb-[6px] opacity-40 shrink" style={{ borderColor: 'var(--border-color)' }} />
-                        
-                        <span className="font-bold text-sm md:text-base whitespace-nowrap shrink-0 pl-1" style={{ color: 'var(--text-primary)' }}>
-                          {currencySymbol}{formattedPrice}
-                        </span>
-                      </div>
-                      
-                      {product.description && (
-                        <p className="text-[11px] md:text-xs mt-1 max-w-[85%] leading-snug" style={{ color: 'var(--text-muted)' }}>
-                          {product.description}
-                        </p>
+                  return groups.map((group, gIdx) => (
+                    <div key={group.subcategory || `g-${gIdx}`} className="space-y-4">
+                      {group.subcategory && (
+                        <div className="pt-2 pb-1 flex items-center gap-3">
+                          <span
+                            className="text-xs md:text-sm font-black uppercase tracking-widest px-2.5 py-0.5 rounded"
+                            style={{
+                              color: color,
+                              backgroundColor: `${color}15`,
+                              border: `1px solid ${color}40`,
+                              letterSpacing: '0.1em',
+                            }}
+                          >
+                            {group.subcategory}
+                          </span>
+                          <div className="flex-1 h-px opacity-30" style={{ backgroundColor: color }} />
+                        </div>
                       )}
+
+                      <div className="space-y-5">
+                        {group.items.map(product => {
+                          const formattedPrice = new Intl.NumberFormat('es-AR', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2,
+                          }).format(product.price);
+
+                          return (
+                            <div key={product.id} className="flex flex-col group w-full min-w-0">
+                              <div className="flex items-end justify-between gap-2 w-full min-w-0">
+                                <span 
+                                  className="font-bold text-sm md:text-base uppercase tracking-wide transition-colors min-w-0 break-words leading-snug" 
+                                  style={{ color: 'var(--text-primary)' }}
+                                >
+                                  {product.name}
+                                </span>
+                                
+                                <div 
+                                  className="flex-grow border-b-2 border-dotted mb-[5px] opacity-40 shrink min-w-[14px]" 
+                                  style={{ borderColor: 'var(--border-color)' }} 
+                                />
+                                
+                                <span 
+                                  className="font-bold text-sm md:text-base whitespace-nowrap shrink-0 pl-1 text-right tabular-nums" 
+                                  style={{ color: 'var(--text-primary)' }}
+                                >
+                                  {currencySymbol}{formattedPrice}
+                                </span>
+                              </div>
+                              
+                              {product.description && (
+                                <p className="text-[11px] md:text-xs mt-1 max-w-[90%] leading-snug break-words" style={{ color: 'var(--text-muted)' }}>
+                                  {product.description}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  );
-                })}
+                  ));
+                })()}
               </div>
             </div>
           );

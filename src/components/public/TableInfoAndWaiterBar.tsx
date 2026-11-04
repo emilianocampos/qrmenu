@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useCart } from '@/components/orders/CartContext';
 import { 
   MapPin, 
@@ -58,6 +59,7 @@ export function TableInfoAndWaiterBar({ businessId, primaryColor }: TableInfoAnd
   const [billModalOpen, setBillModalOpen] = useState(false);
   const [tableModalOpen, setTableModalOpen] = useState(false);
   const [billSuccessModalOpen, setBillSuccessModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   const [loadingWaiter, setLoadingWaiter] = useState(false);
   const [loadingBill, setLoadingBill] = useState(false);
@@ -83,6 +85,7 @@ export function TableInfoAndWaiterBar({ businessId, primaryColor }: TableInfoAnd
   const [isTableFromUrl, setIsTableFromUrl] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const urlTable = searchParams.get('table') || searchParams.get('mesa');
@@ -353,9 +356,12 @@ export function TableInfoAndWaiterBar({ businessId, primaryColor }: TableInfoAnd
         </button>
       </div>
 
-      {/* Modal 1: Configurar Mesa */}
-      {tableModalOpen && !isAssignedByUrl && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      {/* Modales de Atención en Mesa montados en document.body para máxima prioridad visual */}
+      {mounted && typeof document !== 'undefined' && createPortal(
+        <>
+          {/* Modal 1: Configurar Mesa */}
+          {tableModalOpen && !isAssignedByUrl && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
           <div 
             className="rounded-3xl p-6 sm:p-7 max-w-sm w-full text-center space-y-4 border shadow-2xl relative overflow-hidden"
             style={{
@@ -451,7 +457,7 @@ export function TableInfoAndWaiterBar({ businessId, primaryColor }: TableInfoAnd
 
       {/* Modal 2: Confirmar Llamado de Mozo */}
       {waiterModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
           <div 
             className="rounded-3xl p-6 max-w-sm w-full text-center space-y-4 border shadow-2xl relative overflow-hidden"
             style={{
@@ -527,9 +533,9 @@ export function TableInfoAndWaiterBar({ businessId, primaryColor }: TableInfoAnd
 
       {/* Modal 3: Pedir la Cuenta - Rediseñado 100% con los Colores del Admin */}
       {billModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
           <div 
-            className="rounded-3xl p-5 sm:p-7 max-w-md w-full space-y-5 border shadow-2xl relative overflow-hidden my-auto"
+            className="rounded-3xl p-5 sm:p-7 max-w-md w-full space-y-5 border shadow-2xl relative overflow-y-auto max-h-[92vh] my-auto custom-scrollbar"
             style={{
               backgroundColor: 'var(--bg-card)',
               borderColor: 'rgba(var(--primary-color-rgb, 249, 115, 22), 0.35)',
@@ -948,7 +954,7 @@ export function TableInfoAndWaiterBar({ businessId, primaryColor }: TableInfoAnd
 
       {/* Modal 4: Éxito / Confirmación de Pedido de Cuenta para el Cliente */}
       {billSuccessModalOpen && lastBillData && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
           <div 
             className="rounded-3xl p-6 sm:p-7 max-w-sm w-full text-center space-y-5 border shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200"
             style={{
@@ -1061,6 +1067,9 @@ export function TableInfoAndWaiterBar({ businessId, primaryColor }: TableInfoAnd
             </button>
           </div>
         </div>
+      )}
+        </>,
+        document.body
       )}
     </div>
   );
