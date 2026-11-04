@@ -51,7 +51,6 @@ export function LoyaltyClient({
 }: LoyaltyClientProps) {
   const [settings, setSettings] = useState<LoyaltySettings>(initialSettings);
   const [subscribers, setSubscribers] = useState<CustomerLoyaltyData[]>(initialSubscribers);
-  const [activeTab, setActiveTab] = useState<'stamps' | 'raffle'>('stamps');
   const [searchQuery, setSearchQuery] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -127,10 +126,10 @@ export function LoyaltyClient({
         prev.map(item =>
           item.id === sub.id
             ? {
-              ...item,
-              stamps_count: item.stamps_count + 1,
-              total_stamps_earned: item.total_stamps_earned + 1,
-            }
+                ...item,
+                stamps_count: item.stamps_count + 1,
+                total_stamps_earned: item.total_stamps_earned + 1,
+              }
             : item
         )
       );
@@ -199,52 +198,6 @@ export function LoyaltyClient({
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-white/10 pb-4">
-        <button
-          onClick={() => setActiveTab('stamps')}
-          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all cursor-pointer ${
-            activeTab === 'stamps'
-              ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/25 ring-2 ring-amber-400/50'
-              : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white border border-white/5'
-          }`}
-        >
-          <Award className="w-4 h-4" />
-          <span>Programa de Sellos & Clientes</span>
-          <span
-            className={`text-xs px-2 py-0.5 rounded-full font-black ${
-              activeTab === 'stamps' ? 'bg-black/20 text-black' : 'bg-white/10 text-gray-300'
-            }`}
-          >
-            {subscribers.length}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('raffle')}
-          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all cursor-pointer relative ${
-            activeTab === 'raffle'
-              ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-lg shadow-amber-500/25 ring-2 ring-amber-400/50'
-              : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white border border-white/5'
-          }`}
-        >
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>Sorteos & Ruleta</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30">
-            ¡Nuevo!
-          </span>
-        </button>
-      </div>
-
-      {activeTab === 'raffle' ? (
-        <LoyaltyRaffleTab
-          businessId={businessId}
-          businessSlug={businessSlug}
-          businessName={businessName}
-          subscribers={subscribers}
-        />
-      ) : (
-        <>
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 bg-[#121212] border border-white/10 rounded-2xl flex items-center gap-4">
@@ -557,28 +510,16 @@ export function LoyaltyClient({
                             <span className="hidden md:inline">Email</span>
                           </button>
 
-                          {/* Botones de Modificación de Sellos (+ y -) */}
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleManualRemoveStamp(sub)}
-                              disabled={isLoading || sub.stamps_count <= 0}
-                              className="px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/25 text-red-400 hover:text-red-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1 cursor-pointer border border-red-500/20 disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-                              title={sub.stamps_count <= 0 ? 'El cliente ya tiene 0 sellos' : 'Eliminar / Restar 1 sello a este cliente'}
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                              <span>- Sello</span>
-                            </button>
-
-                            <button
-                              onClick={() => handleManualAddStamp(sub)}
-                              disabled={isLoading}
-                              className="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1 cursor-pointer border border-amber-500/40 shadow-sm disabled:opacity-50"
-                              title="Agregar 1 sello a este cliente"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>+ Sello</span>
-                            </button>
-                          </div>
+                          {/* Botón Sello Manual desde Panel Admin */}
+                          <button
+                            onClick={() => handleManualAddStamp(sub)}
+                            disabled={isLoading}
+                            className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1 cursor-pointer border border-amber-500/40 shadow-sm disabled:opacity-50"
+                            title="Agregar 1 sello a este cliente desde el panel admin"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>+ Sello</span>
+                          </button>
 
                           {/* Botón Canjear */}
                           {isReadyToRedeem && (
@@ -601,8 +542,6 @@ export function LoyaltyClient({
           </div>
         )}
       </div>
-        </>
-      )}
     </div>
   );
 }
