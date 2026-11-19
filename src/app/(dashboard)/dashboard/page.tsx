@@ -9,6 +9,9 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { getVisitStatistics } from '@/actions/visits/get-statistics';
 import { getSalesStatistics } from '@/actions/statistics/get-sales-stats';
+import { getLoyaltySettings, getLoyaltySubscribers } from '@/actions/loyalty';
+import { getUpcomingBirthdays } from '@/lib/loyalty-utils';
+import { UpcomingBirthdaysCard } from '@/components/dashboard/UpcomingBirthdaysCard';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -34,6 +37,8 @@ export default async function DashboardPage() {
   const [
     visitStats,
     salesStats,
+    loyaltySettings,
+    loyaltySubscribers,
     { count: productsCount },
     { count: categoriesCount },
     { count: ordersTodayCount },
@@ -43,6 +48,8 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     getVisitStatistics(business.id),
     getSalesStatistics(business.id),
+    getLoyaltySettings(business.id),
+    getLoyaltySubscribers(business.id),
     supabase.from('products').select('*', { count: 'exact', head: true }).eq('business_id', business.id),
     supabase.from('categories').select('*', { count: 'exact', head: true }).eq('business_id', business.id),
     supabase.from('orders').select('*', { count: 'exact', head: true }).eq('business_id', business.id).gte('created_at', startOfToday.toISOString()),
@@ -50,6 +57,8 @@ export default async function DashboardPage() {
     supabase.from('products').select('*, category:categories(name)').eq('business_id', business.id).order('created_at', { ascending: false }).limit(5),
     supabase.from('categories').select('*, products(count)').eq('business_id', business.id).order('item_order').limit(5),
   ]);
+
+  const upcomingBirthdays = getUpcomingBirthdays(loyaltySubscribers, 7);
 
   const medals = ['🥇', '🥈', '🥉', '4º', '5º'];
 
@@ -96,6 +105,18 @@ export default async function DashboardPage() {
           value={ordersMonthCount ?? 0}
           icon={<ShoppingBag className="w-5 h-5 text-orange-400" />}
           href="/orders"
+        />
+      </div>
+
+      {/* Recordatorio de Cumpleaños de la Semana */}
+      <div className="mb-8">
+        <UpcomingBirthdaysCard
+          birthdays={upcomingBirthdays}
+          businessName={business.name}
+          businessSlug={business.slug}
+          birthdayBenefit={loyaltySettings.loyalty_birthday_benefit}
+          birthdayMessageTemplate={loyaltySettings.loyalty_birthday_message}
+          showConfigLink
         />
       </div>
 

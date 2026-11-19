@@ -10,8 +10,16 @@ import {
 } from '@/actions/loyalty';
 import {
   DEFAULT_LOYALTY_WA_MESSAGE,
+  DEFAULT_BIRTHDAY_BENEFIT,
+  DEFAULT_BIRTHDAY_WA_MESSAGE,
   buildWhatsAppUrl,
+  buildBirthdayMessage,
+  getUpcomingBirthdays,
+  getDaysUntilBirthday,
+  formatBirthdayNumeric,
+  formatBirthdayShort,
 } from '@/lib/loyalty-utils';
+import { UpcomingBirthdaysCard } from '@/components/dashboard/UpcomingBirthdaysCard';
 import {
   Award,
   Gift,
@@ -29,6 +37,8 @@ import {
   Copy,
   Check,
   Send,
+  Cake,
+  CreditCard,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -78,6 +88,21 @@ export function LoyaltyClient({
     }
     const finalMsg = generateMessageForSubscriber(sub);
     const url = await buildWhatsAppUrl(sub.customer_phone, finalMsg);
+    window.open(url, '_blank');
+  };
+
+  const handleOpenBirthdayWhatsApp = (sub: CustomerLoyaltyData) => {
+    if (!sub.customer_phone) {
+      toast.warning('Este cliente no registró un número de teléfono / WhatsApp.');
+      return;
+    }
+    const finalMsg = buildBirthdayMessage(settings.loyalty_birthday_message, {
+      clientName: sub.customer_name?.trim() || 'Cliente',
+      businessName: businessName || businessSlug,
+      benefit: settings.loyalty_birthday_benefit || DEFAULT_BIRTHDAY_BENEFIT,
+      birthdayDate: formatBirthdayShort(sub.customer_birthday),
+    });
+    const url = buildWhatsAppUrl(sub.customer_phone, finalMsg);
     window.open(url, '_blank');
   };
 
@@ -170,9 +195,12 @@ export function LoyaltyClient({
     return (
       sub.customer_email.toLowerCase().includes(query) ||
       (sub.customer_name && sub.customer_name.toLowerCase().includes(query)) ||
-      (sub.customer_phone && sub.customer_phone.includes(query))
+      (sub.customer_phone && sub.customer_phone.includes(query)) ||
+      (sub.customer_dni && sub.customer_dni.includes(query))
     );
   });
+
+  const upcomingBirthdays = getUpcomingBirthdays(subscribers, 7);
 
   const totalRewardsUnlocked = subscribers.filter(
     s => s.stamps_count >= settings.loyalty_stamps_required
@@ -193,13 +221,13 @@ export function LoyaltyClient({
             Fidelización & Tarjeta de Sellos
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            Premia a tus clientes frecuentes con sellos digitales por cada día que consuman en tu local.
+            Premia a tus clientes frecuentes con sellos digitales y beneficios especiales en su cumpleaños.
           </p>
         </div>
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 bg-[#121212] border border-white/10 rounded-2xl flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
             <Users className="w-6 h-6" />
@@ -207,6 +235,16 @@ export function LoyaltyClient({
           <div>
             <p className="text-xs font-medium text-gray-400">Clientes Suscritos</p>
             <h3 className="text-2xl font-black text-white">{subscribers.length}</h3>
+          </div>
+        </div>
+
+        <div className="p-5 bg-[#121212] border border-pink-500/20 rounded-2xl flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center shrink-0">
+            <Cake className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-400">Cumpleaños esta semana</p>
+            <h3 className="text-2xl font-black text-pink-400">{upcomingBirthdays.length}</h3>
           </div>
         </div>
 
@@ -230,6 +268,15 @@ export function LoyaltyClient({
           </div>
         </div>
       </div>
+
+      {/* Recordatorio de Cumpleaños de la Semana */}
+      <UpcomingBirthdaysCard
+        birthdays={upcomingBirthdays}
+        businessName={businessName || businessSlug}
+        businessSlug={businessSlug}
+        birthdayBenefit={settings.loyalty_birthday_benefit}
+        birthdayMessageTemplate={settings.loyalty_birthday_message}
+      />
 
       {/* Settings Form */}
       <div className="bg-[#121212] border border-white/10 rounded-3xl p-6 sm:p-8 space-y-6">
@@ -363,6 +410,80 @@ export function LoyaltyClient({
             </div>
           </div>
 
+          {/* Configuración de Cumpleaños y Mensaje de WhatsApp */}
+          <div id="cumpleanos" className="pt-5 border-t border-white/10 space-y-4 scroll-mt-24">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-pink-400 flex items-center gap-1.5">
+                <Cake className="w-4 h-4 text-pink-400" />
+                Beneficio y Mensaje de Cumpleaños (WhatsApp)
+              </label>
+              <p className="text-xs text-gray-400 mt-1">
+                Definí el regalo o descuento que quieras ofrecer a los clientes que cumplen años en la semana y el mensaje que se abrirá listo para enviar por WhatsApp.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+                Beneficio de Cumpleaños
+              </label>
+              <input
+                type="text"
+                value={settings.loyalty_birthday_benefit ?? DEFAULT_BIRTHDAY_BENEFIT}
+                onChange={e => setSettings({ ...settings, loyalty_birthday_benefit: e.target.value })}
+                placeholder={DEFAULT_BIRTHDAY_BENEFIT}
+                className="w-full bg-[#1a1a1a] border border-pink-500/20 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-pink-500"
+              />
+            </div>
+
+            {/* Chips de variables rápidas para cumpleaños */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] text-gray-500 font-semibold">Variables dinámicas:</span>
+              {[
+                { tag: '{cliente}', label: 'Nombre del cliente' },
+                { tag: '{negocio}', label: 'Nombre del local' },
+                { tag: '{beneficio}', label: 'Beneficio de cumpleaños' },
+                { tag: '{fecha_cumple}', label: 'Fecha de cumpleaños' },
+              ].map(v => (
+                <button
+                  key={v.tag}
+                  type="button"
+                  onClick={() => {
+                    const current = settings.loyalty_birthday_message || DEFAULT_BIRTHDAY_WA_MESSAGE;
+                    setSettings({ ...settings, loyalty_birthday_message: `${current} ${v.tag}` });
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-xs bg-pink-500/10 hover:bg-pink-500/25 text-pink-300 border border-pink-500/30 transition-all cursor-pointer font-mono"
+                  title={`Insertar ${v.tag}`}
+                >
+                  +{v.tag}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              rows={3}
+              value={settings.loyalty_birthday_message ?? DEFAULT_BIRTHDAY_WA_MESSAGE}
+              onChange={e => setSettings({ ...settings, loyalty_birthday_message: e.target.value })}
+              placeholder={DEFAULT_BIRTHDAY_WA_MESSAGE}
+              className="w-full bg-[#1a1a1a] border border-pink-500/20 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-pink-500 font-sans leading-relaxed"
+            />
+
+            {/* Vista previa en burbuja de WhatsApp (Cumpleaños) */}
+            <div className="bg-[#0b141a] p-3.5 rounded-2xl border border-white/5 space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block">
+                Vista previa de saludo de cumpleaños en WhatsApp:
+              </span>
+              <div className="bg-[#005c4b] text-white text-xs p-3 rounded-xl rounded-tl-none max-w-md shadow-md leading-relaxed whitespace-pre-wrap">
+                {buildBirthdayMessage(settings.loyalty_birthday_message, {
+                  clientName: 'Juan Pérez',
+                  businessName: businessName || businessSlug,
+                  benefit: settings.loyalty_birthday_benefit || DEFAULT_BIRTHDAY_BENEFIT,
+                  birthdayDate: '24 de noviembre',
+                })}
+                <div className="text-[9px] text-emerald-200/60 text-right mt-1">12:30 ✓✓</div>
+              </div>
+            </div>
+          </div>
+
           <div className="flex justify-end pt-2">
             <button
               type="submit"
@@ -407,7 +528,7 @@ export function LoyaltyClient({
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Buscar por email, nombre o cel..."
+                placeholder="Buscar por email, nombre, DNI o cel..."
                 className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
               />
             </div>
@@ -437,6 +558,8 @@ export function LoyaltyClient({
                 {filteredSubscribers.map(sub => {
                   const isReadyToRedeem = sub.stamps_count >= settings.loyalty_stamps_required;
                   const isLoading = actionLoadingId === sub.id;
+                  const daysUntilBday = getDaysUntilBirthday(sub.customer_birthday);
+                  const isBdaySoon = daysUntilBday !== null && daysUntilBday >= 0 && daysUntilBday <= 7;
 
                   return (
                     <tr key={sub.id} className="hover:bg-white/[0.02] transition-colors">
@@ -448,6 +571,29 @@ export function LoyaltyClient({
                         <div className="flex flex-wrap items-center gap-2 mt-1">
                           {sub.customer_name && (
                             <span className="text-xs text-gray-300 font-medium">{sub.customer_name}</span>
+                          )}
+                          {sub.customer_dni && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md">
+                              <CreditCard className="w-3 h-3" />
+                              DNI {sub.customer_dni}
+                            </span>
+                          )}
+                          {sub.customer_birthday && (
+                            <span
+                              className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border ${
+                                isBdaySoon
+                                  ? 'text-pink-300 bg-pink-500/15 border-pink-500/30 font-bold'
+                                  : 'text-gray-300 bg-white/5 border-white/10'
+                              }`}
+                            >
+                              <Cake className="w-3 h-3 text-pink-400" />
+                              {formatBirthdayNumeric(sub.customer_birthday)}
+                              {daysUntilBday === 0
+                                ? ' (¡Hoy!)'
+                                : isBdaySoon
+                                ? ` (en ${daysUntilBday}d)`
+                                : ''}
+                            </span>
                           )}
                           {sub.customer_phone ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
@@ -488,6 +634,18 @@ export function LoyaltyClient({
 
                       <td className="py-4 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {/* Botón WhatsApp Cumpleaños si cumple en los próximos 7 días */}
+                          {isBdaySoon && sub.customer_phone && (
+                            <button
+                              onClick={() => handleOpenBirthdayWhatsApp(sub)}
+                              className="px-2.5 py-1.5 bg-pink-500/20 hover:bg-pink-500 text-pink-300 hover:text-white border border-pink-500/30 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                              title="Enviar saludo y beneficio de cumpleaños por WhatsApp"
+                            >
+                              <Cake className="w-3.5 h-3.5" />
+                              <span className="hidden md:inline">Cumple</span>
+                            </button>
+                          )}
+
                           {/* Botón WhatsApp */}
                           {sub.customer_phone && (
                             <button

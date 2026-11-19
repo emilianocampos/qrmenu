@@ -3,7 +3,14 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
-import { DEFAULT_LOYALTY_WA_MESSAGE, arePhonesMatching } from '@/lib/loyalty-utils';
+import {
+  DEFAULT_LOYALTY_WA_MESSAGE,
+  DEFAULT_BIRTHDAY_BENEFIT,
+  DEFAULT_BIRTHDAY_WA_MESSAGE,
+  arePhonesMatching,
+  normalizeDni,
+  areDnisMatching,
+} from '@/lib/loyalty-utils';
 
 export interface LoyaltySettings {
   loyalty_enabled: boolean;
@@ -11,6 +18,8 @@ export interface LoyaltySettings {
   loyalty_reward_title: string;
   loyalty_reward_description: string;
   loyalty_whatsapp_message?: string;
+  loyalty_birthday_benefit?: string;
+  loyalty_birthday_message?: string;
 }
 
 export interface CustomerLoyaltyData {
@@ -19,6 +28,8 @@ export interface CustomerLoyaltyData {
   customer_email: string;
   customer_name: string | null;
   customer_phone: string | null;
+  customer_dni?: string | null;
+  customer_birthday?: string | null;
   stamps_count: number;
   total_stamps_earned: number;
   rewards_redeemed: number;
@@ -33,7 +44,7 @@ export async function getLoyaltySettings(businessId: string): Promise<LoyaltySet
 
     const { data, error } = await supabase
       .from('businesses')
-      .select('loyalty_enabled, loyalty_stamps_required, loyalty_reward_title, loyalty_reward_description')
+      .select('*')
       .eq('id', businessId)
       .single();
 
@@ -44,6 +55,8 @@ export async function getLoyaltySettings(businessId: string): Promise<LoyaltySet
         loyalty_reward_title: '¡Premio de Fidelidad!',
         loyalty_reward_description: 'Consigue tus sellos consumiendo en días distintos para desbloquear tu beneficio.',
         loyalty_whatsapp_message: DEFAULT_LOYALTY_WA_MESSAGE,
+        loyalty_birthday_benefit: DEFAULT_BIRTHDAY_BENEFIT,
+        loyalty_birthday_message: DEFAULT_BIRTHDAY_WA_MESSAGE,
       };
     }
 
@@ -57,6 +70,8 @@ export async function getLoyaltySettings(businessId: string): Promise<LoyaltySet
       loyalty_reward_title: data.loyalty_reward_title || '¡Premio de Fidelidad!',
       loyalty_reward_description: descPart?.trim() || 'Consigue tus sellos consumiendo en días distintos para desbloquear tu beneficio.',
       loyalty_whatsapp_message: waPart?.trim() || DEFAULT_LOYALTY_WA_MESSAGE,
+      loyalty_birthday_benefit: data.loyalty_birthday_benefit?.trim() || DEFAULT_BIRTHDAY_BENEFIT,
+      loyalty_birthday_message: data.loyalty_birthday_message?.trim() || DEFAULT_BIRTHDAY_WA_MESSAGE,
     };
   } catch (err) {
     console.error('Error fetching loyalty settings:', err);
@@ -66,6 +81,8 @@ export async function getLoyaltySettings(businessId: string): Promise<LoyaltySet
       loyalty_reward_title: '¡Premio de Fidelidad!',
       loyalty_reward_description: 'Consigue tus sellos consumiendo en días distintos para desbloquear tu beneficio.',
       loyalty_whatsapp_message: DEFAULT_LOYALTY_WA_MESSAGE,
+      loyalty_birthday_benefit: DEFAULT_BIRTHDAY_BENEFIT,
+      loyalty_birthday_message: DEFAULT_BIRTHDAY_WA_MESSAGE,
     };
   }
 }
@@ -79,19 +96,29 @@ export async function updateLoyaltySettings(businessId: string, settings: Partia
     const cleanWaMsg = (settings.loyalty_whatsapp_message || DEFAULT_LOYALTY_WA_MESSAGE).trim();
     const fullDescription = `${cleanDesc}\n---WA_MSG---\n${cleanWaMsg}`;
 
+    const updatePayload: Record<string, any> = {
+      loyalty_enabled: settings.loyalty_enabled,
+      loyalty_stamps_required: settings.loyalty_stamps_required,
+      loyalty_reward_title: settings.loyalty_reward_title,
+      loyalty_reward_description: fullDescription,
+    };
+
+    if (settings.loyalty_birthday_benefit !== undefined) {
+      updatePayload.loyalty_birthday_benefit = settings.loyalty_birthday_benefit.trim();
+    }
+    if (settings.loyalty_birthday_message !== undefined) {
+      updatePayload.loyalty_birthday_message = settings.loyalty_birthday_message.trim();
+    }
+
     const { error } = await supabase
       .from('businesses')
-      .update({
-        loyalty_enabled: settings.loyalty_enabled,
-        loyalty_stamps_required: settings.loyalty_stamps_required,
-        loyalty_reward_title: settings.loyalty_reward_title,
-        loyalty_reward_description: fullDescription,
-      })
+      .update(updatePayload)
       .eq('id', businessId);
 
     if (error) throw error;
 
     revalidatePath('/fidelidad');
+    revalidatePath('/dashboard');
     return { success: true };
   } catch (err: any) {
     console.error('Error updating loyalty settings:', err);
@@ -99,13 +126,26 @@ export async function updateLoyaltySettings(businessId: string, settings: Partia
   }
 }
 
-export async function subscribeOrGetLoyaltyCard(businessId: string, email: string, name?: string, phone?: string) {
+export async function subscribeOrGetLoyaltyCard(
+  businessId: string,
+  email: string,
+  name?: string,
+  phone?: string,
+  dni?: string,
+  birthday?: string
+) {
   try {
     const supabase = await createClient();
     const cleanEmail = email.trim().toLowerCase();
+    const cleanDni = dni ? normalizeDni(dni) : '';
+    const cleanBirthday = birthday?.trim() || null;
 
     if (!cleanEmail) {
       return { error: 'Ingresa un email válido' };
+    }
+
+    if (dni !== undefined && cleanDni.length < 6) {
+      return { error: 'Ingresa un número de DNI válido (al menos 6 dígitos).' };
     }
 
     // 1. Buscar o insertar en customer_loyalty
@@ -117,29 +157,42 @@ export async function subscribeOrGetLoyaltyCard(businessId: string, email: strin
       .maybeSingle();
 
     if (!loyalty) {
+      const insertPayload: Record<string, any> = {
+        business_id: businessId,
+        customer_email: cleanEmail,
+        customer_name: name?.trim() || null,
+        customer_phone: phone?.trim() || null,
+        customer_dni: cleanDni || null,
+        customer_birthday: cleanBirthday,
+        stamps_count: 0,
+        total_stamps_earned: 0,
+        rewards_redeemed: 0,
+      };
+
       const { data: newLoyalty, error: insertError } = await supabase
         .from('customer_loyalty')
-        .insert({
-          business_id: businessId,
-          customer_email: cleanEmail,
-          customer_name: name?.trim() || null,
-          customer_phone: phone?.trim() || null,
-          stamps_count: 0,
-          total_stamps_earned: 0,
-          rewards_redeemed: 0,
-        })
+        .insert(insertPayload)
         .select('*')
         .single();
 
       if (insertError) throw insertError;
       loyalty = newLoyalty;
-    } else if (name || phone) {
+    } else if (name || phone || cleanDni || cleanBirthday) {
+      // Si la cuenta ya tiene un DNI distinto registrado, proteger contra sobreescritura no autorizada
+      if (loyalty.customer_dni && cleanDni && !areDnisMatching(cleanDni, loyalty.customer_dni)) {
+        return {
+          error: 'Ya existe una cuenta con este email registrada con otro DNI. Ingresá en "Ver mis sellos" con tu DNI.',
+        };
+      }
+
       // Actualizar datos de contacto si se enviaron
       const { data: updated } = await supabase
         .from('customer_loyalty')
         .update({
           customer_name: name?.trim() || loyalty.customer_name,
           customer_phone: phone?.trim() || loyalty.customer_phone,
+          customer_dni: cleanDni || loyalty.customer_dni,
+          customer_birthday: cleanBirthday || loyalty.customer_birthday,
           updated_at: new Date().toISOString(),
         })
         .eq('id', loyalty.id)
@@ -172,19 +225,19 @@ export async function subscribeOrGetLoyaltyCard(businessId: string, email: strin
 }
 
 /**
- * Autentica al cliente con su email y número de teléfono (como contraseña) para abrir el gestor de sellos.
+ * Autentica al cliente con su email y número de DNI (como contraseña) para abrir el gestor de sellos.
  */
-export async function loginLoyaltyCustomer(businessId: string, email: string, phone: string) {
+export async function loginLoyaltyCustomer(businessId: string, email: string, dni: string) {
   try {
     const supabase = await createClient();
     const cleanEmail = (email || '').trim().toLowerCase();
-    const cleanPhone = (phone || '').trim();
+    const cleanDni = normalizeDni(dni || '');
 
     if (!cleanEmail) {
       return { error: 'Ingresa tu correo electrónico.' };
     }
-    if (!cleanPhone) {
-      return { error: 'Ingresa tu número de teléfono como contraseña.' };
+    if (!cleanDni || cleanDni.length < 6) {
+      return { error: 'Ingresa tu número de DNI como contraseña.' };
     }
 
     const { data: loyalty, error } = await supabase
@@ -201,21 +254,21 @@ export async function loginLoyaltyCustomer(businessId: string, email: string, ph
       };
     }
 
-    // Validar teléfono como contraseña
-    if (loyalty.customer_phone) {
-      const match = arePhonesMatching(cleanPhone, loyalty.customer_phone);
+    // Validar DNI como contraseña
+    if (loyalty.customer_dni) {
+      const match = areDnisMatching(cleanDni, loyalty.customer_dni);
       if (!match) {
         return {
-          error: 'El número de teléfono no coincide con el registrado para esta cuenta.'
+          error: 'El número de DNI no coincide con el registrado para esta cuenta.'
         };
       }
     } else {
-      // Si no tenía teléfono guardado previamente, lo vinculamos ahora
+      // Si el cliente era antiguo y no tenía DNI guardado aún, lo vinculamos ahora
       await supabase
         .from('customer_loyalty')
-        .update({ customer_phone: cleanPhone, updated_at: new Date().toISOString() })
+        .update({ customer_dni: cleanDni, updated_at: new Date().toISOString() })
         .eq('id', loyalty.id);
-      loyalty.customer_phone = cleanPhone;
+      loyalty.customer_dni = cleanDni;
     }
 
     // Verificar si ya sumó sello hoy

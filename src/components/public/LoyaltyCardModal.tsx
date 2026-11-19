@@ -21,8 +21,16 @@ import {
   LogOut,
   Info,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  CreditCard,
+  Cake,
 } from 'lucide-react';
+import {
+  normalizeDni,
+  getDaysUntilBirthday,
+  formatBirthdayShort,
+  DEFAULT_BIRTHDAY_BENEFIT,
+} from '@/lib/loyalty-utils';
 import { toast } from 'sonner';
 
 interface LoyaltyCardModalProps {
@@ -49,40 +57,42 @@ export function LoyaltyCardModal({
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
+  const [regDni, setRegDni] = useState('');
+  const [regBirthday, setRegBirthday] = useState('');
 
   // Formulario "Ver mis sellos"
   const [loginEmail, setLoginEmail] = useState('');
-  const [loginPhone, setLoginPhone] = useState('');
+  const [loginDni, setLoginDni] = useState('');
 
   // Estado del cliente autenticado / gestor de sellos
   const [cardData, setCardData] = useState<CustomerLoyaltyData | null>(null);
   const [loading, setLoading] = useState(false);
 
   const localEmailKey = `loyalty_email_${businessId}`;
-  const localPhoneKey = `loyalty_phone_${businessId}`;
+  const localDniKey = `loyalty_dni_${businessId}`;
 
   // Cargar sesión persistente al abrir el modal
   useEffect(() => {
     if (!isOpen) return;
 
     const savedEmail = localStorage.getItem(localEmailKey);
-    const savedPhone = localStorage.getItem(localPhoneKey);
+    const savedDni = localStorage.getItem(localDniKey);
 
-    if (savedEmail && savedPhone) {
+    if (savedEmail && savedDni) {
       setLoginEmail(savedEmail);
-      setLoginPhone(savedPhone);
+      setLoginDni(savedDni);
       // Intentar auto-login para abrir el gestor directamente
-      autoLogin(savedEmail, savedPhone);
+      autoLogin(savedEmail, savedDni);
     } else if (savedEmail) {
       setLoginEmail(savedEmail);
       setActiveTab('login');
     }
   }, [isOpen, businessId]);
 
-  const autoLogin = async (email: string, phone: string) => {
+  const autoLogin = async (email: string, dni: string) => {
     setLoading(true);
     try {
-      const res = await loginLoyaltyCustomer(businessId, email, phone);
+      const res = await loginLoyaltyCustomer(businessId, email, dni);
       if (res.card) {
         setCardData(res.card);
       }
@@ -99,19 +109,29 @@ export function LoyaltyCardModal({
     e.preventDefault();
     const cleanEmail = regEmail.trim().toLowerCase();
     const cleanPhone = regPhone.trim();
+    const cleanDni = normalizeDni(regDni);
 
     if (!cleanEmail) return toast.error('Ingresa tu email');
     if (!cleanPhone) return toast.error('Ingresa tu número de WhatsApp / teléfono');
+    if (!cleanDni || cleanDni.length < 6) return toast.error('Ingresa un número de DNI válido (al menos 6 dígitos)');
+    if (!regBirthday) return toast.error('Ingresa tu fecha de nacimiento');
 
     setLoading(true);
     try {
-      const res = await subscribeOrGetLoyaltyCard(businessId, cleanEmail, regName, cleanPhone);
+      const res = await subscribeOrGetLoyaltyCard(
+        businessId,
+        cleanEmail,
+        regName,
+        cleanPhone,
+        cleanDni,
+        regBirthday
+      );
       if (res.error) throw new Error(res.error);
 
       if (res.card) {
         setCardData(res.card);
         localStorage.setItem(localEmailKey, cleanEmail);
-        localStorage.setItem(localPhoneKey, cleanPhone);
+        localStorage.setItem(localDniKey, cleanDni);
         toast.success('¡Datos guardados con éxito! Tu tarjeta de sellos está activa.', { icon: '🎉' });
       }
     } catch (err: any) {
@@ -121,28 +141,28 @@ export function LoyaltyCardModal({
     }
   };
 
-  // 2. Ver mis sellos (Autenticación con Email + Teléfono como contraseña)
+  // 2. Ver mis sellos (Autenticación con Email + DNI como contraseña)
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = loginEmail.trim().toLowerCase();
-    const cleanPhone = loginPhone.trim();
+    const cleanDni = normalizeDni(loginDni);
 
     if (!cleanEmail) return toast.error('Ingresa tu email');
-    if (!cleanPhone) return toast.error('Ingresa tu número de teléfono como contraseña');
+    if (!cleanDni || cleanDni.length < 6) return toast.error('Ingresa tu número de DNI como contraseña');
 
     setLoading(true);
     try {
-      const res = await loginLoyaltyCustomer(businessId, cleanEmail, cleanPhone);
+      const res = await loginLoyaltyCustomer(businessId, cleanEmail, cleanDni);
       if (res.error) throw new Error(res.error);
 
       if (res.card) {
         setCardData(res.card);
         localStorage.setItem(localEmailKey, cleanEmail);
-        localStorage.setItem(localPhoneKey, cleanPhone);
+        localStorage.setItem(localDniKey, cleanDni);
         toast.success('¡Bienvenido! Gestor de sellos abierto.', { icon: '🎟️' });
       }
     } catch (err: any) {
-      toast.error(err.message || 'Datos incorrectos. Verifica tu email y teléfono.');
+      toast.error(err.message || 'Datos incorrectos. Verifica tu email y DNI.');
     } finally {
       setLoading(false);
     }
@@ -150,9 +170,9 @@ export function LoyaltyCardModal({
 
   const handleLogout = () => {
     localStorage.removeItem(localEmailKey);
-    localStorage.removeItem(localPhoneKey);
+    localStorage.removeItem(localDniKey);
     setCardData(null);
-    setLoginPhone('');
+    setLoginDni('');
     setActiveTab('login');
     toast.info('Sesión cerrada');
   };
@@ -162,6 +182,8 @@ export function LoyaltyCardModal({
   const stampsRequired = settings.loyalty_stamps_required || 5;
   const currentStamps = cardData ? cardData.stamps_count : 0;
   const isRewardUnlocked = currentStamps >= stampsRequired;
+  const daysUntilBirthday = cardData ? getDaysUntilBirthday(cardData.customer_birthday) : null;
+  const isBirthdayWeek = daysUntilBirthday !== null && daysUntilBirthday >= 0 && daysUntilBirthday <= 7;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -316,9 +338,57 @@ export function LoyaltyCardModal({
                       }}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>
+                    Número de DNI *
+                  </label>
+                  <div className="relative">
+                    <CreditCard className="w-4 h-4 absolute left-3.5 top-3.5" style={{ color: 'var(--text-muted)' }} />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      value={regDni}
+                      onChange={e => setRegDni(e.target.value.replace(/[^\d.]/g, ''))}
+                      placeholder="Ej: 38456789"
+                      className="w-full rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none border transition-all"
+                      style={{
+                        backgroundColor: 'var(--bg-page)',
+                        borderColor: 'var(--border-color)',
+                        color: 'var(--text-primary)',
+                      }}
+                    />
+                  </div>
                   <p className="text-[11px] mt-1.5 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>Tu número de teléfono será tu contraseña para ver tus sellos.</span>
+                    <span>Tu número de DNI será tu contraseña para ver tus sellos.</span>
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>
+                    Fecha de Nacimiento (Cumpleaños) *
+                  </label>
+                  <div className="relative">
+                    <Cake className="w-4 h-4 absolute left-3.5 top-3.5" style={{ color: 'var(--text-muted)' }} />
+                    <input
+                      type="date"
+                      required
+                      max={new Date().toISOString().split('T')[0]}
+                      value={regBirthday}
+                      onChange={e => setRegBirthday(e.target.value)}
+                      className="w-full rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none border transition-all"
+                      style={{
+                        backgroundColor: 'var(--bg-page)',
+                        borderColor: 'var(--border-color)',
+                        color: 'var(--text-primary)',
+                      }}
+                    />
+                  </div>
+                  <p className="text-[11px] mt-1.5 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                    <span>🎂 Te avisaremos con un beneficio especial en tu semana de cumpleaños.</span>
                   </p>
                 </div>
 
@@ -341,11 +411,11 @@ export function LoyaltyCardModal({
               </form>
             )}
 
-            {/* PESTAÑA B: VER MIS SELLOS (Ingreso con Email + Teléfono como contraseña) */}
+            {/* PESTAÑA B: VER MIS SELLOS (Ingreso con Email + DNI como contraseña) */}
             {activeTab === 'login' && (
               <form onSubmit={handleLogin} className="space-y-4 pt-1 animate-in fade-in duration-200">
                 <div className="text-xs pb-1" style={{ color: 'var(--text-muted)' }}>
-                  Ingresa tu correo y teléfono para acceder a tu gestor de sellos.
+                  Ingresa tu correo y número de DNI para acceder a tu gestor de sellos.
                 </div>
 
                 <div>
@@ -372,16 +442,17 @@ export function LoyaltyCardModal({
 
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>
-                    Contraseña (Número de teléfono) *
+                    Contraseña (Número de DNI) *
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 absolute left-3.5 top-3.5" style={{ color: 'var(--text-muted)' }} />
                     <input
-                      type="tel"
+                      type="text"
+                      inputMode="numeric"
                       required
-                      value={loginPhone}
-                      onChange={e => setLoginPhone(e.target.value)}
-                      placeholder="Tu número de celular registrado"
+                      value={loginDni}
+                      onChange={e => setLoginDni(e.target.value.replace(/[^\d.]/g, ''))}
+                      placeholder="Tu número de DNI registrado"
                       className="w-full rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none border transition-all"
                       style={{
                         backgroundColor: 'var(--bg-page)',
@@ -391,7 +462,7 @@ export function LoyaltyCardModal({
                     />
                   </div>
                   <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                    El teléfono que usaste al registrar tus datos.
+                    El número de DNI que usaste al registrar tus datos.
                   </p>
                 </div>
 
@@ -442,6 +513,26 @@ export function LoyaltyCardModal({
                 <span>{cardData.customer_email}</span>
               </div>
             </div>
+
+            {/* Banner de Semana de Cumpleaños */}
+            {isBirthdayWeek && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-500/20 via-fuchsia-500/15 to-amber-500/20 border border-pink-500/40 text-center space-y-2 animate-in zoom-in-95 duration-300 shadow-lg shadow-pink-500/10">
+                <div className="w-11 h-11 bg-pink-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg shadow-pink-500/30">
+                  <Cake className="w-6 h-6" />
+                </div>
+                <h3 className="font-black text-sm text-pink-400 uppercase tracking-wider">
+                  {daysUntilBirthday === 0
+                    ? '🎂 ¡Feliz Cumpleaños!'
+                    : `🎉 ¡Se acerca tu cumple! (${formatBirthdayShort(cardData.customer_birthday)})`}
+                </h3>
+                <p className="font-extrabold text-base text-white">
+                  {settings.loyalty_birthday_benefit || DEFAULT_BIRTHDAY_BENEFIT}
+                </p>
+                <p className="text-xs text-pink-200/80 max-w-xs mx-auto">
+                  Mostrá tu DNI al personal del local para disfrutar tu beneficio de cumpleaños.
+                </p>
+              </div>
+            )}
 
             {/* Banner de Premio Desbloqueado */}
             {isRewardUnlocked && (
