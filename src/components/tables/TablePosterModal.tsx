@@ -5,6 +5,12 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { Download, Printer, X, QrCode, Copy, Check, ExternalLink } from 'lucide-react';
 import { Business } from '@/types';
 import { toast } from 'sonner';
+import {
+  getTableQrUrl,
+  getTableDisplayName,
+  buildZeroMarginQrCanvas,
+  buildPosterCanvasFromQr,
+} from '@/lib/table-qr-export';
 
 interface RestaurantTableItem {
   id: string;
@@ -34,30 +40,9 @@ export function TablePosterModal({
 
   if (!open || !table) return null;
 
-  // 1. Obtener identificador real de mesa (ej: '1', '2', '1B', '26A', '100')
-  const mesaIdentifier = table.table_name
-    ? table.table_name.replace(/^Mesa\s*/i, '').trim()
-    : String(table.table_number);
-
-  // 2. Resolver la URL pública asegurando que no sea "localhost" ni "127.0.0.1" (inaccesible desde celulares)
-  let effectivePublicUrl = publicUrl;
-  if (typeof window !== 'undefined') {
-    if (
-      effectivePublicUrl.includes('localhost') || 
-      effectivePublicUrl.includes('127.0.0.1') ||
-      effectivePublicUrl.includes('mambaqr.vercel.app')
-    ) {
-      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        effectivePublicUrl = `${window.location.protocol}//${window.location.host}/c/${business.slug}`;
-      } else {
-        effectivePublicUrl = `http://192.168.1.9:3000/c/${business.slug}`;
-      }
-    }
-  }
-
   // URL del QR para la mesa (ej: http://192.168.1.9:3000/c/muud?table=1B)
-  const tableQrUrl = `${effectivePublicUrl}?table=${encodeURIComponent(mesaIdentifier)}`;
-  const displayTableName = table.table_name || `MESA ${table.table_number}`;
+  const tableQrUrl = getTableQrUrl(table, business.slug, publicUrl);
+  const displayTableName = getTableDisplayName(table);
 
   const copyLink = () => {
     navigator.clipboard.writeText(tableQrUrl);
@@ -66,26 +51,12 @@ export function TablePosterModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // 1. Descargar ÚNICAMENTE el código QR (fondo blanco limpio)
+  // 1. Descargar ÚNICAMENTE el código QR (0 margen, alta resolución)
   const downloadQRCodeOnly = () => {
     const canvas = canvasContainerRef.current?.querySelector('canvas') as HTMLCanvasElement;
     if (!canvas) return;
 
-    // Crear canvas con margen blanco para fácil lectura y stickers
-    const qrCanvas = document.createElement('canvas');
-    const padding = 40;
-    qrCanvas.width = canvas.width + padding * 2;
-    qrCanvas.height = canvas.height + padding * 2;
-    const ctx = qrCanvas.getContext('2d');
-    if (!ctx) return;
-
-    // Fondo blanco
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, qrCanvas.width, qrCanvas.height);
-
-    // Dibujar QR
-    ctx.drawImage(canvas, padding, padding);
-
+    const qrCanvas = buildZeroMarginQrCanvas(canvas, 512);
     const link = document.createElement('a');
     link.download = `QR-Solo-${business.slug}-Mesa-${table.table_number}.png`;
     link.href = qrCanvas.toDataURL('image/png');
@@ -97,56 +68,7 @@ export function TablePosterModal({
     const canvas = canvasContainerRef.current?.querySelector('canvas') as HTMLCanvasElement;
     if (!canvas) return;
 
-    // Crear un canvas temporal para dibujar el cartel completo
-    const posterCanvas = document.createElement('canvas');
-    posterCanvas.width = 800;
-    posterCanvas.height = 1100;
-    const ctx = posterCanvas.getContext('2d');
-    if (!ctx) return;
-
-    // Fondo
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, posterCanvas.width, posterCanvas.height);
-
-    // Borde elegante
-    ctx.strokeStyle = business.color_primary || '#6366f1';
-    ctx.lineWidth = 12;
-    ctx.strokeRect(30, 30, posterCanvas.width - 60, posterCanvas.height - 60);
-
-    // Icono Teléfono
-    ctx.font = '60px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('📱', posterCanvas.width / 2, 120);
-
-    // Texto ¡PEDÍ DIRECTO DESDE ACÁ!
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '900 44px sans-serif';
-    ctx.fillText('¡PEDÍ DIRECTO DESDE ACÁ!', posterCanvas.width / 2, 195);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '500 22px sans-serif';
-    ctx.fillText('ESCANEÁ CON TU CELULAR • DIRECTO A LA COCINA', posterCanvas.width / 2, 240);
-
-    // Dibujar QR al centro
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(posterCanvas.width / 2 - 220, 280, 440, 440);
-    ctx.drawImage(canvas, posterCanvas.width / 2 - 200, 300, 400, 400);
-
-    // Nombre de la Mesa
-    ctx.fillStyle = business.color_primary || '#818cf8';
-    ctx.font = '900 64px sans-serif';
-    ctx.fillText(displayTableName.toUpperCase(), posterCanvas.width / 2, 800);
-
-    // Nombre del Negocio
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '700 36px sans-serif';
-    ctx.fillText(business.name, posterCanvas.width / 2, 870);
-
-    // Pie de página
-    ctx.fillStyle = '#64748b';
-    ctx.font = '400 20px sans-serif';
-    ctx.fillText('MambaQR • Pedí sin esperar', posterCanvas.width / 2, 980);
-
+    const posterCanvas = buildPosterCanvasFromQr(canvas, displayTableName, business);
     const link = document.createElement('a');
     link.download = `Cartel-${business.slug}-Mesa-${table.table_number}.png`;
     link.href = posterCanvas.toDataURL('image/png');
@@ -268,13 +190,13 @@ export function TablePosterModal({
               <p className="text-[11px] text-slate-400 mt-0.5 uppercase tracking-wider">Escaneá con tu celular • Directo a cocina</p>
             </div>
 
-            {/* QR Box con alto contraste y margen óptico */}
-            <div ref={canvasContainerRef} className="bg-white p-4 rounded-2xl shadow-xl my-1 flex items-center justify-center">
+            {/* QR Box sin margen en el código QR */}
+            <div ref={canvasContainerRef} className="bg-white p-3 rounded-2xl shadow-xl my-1 flex items-center justify-center">
               <QRCodeCanvas
                 value={tableQrUrl}
                 size={220}
                 level="M"
-                marginSize={3}
+                marginSize={0}
                 fgColor="#000000"
                 bgColor="#ffffff"
               />
@@ -323,7 +245,7 @@ export function TablePosterModal({
             onClick={downloadQRCodeOnly}
             className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold
                        bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all cursor-pointer"
-            title="Descargar solo la imagen del código QR con margen blanco"
+            title="Descargar solo la imagen del código QR"
           >
             <QrCode className="w-4 h-4" />
             Solo QR

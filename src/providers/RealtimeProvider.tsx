@@ -71,8 +71,13 @@ export function RealtimeProvider({ children, businessId }: { children: React.Rea
   }, [unreadCount]);
 
   const triggerNotificationEffects = (payload: NotificationItem) => {
-    // Si la notificación es un llamado de mozo o pedido de cuenta, abrir el modal en vivo inmediatamente
-    if (payload.type === 'waiter_call' || payload.type === 'bill_request') {
+    // Si la notificación es un llamado de mozo, pedido de cuenta, solicitud de sello o premio alcanzado, abrir el modal en vivo inmediatamente
+    if (
+      payload.type === 'waiter_call' ||
+      payload.type === 'bill_request' ||
+      payload.type === 'stamp_request' ||
+      payload.type === 'loyalty_reward_reached'
+    ) {
       setIsWaiterModalOpen(true);
     }
 
@@ -82,6 +87,8 @@ export function RealtimeProvider({ children, businessId }: { children: React.Rea
         case 'new_order': return '🍽️';
         case 'waiter_call': return '🔔';
         case 'bill_request': return '💳';
+        case 'stamp_request': return '🎟️';
+        case 'loyalty_reward_reached': return '🎁';
         case 'order_paid': return '💰';
         case 'new_review': return '⭐';
         case 'low_stock': return '⚠️';
@@ -143,7 +150,12 @@ export function RealtimeProvider({ children, businessId }: { children: React.Rea
           // Marcar los existentes como ya procesados para no disparar alertas retroactivas sonoras
           items.forEach(n => processedNotifIds.current.add(n.id));
           const hasPendingAlerts = items.some(
-            n => !n.read && (n.type === 'waiter_call' || n.type === 'bill_request')
+            n =>
+              !n.read &&
+              (n.type === 'waiter_call' ||
+                n.type === 'bill_request' ||
+                n.type === 'stamp_request' ||
+                n.type === 'loyalty_reward_reached')
           );
           if (hasPendingAlerts) {
             setIsWaiterModalOpen(true);

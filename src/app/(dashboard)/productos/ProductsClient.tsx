@@ -13,6 +13,7 @@ import { createProduct, updateProduct, deleteProduct, duplicateProduct, deleteAl
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { Product, Category, Business } from '@/types';
+import { filterProductsBySearch } from '@/lib/search-utils';
 
 interface ProductsClientProps {
   initialProducts: Product[];
@@ -134,20 +135,22 @@ export function ProductsClient({ initialProducts, categories, business }: Produc
     return products.filter(p => Number(p.price) <= 0).length;
   }, [products]);
 
-  const filtered = products.filter(p => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchCat = filterCategory ? p.category_id === filterCategory : true;
-    const matchStatus = filterStatus === 'available'
-      ? p.is_available
-      : filterStatus === 'unavailable'
-        ? !p.is_available
-        : filterStatus === 'featured'
-          ? p.is_featured
-          : filterStatus === 'no_price'
-            ? Number(p.price) <= 0
-            : true;
-    return matchSearch && matchCat && matchStatus;
-  });
+  const filtered = useMemo(() => {
+    const base = products.filter(p => {
+      const matchCat = filterCategory ? p.category_id === filterCategory : true;
+      const matchStatus = filterStatus === 'available'
+        ? p.is_available
+        : filterStatus === 'unavailable'
+          ? !p.is_available
+          : filterStatus === 'featured'
+            ? p.is_featured
+            : filterStatus === 'no_price'
+              ? Number(p.price) <= 0
+              : true;
+      return matchCat && matchStatus;
+    });
+    return filterProductsBySearch(base, search);
+  }, [products, search, filterCategory, filterStatus]);
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const paginatedProducts = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);

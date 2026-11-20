@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, Share2 } from 'lucide-react';
+import { Menu, X, Award, UtensilsCrossed, Info, Receipt, CalendarCheck, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
@@ -46,11 +46,27 @@ export function Navbar({
 }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
+  const [autoStampPending, setAutoStampPending] = useState(false);
 
   const pathname = usePathname();
   const router = useRouter();
   const isHome = pathname === `/c/${slug}`;
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+
+  // Auto-abrir tarjeta de sellos si el cliente escaneó el QR fijo de caja con la cámara nativa
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !businessId || !loyaltyEnabled) return;
+    const params = new URLSearchParams(window.location.search);
+    const stampQr = params.get('stamp_qr');
+    if (stampQr && stampQr === businessId) {
+      setAutoStampPending(true);
+      setIsLoyaltyModalOpen(true);
+      params.delete('stamp_qr');
+      const nextSearch = params.toString();
+      const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
+      window.history.replaceState({}, '', nextUrl);
+    }
+  }, [businessId, loyaltyEnabled]);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -74,49 +90,30 @@ export function Navbar({
     };
   }, []);
 
-  const handleShareMenu = async () => {
-    const url = typeof window !== 'undefined' ? window.location.origin + `/c/${slug}` : `https://mambaqr.com/c/${slug}`;
-    const title = `Menú de ${name}`;
-    const text = `¡Mirá la carta digital de ${name}! 🍽️`;
-
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({ title, text, url });
-        return;
-      } catch { }
-    }
-
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success('¡Enlace del menú copiado al portapapeles! 📋');
-    } catch {
-      toast.error('No se pudo copiar el enlace');
-    }
-  };
-
   const navItems = [
-    { label: 'Menú', id: 'menu', href: `/c/${slug}` },
+    { label: 'Menú', id: 'menu', href: `/c/${slug}`, icon: UtensilsCrossed },
   ];
 
   if (hasAbout) {
-    navItems.push({ label: 'Sobre Nosotros', id: 'about', href: `/c/${slug}/sobre-nosotros` });
+    navItems.push({ label: 'Sobre Nosotros', id: 'about', href: `/c/${slug}/sobre-nosotros`, icon: Info });
   }
 
   if (orderStatusEnabled) {
     navItems.push({
       label: 'Mis Pedidos',
       id: 'mis-pedidos',
-      href: lastOrderId ? `/c/${slug}/mis-pedidos?id=${lastOrderId}` : `/c/${slug}/mis-pedidos`
+      href: lastOrderId ? `/c/${slug}/mis-pedidos?id=${lastOrderId}` : `/c/${slug}/mis-pedidos`,
+      icon: Receipt,
     });
   }
 
   navItems.push(
-    { label: 'Reservar Mesa', id: 'reservar-mesa', href: `/c/${slug}/reservar-mesa` },
-    { label: 'Reseñas', id: 'reviews', href: `/c/${slug}#reviews` }
+    { label: 'Reservar Mesa', id: 'reservar-mesa', href: `/c/${slug}/reservar-mesa`, icon: CalendarCheck },
+    { label: 'Reseñas', id: 'reviews', href: `/c/${slug}#reviews`, icon: Star }
   );
 
   if (loyaltyEnabled) {
-    navItems.push({ label: '🎟️ Sellos', id: 'loyalty', href: '#' });
+    navItems.push({ label: 'Sellos', id: 'loyalty', href: '#', icon: Award });
   }
 
   const handleNav = (item: any) => {
@@ -218,49 +215,41 @@ export function Navbar({
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center" style={{ gap: 4 }}>
-            {navItems.map(item => (
-              <button
-                key={item.id}
-                id={`nav-${item.id}`}
-                onClick={() => handleNav(item)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)',
-                  fontWeight: 600,
-                  fontSize: '0.9rem',
-                  padding: '8px 18px',
-                  borderRadius: 8,
-                  transition: 'color 0.2s, background 0.2s',
-                }}
-                onMouseEnter={e => {
-                  (e.target as HTMLElement).style.color = 'var(--text-primary)';
-                  (e.target as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.05)';
-                }}
-                onMouseLeave={e => {
-                  (e.target as HTMLElement).style.color = 'var(--text-muted)';
-                  (e.target as HTMLElement).style.backgroundColor = 'transparent';
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
-
-            {/* Botón Compartir Menú */}
-            <button
-              onClick={handleShareMenu}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer hover:opacity-90 ml-2"
-              style={{
-                backgroundColor: 'var(--bg-card-hover)',
-                borderColor: 'var(--border-color)',
-                color: 'var(--text-primary)',
-              }}
-              title="Compartir Carta"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              <span>Compartir</span>
-            </button>
+            {navItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  id={`nav-${item.id}`}
+                  onClick={() => handleNav(item)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    transition: 'color 0.2s, background 0.2s',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)';
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.05)';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)';
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
 
             {reviewCount >= 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '16px', fontSize: '0.9rem', fontWeight: 600 }}>
@@ -275,13 +264,6 @@ export function Navbar({
 
           {/* Menu button */}
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={handleShareMenu}
-              className="p-2 text-gray-400 hover:text-white rounded-full transition-colors cursor-pointer md:hidden"
-              title="Compartir Carta"
-            >
-              <Share2 className="w-5 h-5" />
-            </button>
             <IconButton 
               id="hamburger-menu-btn" 
               onClick={() => setMobileOpen(true)} 
@@ -325,27 +307,23 @@ export function Navbar({
             </IconButton>
           </div>
           <List id="mobile-drawer-list" style={{ padding: 0 }}>
-            {navItems.map(item => (
-              <ListItem key={item.id} disablePadding>
-                <ListItemButton
-                  id={`drawer-nav-${item.id}`}
-                  onClick={() => handleNav(item)}
-                  style={{ borderRadius: 12, marginBottom: 4, padding: '14px 16px' }}
-                >
-                  <span style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '1rem' }}>{item.label}</span>
-                </ListItemButton>
-              </ListItem>
-            ))}
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => { setMobileOpen(false); handleShareMenu(); }}
-                style={{ borderRadius: 12, marginBottom: 4, padding: '14px 16px' }}
-              >
-                <span className="flex items-center gap-2" style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '1rem' }}>
-                  <Share2 className="w-4 h-4" /> Compartir Carta
-                </span>
-              </ListItemButton>
-            </ListItem>
+            {navItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <ListItem key={item.id} disablePadding>
+                  <ListItemButton
+                    id={`drawer-nav-${item.id}`}
+                    onClick={() => handleNav(item)}
+                    style={{ borderRadius: 12, marginBottom: 4, padding: '14px 16px' }}
+                  >
+                    <span className="flex items-center gap-2.5" style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '1rem' }}>
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </span>
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
           </List>
           <div style={{ marginTop: 'auto', paddingTop: '2rem', textAlign: 'center' }}>
             <p style={{ color: 'var(--text-faint)', fontSize: '0.75rem' }}>
@@ -361,9 +339,14 @@ export function Navbar({
           businessId={businessId}
           businessName={name}
           isOpen={isLoyaltyModalOpen}
-          onClose={() => setIsLoyaltyModalOpen(false)}
+          onClose={() => {
+            setIsLoyaltyModalOpen(false);
+            setAutoStampPending(false);
+          }}
           settings={loyaltySettings}
           primaryColor={primaryColor}
+          autoRequestStamp={autoStampPending}
+          onAutoRequestConsumed={() => setAutoStampPending(false)}
         />
       )}
     </>

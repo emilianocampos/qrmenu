@@ -22,11 +22,15 @@ export default async function LoyaltyPage() {
     getLoyaltySubscribers(business.id),
   ]);
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const publicUrl = `${siteUrl.replace(/\/$/, '')}/c/${business.slug}`;
+
   return (
     <LoyaltyClient
       businessId={business.id}
       businessSlug={business.slug}
       businessName={business.name}
+      publicUrl={publicUrl}
       initialSettings={settings}
       initialSubscribers={subscribers}
     />

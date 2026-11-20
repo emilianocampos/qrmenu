@@ -7,6 +7,7 @@ import { SearchBar } from './SearchBar';
 import { ProductGrid } from './ProductGrid';
 import { VintageMenuSection } from './VintageMenuSection';
 import { TableInfoAndWaiterBar } from './TableInfoAndWaiterBar';
+import { filterProductsBySearch } from '@/lib/search-utils';
 
 interface MenuSectionProps {
   businessId?: string;
@@ -66,19 +67,18 @@ export function MenuSection({
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [validProducts]);
 
-  const filteredProducts = validProducts.filter(product => {
-    const query = searchQuery.toLowerCase().trim();
-    let matchSearch = true;
-    if (query) {
-      matchSearch =
-        product.name.toLowerCase().includes(query) ||
-        (product.description?.toLowerCase().includes(query) ?? false) ||
-        (product.category?.name?.toLowerCase().includes(query) ?? false) ||
-        (product.subcategory?.toLowerCase().includes(query) ?? false);
+  const filteredProducts = useMemo(() => {
+    const trimmedQuery = searchQuery.trim();
+    // Si el usuario está buscando texto, buscar en toda la carta letra por letra;
+    // si no hay búsqueda activa, filtrar por la categoría seleccionada.
+    if (trimmedQuery) {
+      return filterProductsBySearch(validProducts, trimmedQuery);
     }
-    const matchCategory = selectedCategoryId ? product.category?.id === selectedCategoryId : true;
-    return matchSearch && matchCategory;
-  });
+    if (selectedCategoryId) {
+      return validProducts.filter(product => product.category?.id === selectedCategoryId);
+    }
+    return validProducts;
+  }, [validProducts, searchQuery, selectedCategoryId]);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);

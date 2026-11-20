@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
-import { Plus, Printer, Pencil, Trash2, UtensilsCrossed, Loader2, X, Check, Copy } from 'lucide-react';
+import React, { useState, useTransition, useRef } from 'react';
+import { Plus, Printer, Pencil, Trash2, UtensilsCrossed, Loader2, X, FolderDown, QrCode, Image as ImageIcon, ChevronDown } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -9,6 +10,15 @@ import { TablePosterModal } from '@/components/tables/TablePosterModal';
 import { createTable, updateTable, deleteTable } from '@/actions/tables';
 import { Business } from '@/types';
 import { toast } from 'sonner';
+import {
+  getTableQrUrl,
+  getTableDisplayName,
+  sanitizeFileName,
+  buildZeroMarginQrCanvas,
+  buildPosterCanvasFromQr,
+  canvasToPngBytes,
+  saveGeneratedFilesToFolderOrZip,
+} from '@/lib/table-qr-export';
 
 interface RestaurantTableItem {
   id: string;
@@ -34,6 +44,76 @@ export function TablesClient({ initialTables, business, publicUrl }: TablesClien
   const [form, setForm] = useState({ tableNumber: '', tableName: '' });
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // Exportación masiva de QRs / Carteles
+  const [bulkMenuOpen, setBulkMenuOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const hiddenQrContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleBulkExport = async (type: 'qr' | 'poster') => {
+    setBulkMenuOpen(false);
+    if (tables.length === 0) {
+      toast.info('No hay mesas para descargar.');
+      return;
+    }
+
+    setIsExporting(true);
+    const folderPrefix = type === 'qr' ? 'QRs-Mesas' : 'Carteles-Mesas';
+    const folderName = `${folderPrefix}-${sanitizeFileName(business.slug || business.name)}`;
+
+    try {
+      const result = await saveGeneratedFilesToFolderOrZip(folderName, async () => {
+        const container = hiddenQrContainerRef.current;
+        if (!container) throw new Error('No se pudieron preparar los códigos QR');
+
+        const files: { name: string; data: Uint8Array }[] = [];
+
+        for (const table of tables) {
+          const qrSourceCanvas = container.querySelector(
+            `canvas[data-table-id="${table.id}"]`
+          ) as HTMLCanvasElement | null;
+          if (!qrSourceCanvas) continue;
+
+          const displayName = getTableDisplayName(table);
+          const safeName = sanitizeFileName(displayName);
+
+          if (type === 'qr') {
+            const qrCanvas = buildZeroMarginQrCanvas(qrSourceCanvas, 512);
+            const data = await canvasToPngBytes(qrCanvas);
+            files.push({ name: `QR-${safeName}.png`, data });
+          } else {
+            const posterCanvas = buildPosterCanvasFromQr(qrSourceCanvas, displayName, business);
+            const data = await canvasToPngBytes(posterCanvas);
+            files.push({ name: `Cartel-${safeName}.png`, data });
+          }
+        }
+
+        if (files.length === 0) {
+          throw new Error('No se generó ninguna imagen de mesa');
+        }
+        return files;
+      });
+
+      if (result.mode === 'cancelled') {
+        toast.info('Descarga cancelada.');
+      } else if (result.mode === 'folder') {
+        toast.success(
+          `¡Listo! Se guardaron ${result.count} imágenes en la carpeta "${result.folderName}".`,
+          { duration: 5000 }
+        );
+      } else {
+        toast.success(
+          `¡Descarga lista! Se generó "${result.folderName}.zip" con ${result.count} imágenes.`,
+          { duration: 5000 }
+        );
+      }
+    } catch (err: any) {
+      console.error('Error en descarga masiva de mesas:', err);
+      toast.error(err?.message || 'Error al generar las imágenes de las mesas.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const openCreate = () => {
     setEditTable(null);
@@ -112,16 +192,102 @@ export function TablesClient({ initialTables, business, publicUrl }: TablesClien
         description="Administrá las mesas y generá carteles con QR de pedido para tus clientes"
         breadcrumb={[{ label: 'Dashboard' }, { label: 'Mesas' }]}
         action={
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
-                       bg-indigo-500 hover:bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-500/25 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Nueva Mesa
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {tables.length > 0 && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setBulkMenuOpen(prev => !prev)}
+                  disabled={isExporting}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                             bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30
+                             transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isExporting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Generando ({tables.length})...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FolderDown className="w-4 h-4" />
+                      <span>Descargar todas ({tables.length})</span>
+                      <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+                    </>
+                  )}
+                </button>
+
+                {bulkMenuOpen && !isExporting && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-20"
+                      onClick={() => setBulkMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-[#141414] border border-white/15 shadow-2xl p-2 z-30 space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => handleBulkExport('qr')}
+                        className="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/10 transition-colors cursor-pointer"
+                      >
+                        <QrCode className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <div>
+                          <div className="text-xs font-bold text-white">Solo QRs</div>
+                          <div className="text-[11px] text-gray-400">
+                            Guarda QR-Mesa-1.png, QR-Mesa-2.png... en una carpeta
+                          </div>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleBulkExport('poster')}
+                        className="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/10 transition-colors cursor-pointer"
+                      >
+                        <ImageIcon className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                        <div>
+                          <div className="text-xs font-bold text-white">Carteles completos (PNG)</div>
+                          <div className="text-[11px] text-gray-400">
+                            Guarda el diseño completo de todas las mesas en una carpeta
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                         bg-indigo-500 hover:bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-500/25 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Nueva Mesa
+            </button>
+          </div>
         }
       />
+
+      {/* Canvases ocultos de QR con 0 margen para descarga masiva instantánea */}
+      <div
+        ref={hiddenQrContainerRef}
+        aria-hidden="true"
+        className="sr-only pointer-events-none"
+      >
+        {tables.map(table => (
+          <QRCodeCanvas
+            key={table.id}
+            data-table-id={table.id}
+            value={getTableQrUrl(table, business.slug, publicUrl)}
+            size={512}
+            level="M"
+            marginSize={0}
+            fgColor="#000000"
+            bgColor="#ffffff"
+          />
+        ))}
+      </div>
 
       {tables.length === 0 ? (
         <EmptyState

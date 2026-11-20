@@ -4,9 +4,12 @@ import React, { useState, useEffect } from 'react';
 import {
   subscribeOrGetLoyaltyCard,
   loginLoyaltyCustomer,
+  requestStampApproval,
+  getStampRequestStatus,
   CustomerLoyaltyData,
   LoyaltySettings
 } from '@/actions/loyalty';
+import { QrScannerView } from './QrScannerView';
 import {
   Award,
   CheckCircle2,
@@ -24,6 +27,9 @@ import {
   UserCheck,
   CreditCard,
   Cake,
+  QrCode,
+  Loader2,
+  Clock,
 } from 'lucide-react';
 import {
   normalizeDni,
@@ -40,6 +46,8 @@ interface LoyaltyCardModalProps {
   onClose: () => void;
   settings: LoyaltySettings;
   primaryColor?: string;
+  autoRequestStamp?: boolean;
+  onAutoRequestConsumed?: () => void;
 }
 
 export function LoyaltyCardModal({
@@ -49,6 +57,8 @@ export function LoyaltyCardModal({
   onClose,
   settings,
   primaryColor = '#f97316',
+  autoRequestStamp = false,
+  onAutoRequestConsumed,
 }: LoyaltyCardModalProps) {
   // Modo de visualización si no tiene sesión activa: 'register' (Guardar mis datos) | 'login' (Ver mis sellos)
   const [activeTab, setActiveTab] = useState<'register' | 'login'>('register');
@@ -68,8 +78,105 @@ export function LoyaltyCardModal({
   const [cardData, setCardData] = useState<CustomerLoyaltyData | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Estado del escáner QR y solicitud pendiente de aprobación en caja
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [submittingStamp, setSubmittingStamp] = useState(false);
+  const [pendingRequestId, setPendingRequestId] = useState<string | null>(null);
+
   const localEmailKey = `loyalty_email_${businessId}`;
   const localDniKey = `loyalty_dni_${businessId}`;
+
+  const submitStampRequest = async (loyaltyId: string) => {
+    setSubmittingStamp(true);
+    try {
+      const res = await requestStampApproval(businessId, loyaltyId);
+      if (res.alreadyStampedToday) {
+        toast.info(res.error || '¡Ya sumaste tu sello de hoy!');
+        setCardData(prev => (prev ? { ...prev, hasStampedToday: true } : prev));
+        return;
+      }
+      if (res.error || !res.requestId) {
+        toast.error(res.error || 'No se pudo enviar la solicitud de sello.');
+        return;
+      }
+      setPendingRequestId(res.requestId);
+      toast.success('Solicitud enviada a caja. Esperando confirmación...', { icon: '⏳' });
+    } finally {
+      setSubmittingStamp(false);
+    }
+  };
+
+  // Si el cliente abrió el modal escaneando el QR fijo con la cámara nativa, enviar solicitud apenas tenga sesión
+  useEffect(() => {
+    if (isOpen && autoRequestStamp && cardData && !cardData.hasStampedToday && !pendingRequestId && !submittingStamp) {
+      onAutoRequestConsumed?.();
+      submitStampRequest(cardData.id);
+    }
+  }, [isOpen, autoRequestStamp, cardData, pendingRequestId, submittingStamp]);
+
+  // Polling de estado de solicitud pendiente (cada 2.5s)
+  useEffect(() => {
+    if (!pendingRequestId) return;
+
+    const interval = setInterval(async () => {
+      const res = await getStampRequestStatus(pendingRequestId);
+      if (res.status === 'approved') {
+        clearInterval(interval);
+        setPendingRequestId(null);
+        const reachedLimit = res.card ? res.card.stamps_count === 0 && (res.card.rewards_redeemed || 0) > (cardData?.rewards_redeemed || 0) : false;
+        if (res.card) {
+          setCardData(res.card);
+        } else {
+          setCardData(prev =>
+            prev
+              ? {
+                  ...prev,
+                  stamps_count: prev.stamps_count + 1,
+                  total_stamps_earned: prev.total_stamps_earned + 1,
+                  hasStampedToday: true,
+                }
+              : prev
+          );
+        }
+        if (reachedLimit) {
+          toast.success(
+            `🎁 ¡FELICITACIONES! Completaste tus sellos y ganaste: ${settings.loyalty_reward_title}. Tu tarjeta se reinició a 0 para volver a sumar.`,
+            { duration: 7000 }
+          );
+        } else {
+          toast.success('🎉 ¡Sello aprobado y sumado a tu tarjeta!', { duration: 5000 });
+        }
+      } else if (res.status === 'rejected') {
+        clearInterval(interval);
+        setPendingRequestId(null);
+        toast.error('La solicitud de sello fue rechazada por el local.');
+      } else if (res.status === 'expired') {
+        clearInterval(interval);
+        setPendingRequestId(null);
+        toast.info('La solicitud expiró. Podés volver a escanear el QR en caja.');
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [pendingRequestId]);
+
+  const handleQrScanned = (decodedText: string) => {
+    setScannerOpen(false);
+    const cleanText = (decodedText || '').trim();
+    const isMatch =
+      cleanText.includes(`stamp_qr=${businessId}`) ||
+      cleanText.includes(`stamp_qr=${encodeURIComponent(businessId)}`) ||
+      cleanText === businessId;
+
+    if (!isMatch) {
+      toast.error('Este código QR no corresponde al QR de sellos de este local.');
+      return;
+    }
+
+    if (cardData) {
+      submitStampRequest(cardData.id);
+    }
+  };
 
   // Cargar sesión persistente al abrir el modal
   useEffect(() => {
@@ -552,6 +659,63 @@ export function LoyaltyCardModal({
               </div>
             )}
 
+            {/* Sección Escanear QR en Caja para Sumar Sello */}
+            {scannerOpen ? (
+              <div
+                className="p-4 rounded-2xl border"
+                style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-color)' }}
+              >
+                <QrScannerView
+                  onScanSuccess={handleQrScanned}
+                  onClose={() => setScannerOpen(false)}
+                />
+              </div>
+            ) : pendingRequestId ? (
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/35 text-center space-y-2 animate-in fade-in duration-200">
+                <div className="flex items-center justify-center gap-2 text-amber-400 font-bold text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Esperando aprobación de caja...</span>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Tu solicitud ya llegó al mostrador. Apenas el cajero la confirme, tu sello se acreditará automáticamente acá.
+                </p>
+                <div className="flex items-center justify-center gap-1.5 text-[11px] text-amber-300/80 pt-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>No cierres esta ventana</span>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={cardData.hasStampedToday || submittingStamp}
+                onClick={() => setScannerOpen(true)}
+                className="w-full py-3.5 px-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: cardData.hasStampedToday ? 'rgba(16, 185, 129, 0.15)' : primaryColor,
+                  color: cardData.hasStampedToday ? '#10b981' : '#ffffff',
+                  border: cardData.hasStampedToday ? '1px solid rgba(16, 185, 129, 0.35)' : 'none',
+                  boxShadow: cardData.hasStampedToday ? 'none' : `0 10px 25px -5px ${primaryColor}55`,
+                }}
+              >
+                {submittingStamp ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Enviando solicitud...</span>
+                  </>
+                ) : cardData.hasStampedToday ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Sello de hoy ya acreditado</span>
+                  </>
+                ) : (
+                  <>
+                    <QrCode className="w-4 h-4" />
+                    <span>Escanear QR para sumar sello</span>
+                  </>
+                )}
+              </button>
+            )}
+
             {/* Tarjeta Visual de Sellos */}
             <div
               className="p-5 rounded-2xl border relative overflow-hidden"
@@ -585,8 +749,8 @@ export function LoyaltyCardModal({
                     <div
                       key={index}
                       className={`aspect-square rounded-2xl flex flex-col items-center justify-center relative transition-all duration-300 border ${isStamped
-                          ? 'scale-105 shadow-md'
-                          : 'border-dashed opacity-40'
+                        ? 'scale-105 shadow-md'
+                        : 'border-dashed opacity-40'
                         }`}
                       style={{
                         backgroundColor: isStamped ? primaryColor : 'var(--bg-card)',

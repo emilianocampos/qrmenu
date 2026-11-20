@@ -294,6 +294,74 @@ export async function loginLoyaltyCustomer(businessId: string, email: string, dn
 }
 
 /**
+ * Helper centralizado: suma +1 sello, verifica si llegó al límite configurado,
+ * reinicia los sellos a 0 si alcanzó el premio y dispara notificación en tiempo real al panel admin.
+ */
+async function applyStampAndCheckLimit(
+  supabase: any,
+  businessId: string,
+  loyalty: CustomerLoyaltyData
+): Promise<{
+  updatedCard: CustomerLoyaltyData;
+  rewardReached: boolean;
+  rewardTitle: string;
+  required: number;
+}> {
+  const { data: biz } = await supabase
+    .from('businesses')
+    .select('loyalty_stamps_required, loyalty_reward_title')
+    .eq('id', businessId)
+    .maybeSingle();
+
+  const required = Math.max(1, Number(biz?.loyalty_stamps_required) || 5);
+  const rewardTitle = biz?.loyalty_reward_title?.trim() || '¡Premio de Fidelidad!';
+
+  const incrementedStamps = (loyalty.stamps_count || 0) + 1;
+  const newTotalEarned = (loyalty.total_stamps_earned || 0) + 1;
+  const rewardReached = incrementedStamps >= required;
+
+  const finalStampsCount = rewardReached ? 0 : incrementedStamps;
+  const finalRewardsRedeemed = rewardReached
+    ? (loyalty.rewards_redeemed || 0) + 1
+    : (loyalty.rewards_redeemed || 0);
+
+  const { data: updated, error: updateErr } = await supabase
+    .from('customer_loyalty')
+    .update({
+      stamps_count: finalStampsCount,
+      total_stamps_earned: newTotalEarned,
+      rewards_redeemed: finalRewardsRedeemed,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', loyalty.id)
+    .select('*')
+    .single();
+
+  if (updateErr) throw updateErr;
+
+  if (rewardReached) {
+    const displayName = loyalty.customer_name?.trim() || loyalty.customer_email;
+    const dniInfo = loyalty.customer_dni ? ` (DNI ${loyalty.customer_dni})` : '';
+
+    await supabase.from('notifications').insert({
+      business_id: businessId,
+      type: 'loyalty_reward_reached',
+      title: '🎁 ¡Premio de Fidelidad Alcanzado!',
+      description: `${displayName}${dniInfo} completó ${required}/${required} sellos y ganó: ${rewardTitle}. Sus sellos se reiniciaron a 0.`,
+      reference_id: loyalty.id,
+      reference_type: 'customer_loyalty',
+    });
+  }
+
+  return {
+    updatedCard: updated as CustomerLoyaltyData,
+    rewardReached,
+    rewardTitle,
+    required,
+  };
+}
+
+/**
  * Acredita un sello automáticamente cuando el cliente realiza una compra desde la app.
  */
 export async function awardStampFromOrder(businessId: string, phone?: string, email?: string) {
@@ -364,20 +432,19 @@ export async function awardStampFromOrder(businessId: string, phone?: string, em
       return { success: true, awarded: false, alreadyStampedToday: true };
     }
 
-    // 5. Incrementar sellos ganados
-    const newCount = (customerLoyalty.stamps_count || 0) + 1;
-    const newTotal = (customerLoyalty.total_stamps_earned || 0) + 1;
+    // 5. Incrementar sellos, reiniciar si alcanzó el límite y notificar al admin
+    const { updatedCard, rewardReached } = await applyStampAndCheckLimit(
+      supabase,
+      businessId,
+      customerLoyalty
+    );
 
-    await supabase
-      .from('customer_loyalty')
-      .update({
-        stamps_count: newCount,
-        total_stamps_earned: newTotal,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', customerLoyalty.id);
-
-    return { success: true, awarded: true, stampsCount: newCount };
+    return {
+      success: true,
+      awarded: true,
+      stampsCount: updatedCard.stamps_count,
+      rewardReached,
+    };
   } catch (err: any) {
     console.error('Error in awardStampFromOrder:', err);
     return { success: false, error: err.message };
@@ -425,31 +492,24 @@ export async function addDailyStamp(businessId: string, email: string) {
       throw logError;
     }
 
-    // 3. Incrementar contadores en customer_loyalty
-    const newStampsCount = loyalty.stamps_count + 1;
-    const newTotalEarned = loyalty.total_stamps_earned + 1;
-
-    const { data: updatedCard, error: updateError } = await supabase
-      .from('customer_loyalty')
-      .update({
-        stamps_count: newStampsCount,
-        total_stamps_earned: newTotalEarned,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', loyalty.id)
-      .select('*')
-      .single();
-
-    if (updateError) throw updateError;
+    // 3. Incrementar sellos, reiniciar si alcanzó el límite y notificar
+    const { updatedCard, rewardReached, rewardTitle } = await applyStampAndCheckLimit(
+      supabase,
+      businessId,
+      loyalty
+    );
 
     return {
       success: true,
       alreadyStampedToday: false,
+      rewardReached,
       card: {
         ...updatedCard,
         hasStampedToday: true,
       } as CustomerLoyaltyData,
-      message: '🎉 ¡Excelente! Sumaste 1 sello por tu visita de hoy.',
+      message: rewardReached
+        ? `🎁 ¡Felicitaciones! Completaste tu tarjeta y ganaste: ${rewardTitle}. Tus sellos se reiniciaron para volver a empezar.`
+        : '🎉 ¡Excelente! Sumaste 1 sello por tu visita de hoy.',
     };
   } catch (err: any) {
     console.error('Error adding daily stamp:', err);
@@ -536,24 +596,446 @@ export async function manualAddStamp(loyaltyId: string, businessId: string) {
 
     if (fetchErr || !loyalty) throw new Error('Tarjeta no encontrada');
 
-    const newStamps = loyalty.stamps_count + 1;
-    const newTotal = loyalty.total_stamps_earned + 1;
+    const { updatedCard, rewardReached, rewardTitle } = await applyStampAndCheckLimit(
+      supabase,
+      businessId,
+      loyalty
+    );
 
-    const { error: updateErr } = await supabase
+    revalidatePath('/fidelidad');
+    return { success: true, card: updatedCard, rewardReached, rewardTitle };
+  } catch (err: any) {
+    console.error('Error in manualAddStamp:', err);
+    return { error: err.message || 'Error al otorgar sello' };
+  }
+}
+
+/**
+ * Crea una solicitud de sello (pendiente de aprobación en caja) cuando el cliente escanea el QR fijo del local.
+ */
+export async function requestStampApproval(businessId: string, loyaltyId: string) {
+  try {
+    let supabase: any;
+    try {
+      supabase = createAdminClient();
+    } catch {
+      supabase = await createClient();
+    }
+
+    // 1. Verificar tarjeta del cliente
+    const { data: loyalty, error: fetchErr } = await supabase
       .from('customer_loyalty')
-      .update({
-        stamps_count: newStamps,
-        total_stamps_earned: newTotal,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', loyaltyId);
+      .select('*')
+      .eq('id', loyaltyId)
+      .eq('business_id', businessId)
+      .single();
 
-    if (updateErr) throw updateErr;
+    if (fetchErr || !loyalty) {
+      return { error: 'No se encontró tu tarjeta de fidelidad.' };
+    }
+
+    // 2. Verificar si ya sumó sello hoy
+    const today = new Date().toISOString().split('T')[0];
+    const { data: todayStamp } = await supabase
+      .from('loyalty_stamps_log')
+      .select('id')
+      .eq('loyalty_id', loyalty.id)
+      .eq('stamp_date', today)
+      .maybeSingle();
+
+    if (todayStamp) {
+      return {
+        alreadyStampedToday: true,
+        error: '¡Ya sumaste tu sello de hoy! Volvé mañana para sumar otro.',
+      };
+    }
+
+    // 3. Evitar solicitudes duplicadas en los últimos 3 minutos
+    const threeMinAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+    const { data: existingReq } = await supabase
+      .from('loyalty_stamp_requests')
+      .select('id, status, created_at')
+      .eq('business_id', businessId)
+      .eq('loyalty_id', loyalty.id)
+      .eq('status', 'pending')
+      .gte('created_at', threeMinAgo)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingReq) {
+      return { success: true, requestId: existingReq.id, reused: true };
+    }
+
+    // 4. Crear solicitud pendiente
+    const { data: newReq, error: reqErr } = await supabase
+      .from('loyalty_stamp_requests')
+      .insert({
+        business_id: businessId,
+        loyalty_id: loyalty.id,
+        status: 'pending',
+      })
+      .select('id')
+      .single();
+
+    if (reqErr) throw reqErr;
+
+    // 5. Disparar notificación en tiempo real al panel admin
+    const displayName = loyalty.customer_name?.trim() || loyalty.customer_email;
+    const dniInfo = loyalty.customer_dni ? ` (DNI ${loyalty.customer_dni})` : '';
+
+    const { error: notifErr } = await supabase
+      .from('notifications')
+      .insert({
+        business_id: businessId,
+        type: 'stamp_request',
+        title: '🎟️ Solicitud de Sello',
+        description: `${displayName}${dniInfo} escaneó el QR y solicita sumar 1 sello.`,
+        reference_id: newReq.id,
+        reference_type: 'loyalty_stamp_request',
+      });
+
+    if (notifErr) {
+      console.error('Error creating stamp notification:', notifErr);
+    }
+
+    return { success: true, requestId: newReq.id };
+  } catch (err: any) {
+    console.error('Error in requestStampApproval:', err);
+    return { error: err.message || 'Error al enviar la solicitud de sello' };
+  }
+}
+
+/**
+ * Consulta el estado de una solicitud de sello desde la tarjeta del cliente.
+ */
+export async function getStampRequestStatus(requestId: string) {
+  try {
+    let supabase: any;
+    try {
+      supabase = createAdminClient();
+    } catch {
+      supabase = await createClient();
+    }
+
+    const { data: req, error } = await supabase
+      .from('loyalty_stamp_requests')
+      .select('id, status, loyalty_id, created_at')
+      .eq('id', requestId)
+      .single();
+
+    if (error || !req) {
+      return { status: 'expired' as const };
+    }
+
+    // Si lleva más de 3 minutos pendiente, considerarla vencida
+    const ageMs = Date.now() - new Date(req.created_at).getTime();
+    if (req.status === 'pending' && ageMs > 3 * 60 * 1000) {
+      await supabase
+        .from('loyalty_stamp_requests')
+        .update({ status: 'expired', resolved_at: new Date().toISOString() })
+        .eq('id', requestId);
+      return { status: 'expired' as const };
+    }
+
+    if (req.status === 'approved') {
+      const { data: card } = await supabase
+        .from('customer_loyalty')
+        .select('*')
+        .eq('id', req.loyalty_id)
+        .single();
+
+      return {
+        status: 'approved' as const,
+        card: card ? ({ ...card, hasStampedToday: true } as CustomerLoyaltyData) : null,
+      };
+    }
+
+    return { status: req.status as 'pending' | 'rejected' | 'expired' };
+  } catch (err: any) {
+    console.error('Error in getStampRequestStatus:', err);
+    return { status: 'pending' as const };
+  }
+}
+
+/**
+ * Aprueba una solicitud de sello desde el panel admin, acreditando +1 sello al cliente.
+ */
+export async function approveStampRequest(
+  requestId: string,
+  businessId: string,
+  notificationId?: string
+) {
+  try {
+    let supabase: any;
+    try {
+      supabase = createAdminClient();
+    } catch {
+      supabase = await createClient();
+    }
+
+    const { data: req, error: reqErr } = await supabase
+      .from('loyalty_stamp_requests')
+      .select('*')
+      .eq('id', requestId)
+      .eq('business_id', businessId)
+      .single();
+
+    if (reqErr || !req) {
+      return { error: 'Solicitud no encontrada.' };
+    }
+
+    if (req.status === 'approved') {
+      if (notificationId) {
+        await supabase.from('notifications').update({ read: true }).eq('id', notificationId);
+      }
+      return { success: true, alreadyApproved: true };
+    }
+
+    if (req.status === 'rejected') {
+      return { error: 'Esta solicitud ya fue rechazada.' };
+    }
+
+    // 1. Obtener tarjeta del cliente
+    const { data: loyalty, error: loyErr } = await supabase
+      .from('customer_loyalty')
+      .select('*')
+      .eq('id', req.loyalty_id)
+      .single();
+
+    if (loyErr || !loyalty) {
+      return { error: 'Tarjeta de cliente no encontrada.' };
+    }
+
+    // 2. Registrar log diario (tolerando si ya existía)
+    const today = new Date().toISOString().split('T')[0];
+    await supabase
+      .from('loyalty_stamps_log')
+      .insert({
+        business_id: businessId,
+        loyalty_id: loyalty.id,
+        stamp_date: today,
+      });
+
+    // 3. Sumar +1 sello, reiniciar si llegó al límite y notificar
+    const { rewardReached, rewardTitle } = await applyStampAndCheckLimit(
+      supabase,
+      businessId,
+      loyalty
+    );
+
+    // 4. Marcar solicitud como aprobada
+    await supabase
+      .from('loyalty_stamp_requests')
+      .update({ status: 'approved', resolved_at: new Date().toISOString() })
+      .eq('id', requestId);
+
+    // 5. Marcar notificación como leída
+    if (notificationId) {
+      await supabase.from('notifications').update({ read: true }).eq('id', notificationId);
+    } else {
+      await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('reference_id', requestId)
+        .eq('business_id', businessId);
+    }
+
+    revalidatePath('/fidelidad');
+    return { success: true, rewardReached, rewardTitle };
+  } catch (err: any) {
+    console.error('Error in approveStampRequest:', err);
+    return { error: err.message || 'Error al aprobar el sello' };
+  }
+}
+
+/**
+ * Rechaza una solicitud de sello desde el panel admin.
+ */
+export async function rejectStampRequest(
+  requestId: string,
+  businessId: string,
+  notificationId?: string
+) {
+  try {
+    let supabase: any;
+    try {
+      supabase = createAdminClient();
+    } catch {
+      supabase = await createClient();
+    }
+
+    await supabase
+      .from('loyalty_stamp_requests')
+      .update({ status: 'rejected', resolved_at: new Date().toISOString() })
+      .eq('id', requestId)
+      .eq('business_id', businessId);
+
+    if (notificationId) {
+      await supabase.from('notifications').update({ read: true }).eq('id', notificationId);
+    } else {
+      await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('reference_id', requestId)
+        .eq('business_id', businessId);
+    }
 
     revalidatePath('/fidelidad');
     return { success: true };
   } catch (err: any) {
-    console.error('Error in manualAddStamp:', err);
-    return { error: err.message || 'Error al otorgar sello' };
+    console.error('Error in rejectStampRequest:', err);
+    return { error: err.message || 'Error al rechazar la solicitud' };
+  }
+}
+
+/**
+ * CRUD Admin: Crear cliente de fidelización manualmente.
+ */
+export async function createLoyaltyCustomer(
+  businessId: string,
+  payload: {
+    customer_email: string;
+    customer_name?: string | null;
+    customer_phone?: string | null;
+    customer_dni?: string | null;
+    customer_birthday?: string | null;
+    stamps_count?: number;
+  }
+) {
+  try {
+    const supabase = await createClient();
+    const cleanEmail = (payload.customer_email || '').trim().toLowerCase();
+    const cleanDni = payload.customer_dni ? normalizeDni(payload.customer_dni) : null;
+    const stamps = Math.max(0, Number(payload.stamps_count) || 0);
+
+    if (!cleanEmail) {
+      return { error: 'El email es obligatorio.' };
+    }
+
+    const { data: existing } = await supabase
+      .from('customer_loyalty')
+      .select('id')
+      .eq('business_id', businessId)
+      .eq('customer_email', cleanEmail)
+      .maybeSingle();
+
+    if (existing) {
+      return { error: 'Ya existe un cliente registrado con ese email.' };
+    }
+
+    const { data, error } = await supabase
+      .from('customer_loyalty')
+      .insert({
+        business_id: businessId,
+        customer_email: cleanEmail,
+        customer_name: payload.customer_name?.trim() || null,
+        customer_phone: payload.customer_phone?.trim() || null,
+        customer_dni: cleanDni || null,
+        customer_birthday: payload.customer_birthday?.trim() || null,
+        stamps_count: stamps,
+        total_stamps_earned: stamps,
+        rewards_redeemed: 0,
+      })
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    revalidatePath('/fidelidad');
+    revalidatePath('/dashboard');
+    return { success: true, card: data as CustomerLoyaltyData };
+  } catch (err: any) {
+    console.error('Error in createLoyaltyCustomer:', err);
+    return { error: err.message || 'Error al crear el cliente' };
+  }
+}
+
+/**
+ * CRUD Admin: Actualizar datos, DNI, cumpleaños o cantidad de sellos de un cliente.
+ */
+export async function updateLoyaltyCustomer(
+  loyaltyId: string,
+  businessId: string,
+  payload: {
+    customer_email?: string;
+    customer_name?: string | null;
+    customer_phone?: string | null;
+    customer_dni?: string | null;
+    customer_birthday?: string | null;
+    stamps_count?: number;
+    rewards_redeemed?: number;
+  }
+) {
+  try {
+    const supabase = await createClient();
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (payload.customer_email !== undefined) {
+      const cleanEmail = payload.customer_email.trim().toLowerCase();
+      if (!cleanEmail) return { error: 'El email no puede estar vacío.' };
+      updateData.customer_email = cleanEmail;
+    }
+    if (payload.customer_name !== undefined) {
+      updateData.customer_name = payload.customer_name?.trim() || null;
+    }
+    if (payload.customer_phone !== undefined) {
+      updateData.customer_phone = payload.customer_phone?.trim() || null;
+    }
+    if (payload.customer_dni !== undefined) {
+      updateData.customer_dni = payload.customer_dni ? normalizeDni(payload.customer_dni) : null;
+    }
+    if (payload.customer_birthday !== undefined) {
+      updateData.customer_birthday = payload.customer_birthday?.trim() || null;
+    }
+    if (payload.stamps_count !== undefined) {
+      updateData.stamps_count = Math.max(0, Number(payload.stamps_count) || 0);
+    }
+    if (payload.rewards_redeemed !== undefined) {
+      updateData.rewards_redeemed = Math.max(0, Number(payload.rewards_redeemed) || 0);
+    }
+
+    const { data, error } = await supabase
+      .from('customer_loyalty')
+      .update(updateData)
+      .eq('id', loyaltyId)
+      .eq('business_id', businessId)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    revalidatePath('/fidelidad');
+    revalidatePath('/dashboard');
+    return { success: true, card: data as CustomerLoyaltyData };
+  } catch (err: any) {
+    console.error('Error in updateLoyaltyCustomer:', err);
+    return { error: err.message || 'Error al actualizar el cliente' };
+  }
+}
+
+/**
+ * CRUD Admin: Eliminar cliente del programa de fidelización.
+ */
+export async function deleteLoyaltyCustomer(loyaltyId: string, businessId: string) {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('customer_loyalty')
+      .delete()
+      .eq('id', loyaltyId)
+      .eq('business_id', businessId);
+
+    if (error) throw error;
+
+    revalidatePath('/fidelidad');
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error in deleteLoyaltyCustomer:', err);
+    return { error: err.message || 'Error al eliminar el cliente' };
   }
 }

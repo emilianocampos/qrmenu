@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Product } from '@/types';
 import { TableInfoAndWaiterBar } from './TableInfoAndWaiterBar';
+import { SearchBar } from './SearchBar';
+import { filterProductsBySearch } from '@/lib/search-utils';
 
 interface VintageMenuSectionProps {
   products: Product[];
@@ -33,15 +35,22 @@ export function VintageMenuSection({
   businessId,
   primaryColor
 }: VintageMenuSectionProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Filter products that have a valid price > 0
   const validProducts = useMemo(() => {
     return products.filter(p => Number(p.price) > 0);
   }, [products]);
 
-  // Group products by category
+  // Filter letter-by-letter according to search query
+  const filteredProducts = useMemo(() => {
+    return filterProductsBySearch(validProducts, searchQuery);
+  }, [validProducts, searchQuery]);
+
+  // Group filtered products by category
   const categories = useMemo(() => {
     const map = new Map<string, { id: string, name: string, products: Product[] }>();
-    validProducts.forEach(p => {
+    filteredProducts.forEach(p => {
       if (p.category) {
         if (!map.has(p.category.id)) {
           map.set(p.category.id, { id: p.category.id, name: p.category.name, products: [] });
@@ -52,7 +61,7 @@ export function VintageMenuSection({
     return Array.from(map.values())
       .filter(c => c.products.length > 0)
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [validProducts]);
+  }, [filteredProducts]);
 
   // If no products, fallback to empty state
   if (validProducts.length === 0) {
@@ -76,11 +85,50 @@ export function VintageMenuSection({
 
       {/* Mesa, Mozo y Pedido de Cuenta */}
       {businessId && (
-        <div className="max-w-6xl mx-auto mb-8 flex justify-center sm:justify-end relative z-20">
+        <div className="max-w-6xl mx-auto mb-6 flex justify-center sm:justify-end relative z-20">
           <TableInfoAndWaiterBar businessId={businessId} orderMode={orderMode} primaryColor={primaryColor} />
         </div>
       )}
 
+      {/* Buscador letra por letra en vista Vintage */}
+      <div className="max-w-6xl mx-auto mb-8 relative z-10">
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Buscar plato, bebida o categoría..."
+        />
+        {searchQuery.trim() && (
+          <p className="mt-2.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span className="font-bold" style={{ color: 'var(--text-primary)' }}>
+              {filteredProducts.length}
+            </span>{' '}
+            resultado{filteredProducts.length !== 1 ? 's' : ''} para &ldquo;{searchQuery}&rdquo;
+          </p>
+        )}
+      </div>
+
+      {categories.length === 0 ? (
+        <div
+          className="max-w-md mx-auto py-12 px-6 text-center rounded-2xl border relative z-10"
+          style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+        >
+          <div className="text-4xl mb-3">🍽️</div>
+          <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+            No encontramos coincidencias
+          </h3>
+          <p className="text-xs mb-5" style={{ color: 'var(--text-muted)' }}>
+            Probá escribiendo otra palabra o limpiá el buscador para ver toda la carta.
+          </p>
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="px-5 py-2.5 rounded-full text-xs font-bold text-white cursor-pointer transition-opacity hover:opacity-90"
+            style={{ backgroundColor: primaryColor || 'var(--primary-color)' }}
+          >
+            Ver toda la carta
+          </button>
+        </div>
+      ) : (
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-16 relative z-10">
         {categories.map((category, index) => {
           const isSingle = vintageColorMode === 'single';
@@ -191,6 +239,7 @@ export function VintageMenuSection({
           );
         })}
       </div>
+      )}
     </section>
   );
 }
